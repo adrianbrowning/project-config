@@ -1,16 +1,29 @@
 {
-  "name": "@total-typescript/tsconfig",
-  "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet",
-  "version": "1.0.4",
-  "devDependencies": {
-    "@changesets/cli": "^2.27.1"
+  "$schema": "https://json.schemastore.org/package",
+  "name": "@gingacodemonkey/config",
+  "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
+  "version": "0.0.24-5",
+  "scripts": {
+    "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
+    "build": "node build.js && pnpm pack",
+    "build:bump": "node build.js && pnpm version patch --no-git-tag-version && pnpm pack",
+    "build:bump-dev": "node build.js && pnpm version prerelease --no-git-tag-version && pnpm pack",
+    "prepare": "husky"
+  },
+  "main": "dist/setup.js",
+  "bin": {
+    "gingacodemonkey-config": "dist/setup.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/total-typescript/tsconfig.git"
+    "url": "https://github.com/adrianbrowning/config.git"
   },
-  "homepage": "https://totaltypescript.com/tsconfig-cheat-sheet",
-  "author": "Matt Pocock",
+  "homepage": "https://github.com/adrianbrowning/config.git",
+  "author": "Adrian Elton-Browning",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
   "license": "MIT",
   "exports": {
     "./tsc": "./tsc/dom/app.json",
@@ -22,14 +35,87 @@
     "./tsc/no-dom/app": "./tsc/no-dom/app.json",
     "./tsc/no-dom/library": "./tsc/no-dom/library.json",
     "./tsc/no-dom/library-monorepo": "./tsc/no-dom/library-monorepo.json",
-    "./bundler": "./bundler/dom.json",
-    "./bundler/dom": "./bundler/dom.json",
-    "./bundler/dom/app": "./bundler/dom.json",
-    "./bundler/dom/library": "./bundler/dom.json",
-    "./bundler/dom/library-monorepo": "./bundler/dom.json",
-    "./bundler/no-dom": "./bundler/no-dom.json",
-    "./bundler/no-dom/app": "./bundler/no-dom.json",
-    "./bundler/no-dom/library": "./bundler/no-dom.json",
-    "./bundler/no-dom/library-monorepo": "./bundler/no-dom.json"
-  }
+    "./tsc/node": "./tsc/node/app.json",
+    "./tsc/node/app": "./tsc/node/app.json",
+    "./tsc/node/library": "./tsc/node/library.json",
+    "./tsc/node/library-monorepo": "./tsc/node/library-monorepo.json",
+    "./bundler": "./tsc/bundler/dom.json",
+    "./bundler/dom": "./tsc/bundler/dom.json",
+    "./bundler/dom/app": "./tsc/bundler/dom.json",
+    "./bundler/dom/library": "./tsc/bundler/dom.json",
+    "./bundler/dom/library-monorepo": "./tsc/bundler/dom.json",
+    "./bundler/no-dom": "./tsc/bundler/no-dom.json",
+    "./bundler/no-dom/app": "./tsc/bundler/no-dom.json",
+    "./bundler/no-dom/library": "./tsc/bundler/no-dom.json",
+    "./bundler/no-dom/library-monorepo": "./tsc/bundler/no-dom.json",
+    "./eslint": "./eslint.ts",
+    "./styled": "./eslint.styled.ts",
+    "./eslint.ts": "./eslint.ts",
+    "./styled.ts": "./eslint.styled.ts"
+  },
+  "dependencies": {
+    "@eslint/compat": "^2.0.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.39.1",
+    "@listr2/prompt-adapter-enquirer": "^3.0.5",
+    "@stylistic/eslint-plugin": "^5.6.1",
+    "@total-typescript/ts-reset": "^0.6.1",
+    "enquirer": "^2.4.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-jest-dom": "^5.5.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-compiler": "19.1.0-rc.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-security-node": "^1.1.4",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-testing-library": "^7.13.4",
+    "eslint-plugin-unicorn": "^62.0.0",
+    "eslint-plugin-unused-imports": "^4.3.0",
+    "eslint-plugin-vitest": "^0.5.4",
+    "globals": "^16.5.0",
+    "listr2": "^9.0.5",
+    "prettier-plugin-tailwindcss": "^0.7.1",
+    "tslib": "^2.8.1",
+    "typescript-eslint": "^8.47.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-replace": "^6.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/react": "^19.2.6",
+    "esbuild": "^0.27.0",
+    "esbuild-plugin-alias": "^0.2.1",
+    "eslint": "^9.8.0",
+    "husky": "^9.1.7",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.6.2",
+    "react": "^19.2.0",
+    "rollup": "^4.53.3",
+    "rollup-plugin-delete": "^3.0.1",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "terser": "^5.44.1",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@commitlint/cli": "20.0.0",
+    "@commitlint/config-conventional": "20.0.0",
+    "@gingacodemonkey/semantic-release-unsquash": "0.2.7",
+    "eslint": "^9.8.0",
+    "husky": "9.0.6",
+    "knip": "5.70.1",
+    "lint-staged": "15.2.10",
+    "typescript": "5.7.3"
+  },
+  "files": [
+    "dist",
+    "tsc",
+    "eslint.ts",
+    "eslint.styled.ts"
+  ]
 }

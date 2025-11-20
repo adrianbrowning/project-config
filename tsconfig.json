@@ -1,0 +1,17 @@
+{
+  "extends": "./tsc/bundler/no-dom.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "moduleResolution": "node",
+  },
+  "include": [
+    "src",
+    "rollup.config.ts",
+    "eslint.ts",
+    "eslint.styled.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
