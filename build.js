@@ -72,6 +72,19 @@ Promise.all([setupBuild, eslintBuild]).then(() => {
     }
     fs.writeFileSync('dist/setup.cjs', setupContent);
 
+    // Generate type declaration files for ESLint configs
+    fs.writeFileSync('dist/eslint.d.ts', `import type { Linter } from 'eslint';
+
+export declare const nodeRules: Array<Linter.Config>;
+export declare const config: Array<Linter.Config>;
+export default config;
+`);
+    fs.writeFileSync('dist/eslint.styled.d.ts', `import type { Linter } from 'eslint';
+
+export declare const config: Array<Linter.Config>;
+export default config;
+`);
+
     // Make the file executable
     execSync('chmod +x dist/setup.cjs');
     console.log('✓ Build complete');

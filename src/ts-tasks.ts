@@ -1,7 +1,7 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import {execSync} from 'child_process';
 import fs from 'fs';
-import {installPkg, compareVersions} from "./utils.ts";
+import {compareVersions} from "./utils.ts";
 import type {ListrTask} from "listr2";
 import type {CliArgs} from "./cli-args.ts";
 
@@ -14,7 +14,8 @@ export const tsTasks: Array<ListrTask> = [
             const tsVersion = isTypescriptInstalled();
             if (!tsVersion) {
                 task.title = 'TypeScript not installed. Installing...';
-                installPkg(ctx.packageManager, "typescript@latest");
+                ctx.packages.add("typescript@latest");
+                ctx.packages.add("@types/node@^24.0.0");
                 return;
             }
 
@@ -31,7 +32,8 @@ export const tsTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading TypeScript to the latest version...',
                         task: async (ctx: any) => {
-                            installLatestTypescript(ctx.packageManager);
+                            ctx.packages.add("typescript@"+Supported_Version);
+                            ctx.packages.add("@types/node@^24.0.0");
                         }
                         }],
                         { concurrent: false });
@@ -140,11 +142,11 @@ export const tsTasks: Array<ListrTask> = [
                             createTsConfig(tsConfig);
 
                             if (type === "App") {
-                                const str = ["import '@total-typescript/ts-reset';"];
+                                const str = ["import \"@total-typescript/ts-reset\";"];
                                 // create reset.d.ts
                                 // add
                                 if(dom) {
-                                    str.push("import '@total-typescript/ts-reset/dom';");
+                                    str.push("import \"@total-typescript/ts-reset/dom\";");
                                     str.push(`declare module 'react' {\n\t// support css variables\n\tinterface CSSProperties {\n\t\t[key: \`--\${string}\`]: string | number;\n\t}\n}`);
 
                                 }
@@ -160,7 +162,6 @@ export const tsTasks: Array<ListrTask> = [
         title: 'Adding TypeScript scripts to package.json',
         task: async () => {
             const { updatePkgJsonScript } = await import('./utils.ts');
-            updatePkgJsonScript('type-check', 'tsc --noEmit');
             updatePkgJsonScript('lint:ts', 'tsc --noEmit');
         }
     },
@@ -176,12 +177,6 @@ function isTypescriptInstalled(): string | false {
         return false;
     }
 }
-
-function installLatestTypescript(packageManager: string): void {
-    installPkg(packageManager as any, "typescript@"+Supported_Version);
-}
-
-
 
 function getTsConfig(): boolean {
     return fs.existsSync('tsconfig.json');
@@ -206,7 +201,8 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask> {
                 const tsVersion = isTypescriptInstalled();
                 if (!tsVersion) {
                     task.title = 'TypeScript not installed. Installing...';
-                    installPkg(ctx.packageManager, "typescript@latest");
+                    ctx.packages.add("typescript@latest");
+                    ctx.packages.add("@types/node@^24.0.0");
                     return;
                 }
 
@@ -216,7 +212,8 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask> {
                 if (compareVersions(tsVersion, Supported_Version) < 0) {
                     // In non-interactive mode, auto-upgrade
                     task.title = `Upgrading TypeScript from ${tsVersion} to ${Supported_Version}...`;
-                    installLatestTypescript(ctx.packageManager);
+                    ctx.packages.add("typescript@"+Supported_Version);
+                    ctx.packages.add("@types/node@^24.0.0");
                 }
             }
         },
@@ -247,9 +244,9 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask> {
                 createTsConfig(tsConfig);
 
                 if (type === "app") {
-                    const str = ["import '@total-typescript/ts-reset';"];
+                    const str = ["import \"@total-typescript/ts-reset\";"];
                     if (dom) {
-                        str.push("import '@total-typescript/ts-reset/dom';");
+                        str.push("import \"@total-typescript/ts-reset/dom\";");
                         str.push(`declare module 'react' {\n\t// support css variables\n\tinterface CSSProperties {\n\t\t[key: \`--\${string}\`]: string | number;\n\t}\n}`);
                     }
                     // Ensure src directory exists
@@ -264,7 +261,6 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask> {
             title: 'Adding TypeScript scripts to package.json',
             task: async () => {
                 const { updatePkgJsonScript } = await import('./utils.ts');
-                updatePkgJsonScript('type-check', 'tsc --noEmit');
                 updatePkgJsonScript('lint:ts', 'tsc --noEmit');
             }
         },

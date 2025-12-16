@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, writeConfigFile} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__lintstaged_version__";
@@ -19,7 +19,7 @@ export const lintstagedTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion(pkgName);
             if (!eslintInstalled) {
                 task.title = 'LintStaged not installed. Installing...';
-                installLatestLintStaged(ctx.packageManager);
+                ctx.packages.add(`${pkgName}@${Supported_Version}`);
                 return;
             }
 
@@ -36,7 +36,7 @@ export const lintstagedTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading LintStaged to the supported version...',
                         task: async (ctx: any) => {
-                            installLatestLintStaged(ctx.packageManager);
+                            ctx.packages.add(`${pkgName}@${Supported_Version}`);
                         }
                         }],
                         { concurrent: false });
@@ -52,10 +52,3 @@ export const lintstagedTasks: Array<ListrTask> = [
         task: writeConfigFile(configFile.path, JSON.stringify(configFile.content, null, 2))
     }
     ];
-
-
-
-
-function installLatestLintStaged(packageManager: string): void {
-    installPkg(packageManager as any, `${pkgName}@${Supported_Version}`);
-}

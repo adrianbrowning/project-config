@@ -142,10 +142,28 @@ Examples:
 }
 
 /**
+ * Collects packages to install, batched at end of setup
+ */
+export type PackageCollector = {
+  packages: Set<string>;
+  add(pkg: string): void;
+};
+
+export function createPackageCollector(): PackageCollector {
+  const packages = new Set<string>();
+  return {
+    packages,
+    add(pkg: string) {
+      packages.add(pkg);
+    },
+  };
+}
+
+/**
  * Context type that includes CLI args for use in tasks
  */
 export type TaskContext = {
   packageManager: 'npm' | 'yarn' | 'pnpm' | 'bun';
   cliArgs: CliArgs;
-  [key: string]: unknown;
+  packages: PackageCollector;
 };

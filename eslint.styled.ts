@@ -13,7 +13,7 @@ export const config = [
     {
         plugins: {
             "@stylistic": stylistic,
-            "simple-import-sort": (await import('eslint-plugin-simple-import-sort')).default,
+            // "simple-import-sort": (await import('eslint-plugin-simple-import-sort')).default,
             "unused-imports": fixupPluginRules(unusedImports),
         },
 
@@ -110,7 +110,7 @@ export const config = [
             }],
             "@stylistic/semi": ["error", "always"],
             "@stylistic/type-annotation-spacing": "error",
-            "simple-import-sort/imports": "error",
+            // "simple-import-sort/imports": "error",
         },
     },
     hasTypeScript

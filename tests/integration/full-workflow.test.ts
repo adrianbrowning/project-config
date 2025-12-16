@@ -1,6 +1,6 @@
 /**
  * Full workflow integration test
- * Tests the complete CLI workflow: setup, lint, type-check, commit
+ * Tests the complete CLI workflow: setup, lint, lint:ts, commit
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -54,8 +54,8 @@ describe('Complete CLI workflow', () => {
     expect(tsconfig.extends).toContain('dom');
     expect(tsconfig.extends).toContain('app');
 
-    // Verify type-check script added
-    assertPackageJsonScript(project, 'type-check', 'tsc --noEmit');
+    // Verify lint:ts script added
+    assertPackageJsonScript(project, 'lint:ts', 'tsc --noEmit');
   });
 
   it('generates ESLint configuration', () => {
@@ -134,8 +134,8 @@ export function greet(name: string): string {
     expect(lintResult.exitCode).toBeLessThanOrEqual(1);
   });
 
-  it('type-check passes', () => {
-    const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+  it('lint:ts passes', () => {
+    const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
     expect(result.exitCode).toBe(0);
   });
 

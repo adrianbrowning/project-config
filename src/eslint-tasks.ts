@@ -1,6 +1,6 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import fs from 'fs';
-import {compareVersions, getPkgVersion, installPkg} from "./utils.ts";
+import {compareVersions, getPkgVersion} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__eslint_version__";
@@ -12,7 +12,9 @@ export const esLintTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion("@eslint/js");
             if (!eslintInstalled) {
                 task.title = 'ESLint not installed. Installing...';
-                installLatestESLint(ctx.packageManager);
+                ctx.packages.add(`@eslint/js@${Supported_Version}`);
+                ctx.packages.add('eslint');
+                ctx.packages.add('typescript-eslint');
                 return;
             }
 
@@ -29,7 +31,9 @@ export const esLintTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading ESLint to the supported version...',
                         task: async (ctx) => {
-                            installLatestESLint(ctx.packageManager);
+                            ctx.packages.add(`@eslint/js@${Supported_Version}`);
+                            ctx.packages.add('eslint');
+                            ctx.packages.add('typescript-eslint');
                         }
                         }],
                         { concurrent: false });
@@ -52,9 +56,9 @@ export const esLintTasks: Array<ListrTask> = [
         title: 'Adding lint scripts to package.json',
         task: async () => {
             const { updatePkgJsonScript } = await import('./utils.ts');
-            updatePkgJsonScript('lint', 'eslint .');
-            updatePkgJsonScript('lint:fix', 'eslint . --fix');
-            updatePkgJsonScript('lint:style', 'eslint --config eslint.config.style.ts . --fix');
+            updatePkgJsonScript('lint:esl', 'eslint --config eslint.config.ts "src/**/*.{j,t}s{,x}" --cache --max-warnings=0');
+            updatePkgJsonScript('lint:s', 'eslint --config eslint.config.style.ts "src/**/*.{j,t}s{,x}" --cache --max-warnings=0');
+            updatePkgJsonScript('lint:fix', 'pnpm lint:s --fix');
         }
     },
     ];
@@ -109,15 +113,4 @@ function eslintConfigFile(fileName: string, importName: string) {
 
 function getLintConfig(fileName: string): boolean {
     return fs.existsSync("./"+fileName);
-}
-
-
-
-function installLatestESLint(packageManager: string): void {
-    const packages = [
-        `@eslint/js@${Supported_Version}`,
-        'eslint',
-        'typescript-eslint'
-    ];
-    packages.forEach(pkg => installPkg(packageManager as any, pkg));
 }

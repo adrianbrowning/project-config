@@ -36,7 +36,7 @@ describe('TypeScript Configurations', () => {
   });
 
   describe('bundler/dom/app (Vite/React web app)', () => {
-    it('generates correct tsconfig and passes type-check', () => {
+    it('generates correct tsconfig and passes lint:ts', () => {
       using project = new TestProject({ name: 'ts-bundler-dom-app' });
       project.init();
 
@@ -69,8 +69,8 @@ describe('TypeScript Configurations', () => {
       project.install();
 
       // Type-check should pass
-      assertPackageJsonScript(project, 'type-check');
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      assertPackageJsonScript(project, 'lint:ts');
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });
@@ -109,7 +109,7 @@ export function addClass(el: HTMLElement, className: string): void {
 
       project.install();
 
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });
@@ -149,7 +149,7 @@ export function addClass(el: HTMLElement, className: string): void {
       project.writeFile('src/index.ts', getFixtureContent('node-library/index.ts'));
       project.install();
 
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });
@@ -183,7 +183,7 @@ export function addClass(el: HTMLElement, className: string): void {
       project.writeFile('src/index.ts', getFixtureContent('node-library/index.ts'));
       project.install();
 
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });
@@ -213,7 +213,7 @@ export function addClass(el: HTMLElement, className: string): void {
       project.writeFile('src/index.ts', getFixtureContent('node-library/index.ts'));
       project.install();
 
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });
@@ -246,7 +246,7 @@ export function addClass(el: HTMLElement, className: string): void {
       project.writeFile('src/index.ts', getFixtureContent('node-library/index.ts'));
       project.install();
 
-      const result = runCommand(project, 'pnpm type-check', { expectFailure: true });
+      const result = runCommand(project, 'pnpm lint:ts', { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
   });

@@ -1,6 +1,6 @@
 import * as enquirer from 'enquirer';
 import { Listr } from 'listr2'
-import { detectPackageManager, updatePkgJson } from "./utils.ts";
+import { detectPackageManager, updatePkgJson, updatePkgJsonScript } from "./utils.ts";
 import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
@@ -9,7 +9,8 @@ import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { createGithubActionsTasks } from "./github-actions-tasks.ts";
-import { parseCliArgs, isInteractiveMode, printHelp, type CliArgs, type TaskContext } from "./cli-args.ts";
+import { parseCliArgs, isInteractiveMode, printHelp, createPackageCollector, type CliArgs, type TaskContext } from "./cli-args.ts";
+import { installPkg } from "./utils.ts";
 
 const { MultiSelect } = enquirer.default as any;
 
@@ -64,6 +65,7 @@ function createTasks(cliArgs: CliArgs) {
                 title: 'Detecting Package Manager',
                 task: async (ctx, task) => {
                     ctx.cliArgs = cliArgs;
+                    ctx.packages = createPackageCollector();
                     ctx.packageManager = await detectPackageManager(task, cliArgs.yes);
                 }
             },
@@ -140,6 +142,21 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: string[], cliArgs: CliA
         }
     });
 
+    // Add combined lint script based on selected tools
+    const hasTs = answer.includes("ts");
+    const hasEslint = answer.includes("eslint");
+    if (hasTs || hasEslint) {
+        tasks.add({
+            title: "Adding combined lint script",
+            task: async () => {
+                const parts: Array<string> = [];
+                if (hasTs) parts.push('pnpm lint:ts');
+                if (hasEslint) parts.push('pnpm lint:fix');
+                updatePkgJsonScript('lint', parts.join('; '));
+            }
+        });
+    }
+
     // Add pnpm.minimumReleaseAge to package.json
     tasks.add({
         title: "Configuring pnpm settings",
@@ -152,7 +169,17 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: string[], cliArgs: CliA
     tasks.add({
         title: "Configuring engines",
         task: async () => {
-            updatePkgJson('engines', { node: '>=18.0.0', pnpm: '>=8.0.0' });
+            updatePkgJson('engines', { node: '>=24.0.0', pnpm: '>=10.0.0' });
+        }
+    });
+
+    // Final task: install all collected packages at once
+    tasks.add({
+        title: "Installing packages",
+        skip: (ctx) => ctx.packages.packages.size === 0,
+        task: (ctx) => {
+            const pkgList = [...ctx.packages.packages].join(' ');
+            installPkg(ctx.packageManager, pkgList);
         }
     });
 }

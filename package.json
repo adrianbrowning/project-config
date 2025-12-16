@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "@gingacodemonkey/config",
   "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
-  "version": "0.0.24-34",
+  "version": "0.0.24-41",
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
     "build": "node build.js && pnpm pack",
@@ -91,7 +91,7 @@
     "typescript-eslint": "^8.47.0"
   },
   "devDependencies": {
-    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-34.tgz",
+    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-41.tgz",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",

@@ -1,7 +1,7 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import {execSync} from 'node:child_process';
 import fs from 'node:fs';
-import {compareVersions, getPkgVersion, installPkg} from "./utils.ts";
+import {compareVersions, getPkgVersion} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__husky_version__";
@@ -33,7 +33,7 @@ export const huskyTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion("husky");
             if (!eslintInstalled) {
                 task.title = 'Husky not installed. Installing...';
-                installLatestHusky(ctx.packageManager);
+                ctx.packages.add(`husky@${Supported_Version}`);
                 return;
             }
 
@@ -50,7 +50,7 @@ export const huskyTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading Husky to the supported version...',
                         task: async (ctx: any) => {
-                            installLatestHusky(ctx.packageManager);
+                            ctx.packages.add(`husky@${Supported_Version}`);
                         }
                         }],
                         { concurrent: false });
@@ -100,9 +100,3 @@ export const huskyTasks: Array<ListrTask> = [
         },
     }
     ];
-
-
-
-function installLatestHusky(packageManager: string): void {
-    installPkg(packageManager as any, `husky@${Supported_Version}`);
-}

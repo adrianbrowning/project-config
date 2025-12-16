@@ -124,8 +124,8 @@ importers:
         version: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
     devDependencies:
       '@gingacodemonkey/config':
-        specifier: file:gingacodemonkey-config-0.0.24-34.tgz
-        version: file:gingacodemonkey-config-0.0.24-34.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
+        specifier: file:gingacodemonkey-config-0.0.24-41.tgz
+        version: file:gingacodemonkey-config-0.0.24-41.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
       '@rollup/plugin-commonjs':
         specifier: ^29.0.0
         version: 29.0.0(rollup@4.53.3)
@@ -620,9 +620,9 @@ packages:
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
 
-  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-34.tgz':
-    resolution: {integrity: sha512-O5mqcngR/XcaRRFJvmX5dWTU+fOY3+sl/Gw/FE81THGgmWuMK6H3eYTUagtGe/4WUYYNz1JSmg6oF6qAGpUo4A==, tarball: file:gingacodemonkey-config-0.0.24-34.tgz}
-    version: 0.0.24-34
+  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-41.tgz':
+    resolution: {integrity: sha512-mOJxB7fFvA2Q/9FIevOrX0O3J+EftRhZedX5tujool+m7bBrsAOnAd4gIkKWuEsRR8PiEtaoOlKn02yzbthrCA==, tarball: file:gingacodemonkey-config-0.0.24-41.tgz}
+    version: 0.0.24-41
     hasBin: true
     peerDependencies:
       '@commitlint/cli': 20.0.0
@@ -5023,7 +5023,7 @@ snapshots:
 
   '@fastify/busboy@2.1.1': {}
 
-  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-34.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
+  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-41.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
     dependencies:
       '@commitlint/cli': 20.0.0(@types/node@22.19.1)(typescript@5.9.3)
       '@commitlint/config-conventional': 20.0.0

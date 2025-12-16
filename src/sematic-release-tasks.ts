@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, writeConfigFile} from "./utils.ts";
 import fs from "fs";
 import type {ListrTask} from "listr2";
 
@@ -126,7 +126,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -146,7 +146,12 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion("semantic-release-unsquash");
             if (!eslintInstalled) {
                 task.title = 'SemanticRelease not installed. Installing...';
-                installLatestSemanticRelease(ctx.packageManager);
+                ctx.packages.add(`${pkgName}@${Supported_Version}`);
+                ctx.packages.add('semantic-release');
+                ctx.packages.add('@semantic-release/changelog');
+                ctx.packages.add('@semantic-release/git');
+                ctx.packages.add('@semantic-release/npm');
+                ctx.packages.add('@semantic-release/github');
                 return;
             }
 
@@ -163,7 +168,12 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading SemanticRelease to the supported version...',
                         task: async (ctx: any) => {
-                            installLatestSemanticRelease(ctx.packageManager);
+                            ctx.packages.add(`${pkgName}@${Supported_Version}`);
+                            ctx.packages.add('semantic-release');
+                            ctx.packages.add('@semantic-release/changelog');
+                            ctx.packages.add('@semantic-release/git');
+                            ctx.packages.add('@semantic-release/npm');
+                            ctx.packages.add('@semantic-release/github');
                         }
                         }],
                         { concurrent: false });
@@ -219,18 +229,3 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
         }
     }
     ];
-
-
-
-
-function installLatestSemanticRelease(packageManager: string): void {
-    const packages = [
-        `${pkgName}@${Supported_Version}`,
-        'semantic-release',
-        '@semantic-release/changelog',
-        '@semantic-release/git',
-        '@semantic-release/npm',
-        '@semantic-release/github'
-    ];
-    packages.forEach(pkg => installPkg(packageManager as any, pkg));
-}

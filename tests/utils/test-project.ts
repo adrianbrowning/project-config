@@ -29,6 +29,8 @@ export class TestProject implements Disposable {
   init(): void {
     this.exec('pnpm init');
     this.exec('git init');
+    // Add .gitignore to prevent staging node_modules
+    this.writeFile('.gitignore', 'node_modules\ndist\n.cache\n');
   }
 
   /**
@@ -43,11 +45,15 @@ export class TestProject implements Disposable {
         env: { ...process.env, CI: 'true' },
       });
     } catch (error) {
+      const err = error as { stdout?: string | Buffer; stderr?: string | Buffer; status?: number };
+      const stderr = err.stderr?.toString() ?? '';
+      const stdout = err.stdout?.toString() ?? '';
       if (options?.expectFailure) {
-        const err = error as { stdout?: Buffer; stderr?: Buffer; status?: number };
-        return err.stderr?.toString() ?? err.stdout?.toString() ?? '';
+        return stderr || stdout;
       }
-      throw error;
+      // Include stderr in error message for debugging
+      const details = stderr || stdout;
+      throw new Error(`Command failed: ${command}\n${details}`);
     }
   }
 
@@ -105,9 +111,10 @@ export class TestProject implements Disposable {
 
   /**
    * Install project dependencies
+   * Uses --no-frozen-lockfile because test projects have no lockfile
    */
   install(): void {
-    this.exec('pnpm install');
+    this.exec('pnpm install --no-frozen-lockfile');
   }
 
   /**

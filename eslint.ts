@@ -9,7 +9,7 @@ import {has} from "./src/utils.ts";
 import reactCompilerPlugin from 'eslint-plugin-react-compiler';
 import sonarjs from 'eslint-plugin-sonarjs';
 import depend from 'eslint-plugin-depend';
-import barrelFiles from 'eslint-plugin-no-barrel-files';
+import noBarrelFiles from 'eslint-plugin-no-barrel-files';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,8 +82,8 @@ const typescriptRules = hasTypeScript ? [{
             "error",
             "property"
         ],
-        "@typescript-eslint/no-deprecated": "warn",
-        'import/consistent-type-specifier-style': [WARN, 'prefer-inline'],
+        "@typescript-eslint/no-deprecated": WARN,
+        'import/consistent-type-specifier-style': WARN,
 
 
         // here are rules we've decided to not enable. Commented out rather
@@ -150,14 +150,6 @@ export const nodeRules = [
     ),
     {
         plugins: {
-            "unicorn" : (await import('eslint-plugin-unicorn')).default
-        },
-        rules: {
-            "unicorn/prefer-node-protocol" : "error",
-        }
-    },
-    {
-        plugins: {
             "security-node": (await import('eslint-plugin-security-node')).default,
         },
         languageOptions: {
@@ -193,6 +185,16 @@ export const config = [
             '**/dist/**',
         ],
     },
+
+    {
+        plugins: {
+            "unicorn" : (await import('eslint-plugin-unicorn')).default
+        },
+        rules: {
+            "unicorn/prefer-node-protocol" : "error",
+        }
+    },
+
     js.configs.recommended,
 
     // SonarJS - code smells and bug detection
@@ -207,15 +209,7 @@ export const config = [
     },
 
     // Barrel files - avoid barrel file anti-patterns
-    {
-        plugins: { 'barrel-files': barrelFiles },
-        rules: {
-            'barrel-files/avoid-barrel-files': ERROR,
-            'barrel-files/avoid-importing-barrel-files': ERROR,
-            'barrel-files/avoid-namespace-import': ERROR,
-            'barrel-files/avoid-re-export-all': ERROR,
-        },
-    },
+    noBarrelFiles.flat,
 
     // all files
     {

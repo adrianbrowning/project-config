@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, writeConfigFile} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 let Supported_Version = "";
@@ -15,7 +15,7 @@ export const commitLintTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion(pkgName);
             if (!eslintInstalled) {
                 task.title = 'CommitLint not installed. Installing...';
-                installLatestCommitLint(ctx.packageManager);
+                ctx.packages.add(`${pkgName}@${Supported_Version}`);
                 return;
             }
 
@@ -32,7 +32,7 @@ export const commitLintTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading CommitLint to the supported version...',
                         task: async (ctx: any) => {
-                            installLatestCommitLint(ctx.packageManager);
+                            ctx.packages.add(`${pkgName}@${Supported_Version}`);
                         }
                         }],
                         { concurrent: false });
@@ -51,7 +51,7 @@ export const commitLintTasks: Array<ListrTask> = [
             const eslintInstalled = getPkgVersion(pkgName);
             if (!eslintInstalled) {
                 task.title = 'CommitLint/config-conventional not installed. Installing...';
-                installLatestCommitLint(ctx.packageManager);
+                ctx.packages.add(`${pkgName}@${Supported_Version}`);
                 return;
             }
 
@@ -68,7 +68,7 @@ export const commitLintTasks: Array<ListrTask> = [
                     return task.newListr([{
                         title: 'Upgrading CommitLint/config-conventional to the supported version...',
                         task: async (ctx: any) => {
-                            installLatestCommitLint(ctx.packageManager);
+                            ctx.packages.add(`${pkgName}@${Supported_Version}`);
                         }
                         }],
                         { concurrent: false });
@@ -89,10 +89,3 @@ export const commitLintTasks: Array<ListrTask> = [
 };`)
     }
     ];
-
-
-
-
-function installLatestCommitLint(packageManager: string): void {
-    installPkg(packageManager as any, `${pkgName}@${Supported_Version}`);
-}

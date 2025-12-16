@@ -55,10 +55,10 @@ export function runLintFix(project: TestProject): CommandResult {
 }
 
 /**
- * Run type-check command
+ * Run lint:ts command
  */
 export function runTypeCheck(project: TestProject): CommandResult {
-  return runCommand(project, 'pnpm type-check', { expectFailure: true });
+  return runCommand(project, 'pnpm lint:ts', { expectFailure: true });
 }
 
 /**
