@@ -33,12 +33,18 @@ const playwrightFiles = ['**/e2e/**']
 
 const reactHooksPlugin = hasReact ? (await import('eslint-plugin-react-hooks')).default : null;
 
+const getTsconfigRootDir = () => {
+    const dir = import.meta.dirname?.toString() ?? '';
+    const idx = dir.indexOf("/node_modules/");
+    return idx !== -1 ? dir.substring(0, idx) : dir;
+};
+
 const typescriptRules = hasTypeScript ? [{
     languageOptions: {
         parser: tseslint.parser,
         parserOptions: {
             projectService: true,
-            tsconfigRootDir: import.meta.dirname.toString().substring(0, import.meta.dirname.toString().indexOf("/node_modules/")),
+            tsconfigRootDir: getTsconfigRootDir(),
         },
     },
     files: ['**/*.d.ts', '**/*.ts?(x)'],

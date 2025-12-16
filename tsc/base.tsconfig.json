@@ -23,6 +23,8 @@
     "noImplicitReturns": true,
     "allowUnusedLabels": true,
     "noImplicitAny": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true
   }
 }

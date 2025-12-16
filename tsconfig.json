@@ -1,12 +1,13 @@
 {
-  "extends": "./tsc/bundler/no-dom.json",
+  "extends": "@gingacodemonkey/config/bundler/no-dom/app",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
+//    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node"
   },
   "include": [
-    "src",
+    "./src/**.ts",
     "rollup.config.ts",
     "eslint.ts",
     "eslint.styled.ts",

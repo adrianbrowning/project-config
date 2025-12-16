@@ -1,4 +1,4 @@
-import {writeConfigFile} from "./utils.ts";
+import { writeConfigFile } from "./utils.ts";
 
 // GitHub Actions workflow file contents
 const CACHE_WORKFLOW = `name: ESLint Auto-fix and Check
@@ -304,57 +304,57 @@ jobs:
 `;
 
 export type GithubActionsOptions = {
-    includeCache?: boolean;
-    includeCiTest?: boolean;
-    includeLint?: boolean;
-    includeKnip?: boolean;
-    includeTsCheck?: boolean;
+  includeCache?: boolean;
+  includeCiTest?: boolean;
+  includeLint?: boolean;
+  includeKnip?: boolean;
+  includeTsCheck?: boolean;
 };
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
-    const tasks: Array<{title: string; task: ReturnType<typeof writeConfigFile>}> = [];
+  const tasks: Array<{ title: string; task: ReturnType<typeof writeConfigFile>; }> = [];
 
-    // Always include cache and ci_test
-    if (options.includeCache !== false) {
-        tasks.push({
-            title: 'Setting up cache workflow',
-            task: writeConfigFile('.github/workflows/cache.yml', CACHE_WORKFLOW),
-        });
-    }
+  // Always include cache and ci_test
+  if (options.includeCache !== false) {
+    tasks.push({
+      title: "Setting up cache workflow",
+      task: writeConfigFile(".github/workflows/cache.yml", CACHE_WORKFLOW),
+    });
+  }
 
-    if (options.includeCiTest !== false) {
-        tasks.push({
-            title: 'Setting up CI test workflow',
-            task: writeConfigFile('.github/workflows/ci_test.yml', CI_TEST_WORKFLOW),
-        });
-    }
+  if (options.includeCiTest !== false) {
+    tasks.push({
+      title: "Setting up CI test workflow",
+      task: writeConfigFile(".github/workflows/ci_test.yml", CI_TEST_WORKFLOW),
+    });
+  }
 
-    // Conditional workflows
-    if (options.includeLint) {
-        tasks.push({
-            title: 'Setting up ESLint workflow',
-            task: writeConfigFile('.github/workflows/lint.yml', LINT_WORKFLOW),
-        });
-    }
+  // Conditional workflows
+  if (options.includeLint) {
+    tasks.push({
+      title: "Setting up ESLint workflow",
+      task: writeConfigFile(".github/workflows/lint.yml", LINT_WORKFLOW),
+    });
+  }
 
-    if (options.includeKnip) {
-        tasks.push({
-            title: 'Setting up Knip workflow',
-            task: writeConfigFile('.github/workflows/knip.yml', KNIP_WORKFLOW),
-        });
-    }
+  if (options.includeKnip) {
+    tasks.push({
+      title: "Setting up Knip workflow",
+      task: writeConfigFile(".github/workflows/knip.yml", KNIP_WORKFLOW),
+    });
+  }
 
-    if (options.includeTsCheck) {
-        tasks.push({
-            title: 'Setting up TypeScript check workflow',
-            task: writeConfigFile('.github/workflows/ts-check.yml', TS_CHECK_WORKFLOW),
-        });
-    }
+  if (options.includeTsCheck) {
+    tasks.push({
+      title: "Setting up TypeScript check workflow",
+      task: writeConfigFile(".github/workflows/ts-check.yml", TS_CHECK_WORKFLOW),
+    });
+  }
 
-    return tasks;
+  return tasks;
 }
 
 export const githubActionsTasks = createGithubActionsTasks({
-    includeCache: true,
-    includeCiTest: true,
+  includeCache: true,
+  includeCiTest: true,
 });
