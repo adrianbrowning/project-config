@@ -1,0 +1,132 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, 'release-*']
+  pull_request:
+    branches: [main, 'release-*']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-tarball
+          path: gingacodemonkey-config-*.tgz
+          retention-days: 1
+
+  integration-tests-native:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-file:
+          - full-workflow
+          - typescript-configs
+          - eslint
+          - husky-hooks
+          - commitlint
+          - lint-staged
+          - knip
+          - github-actions
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Configure git
+        run: |
+          git config --global user.email "test@test.com"
+          git config --global user.name "Test User"
+          git config --global init.defaultBranch main
+
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: package-tarball
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          cd tests && pnpm install
+
+      - name: Set TARBALL_PATH
+        run: echo "TARBALL_PATH=$(ls ${{ github.workspace }}/gingacodemonkey-config-*.tgz)" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        working-directory: tests
+        env:
+          CI: true
+          TARBALL_PATH: ${{ env.TARBALL_PATH }}
+        run: pnpm vitest run integration/${{ matrix.test-file }}.test.ts --reporter=verbose
+
+  integration-tests-docker:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: package-tarball
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          cd tests && pnpm install
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Docker tests
+        run: docker-compose up --build --abort-on-container-exit
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          if-no-files-found: ignore

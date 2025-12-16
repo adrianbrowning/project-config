@@ -1,0 +1,9 @@
+{
+  "extends": "../base.tsconfig.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    /* If NOT transpiling with TypeScript: */
+    "module": "preserve",
+    "noEmit": true
+  }
+}

@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, has, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 let Supported_Version = "";
@@ -31,7 +31,7 @@ export const commitLintTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading CommitLint to the supported version...',
-                        task: async (ctx: any, task: any) => {
+                        task: async (ctx: any) => {
                             installLatestCommitLint(ctx.packageManager);
                         }
                         }],
@@ -67,7 +67,7 @@ export const commitLintTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading CommitLint/config-conventional to the supported version...',
-                        task: async (ctx: any, task: any) => {
+                        task: async (ctx: any) => {
                             installLatestCommitLint(ctx.packageManager);
                         }
                         }],

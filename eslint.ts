@@ -4,9 +4,12 @@ import {FlatCompat} from "@eslint/eslintrc";
 import js from "@eslint/js";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
-import reactRecommended from "eslint-plugin-react/configs/recommended.js";
+import reactRecommended from "eslint-plugin-react";
 import {has} from "./src/utils.ts";
 import reactCompilerPlugin from 'eslint-plugin-react-compiler';
+import sonarjs from 'eslint-plugin-sonarjs';
+import depend from 'eslint-plugin-depend';
+import barrelFiles from 'eslint-plugin-no-barrel-files';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +30,119 @@ const hasVitest = has('vitest')
 const vitestFiles = ['**/__tests__/**/*', '**/*.test.*']
 const testFiles = ['**/tests/**', '**/#tests/**', ...vitestFiles]
 const playwrightFiles = ['**/e2e/**']
+
+const reactHooksPlugin = hasReact ? (await import('eslint-plugin-react-hooks')).default : null;
+
+const typescriptRules = hasTypeScript ? [{
+    languageOptions: {
+        parser: tseslint.parser,
+        parserOptions: {
+            projectService: true,
+            tsconfigRootDir: import.meta.dirname.toString().substring(0, import.meta.dirname.toString().indexOf("/node_modules/")),
+        },
+    },
+    files: ['**/*.d.ts', '**/*.ts?(x)'],
+    plugins: {
+        '@typescript-eslint': tseslint.plugin,
+    },
+    rules: {
+        "@typescript-eslint/no-empty-object-type": "error",
+        "@typescript-eslint/use-unknown-in-catch-callback-variable": "error",
+        "@typescript-eslint/no-unsafe-function-type": "error",
+        "@typescript-eslint/no-wrapper-object-types": "error",
+        "no-redeclare": "off",
+        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/array-type": [
+            "error",
+            {
+                "default": "generic"
+            }
+        ],
+        "@typescript-eslint/await-thenable": [
+            "error"
+        ],
+        "@typescript-eslint/no-floating-promises": ["error"],
+        "@typescript-eslint/no-misused-promises": ["error"],
+        "@typescript-eslint/no-unnecessary-condition": ["error"],
+        "@typescript-eslint/no-unnecessary-type-assertion": "error",
+        "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+                args: "after-used",
+                "argsIgnorePattern": "^_",
+                "caughtErrorsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_",
+                ignoreRestSiblings: true,
+            }
+        ],
+        "@typescript-eslint/promise-function-async": [
+            "error"
+        ],
+        "@typescript-eslint/method-signature-style": [
+            "error",
+            "property"
+        ],
+        "@typescript-eslint/no-deprecated": "warn",
+        'import/consistent-type-specifier-style': [WARN, 'prefer-inline'],
+
+
+        // here are rules we've decided to not enable. Commented out rather
+        // than setting them to disabled to avoid them being referenced at all
+        // when config resolution happens.
+
+        // @typescript-eslint/require-await - sometimes you really do want
+        // async without await to make a function async. TypeScript will ensure
+        // it's treated as an async function by consumers and that's enough for me.
+
+        // @typescript-eslint/prefer-promise-reject-errors - sometimes you
+        // aren't the one creating the error and you just want to propogate an
+        // error object with an unknown type.
+
+        // @typescript-eslint/only-throw-error - same reason as above.
+        // However this rule supports options to allow you to throw `any` and
+        // `unknown`. Unfortunately, in Remix you can throw Response objects
+        // and we don't want to enable this rule for those cases.
+
+        // @typescript-eslint/no-unsafe-declaration-merging - this is a rare
+        // enough problem (especially if you focus on types over interfaces)
+        // that it's not worth enabling.
+
+        // @typescript-eslint/no-unsafe-enum-comparison - enums are not
+        // recommended or used in epic projects, so it's not worth enabling.
+
+        // @typescript-eslint/no-unsafe-unary-minus - this is a rare enough
+        // problem that it's not worth enabling.
+
+        // @typescript-eslint/no-base-to-string - this doesn't handle when
+        // your object actually does implement toString unless you do so with
+        // a class which is not 100% of the time. For example, the timings
+        // object in the epic stack uses defineProperty to implement toString.
+        // It's not high enough risk/impact to enable.
+
+        // @typescript-eslint/no-non-null-assertion - normally you should not
+        // use ! to tell TS to ignore the null case, but you're a responsible
+        // adult and if you're going to do that, the linter shouldn't yell at
+        // you about it.
+
+        // @typescript-eslint/restrict-template-expressions - toString is a
+        // feature of many built-in objects and custom ones. It's not worth
+        // enabling.
+
+        // @typescript-eslint/no-confusing-void-expression - what's confusing
+        // to one person isn't necessarily confusing to others. Arrow
+        // functions that call something that returns void is not confusing
+        // and the types will make sure you don't mess something up.
+
+        // these each protect you from `any` and while it's best to avoid
+        // using `any`, it's not worth having a lint rule yell at you when you
+        // do:
+        // - @typescript-eslint/no-unsafe-argument
+        // - @typescript-eslint/no-unsafe-call
+        // - @typescript-eslint/no-unsafe-member-access
+        // - @typescript-eslint/no-unsafe-return
+        // - @typescript-eslint/no-unsafe-assignment
+    },
+}] : []
 
 export const nodeRules = [
     ...compat.extends(
@@ -63,6 +179,8 @@ export const nodeRules = [
     },
 ];
 
+const eslPlugProm = (await import('eslint-plugin-promise')).default;
+
 export const config = [
     {
         ignores: [
@@ -75,15 +193,35 @@ export const config = [
             '**/dist/**',
         ],
     },
-    ...compat.extends(
-        "eslint:recommended",
-        "plugin:promise/recommended",
-    ),
+    js.configs.recommended,
+
+    // SonarJS - code smells and bug detection
+    sonarjs.configs.recommended,
+
+    // Depend - detect dependency bloat and redundant polyfills
+    {
+        plugins: { depend },
+        rules: {
+            'depend/ban-dependencies': ERROR,
+        },
+    },
+
+    // Barrel files - avoid barrel file anti-patterns
+    {
+        plugins: { 'barrel-files': barrelFiles },
+        rules: {
+            'barrel-files/avoid-barrel-files': ERROR,
+            'barrel-files/avoid-importing-barrel-files': ERROR,
+            'barrel-files/avoid-namespace-import': ERROR,
+            'barrel-files/avoid-re-export-all': ERROR,
+        },
+    },
+
     // all files
     {
         plugins: {
             import: (await import('eslint-plugin-import-x')).default,
-            promise: (await import('eslint-plugin-promise')).default,
+            promise: eslPlugProm,
         },
         languageOptions: {
             globals: {
@@ -91,7 +229,8 @@ export const config = [
             },
         },
         rules: {
-            "no-unused-labels": "off",
+            ...eslPlugProm?.configs?.recommended?.rules,
+        "no-unused-labels": "off",
             'no-unexpected-multiline': ERROR,
             'no-warning-comments': [
                 ERROR,
@@ -126,7 +265,7 @@ export const config = [
     hasReact
         ? {
             files: ['**/*.tsx', '**/*.jsx'],
-            ...reactRecommended,
+            ...reactRecommended.configs.flat.recommended,
             plugins: {
                 react: (await import('eslint-plugin-react')).default,
             },
@@ -135,7 +274,7 @@ export const config = [
                 parser: tseslint.parser,
                 parserOptions: {
                     jsx: true,
-                    project: './tsconfig.json',
+                    // project: './tsconfig.json',
                     projectService: true,
                 },
             },
@@ -181,16 +320,23 @@ export const config = [
     // react-hook rules are applicable in ts/js/tsx/jsx, but only with React as a
     // dep
 
-    hasReact ? compat.extends("plugin:react-hooks/recommended")[0] : null,
+    // hasReact ? {
+    //     plugins: {
+    //         'react-hooks': reactHooksPlugin,
+    //     },
+    //     rules: reactHooksPlugin?.configs.recommended.rules,
+    // } : null,
     hasReact
         ? {
             files: ['**/*.ts?(x)', '**/*.js?(x)'],
             plugins: {
+                'react-hooks': reactHooksPlugin,
                 // 'react-hooks': fixupPluginRules(
                 // 	await import('eslint-plugin-react-hooks'),
                 // ),
             },
             rules: {
+                ...reactHooksPlugin?.configs.recommended.rules,
                 "react-hooks/exhaustive-deps": ["error"],
                 "react-hooks/rules-of-hooks": ["error"],
             },
@@ -213,121 +359,36 @@ export const config = [
         }
         : null,
 
+    // React Refresh - Fast Refresh compatibility
+    hasReact
+        ? {
+            files: ['**/*.tsx', '**/*.jsx'],
+            plugins: {
+                'react-refresh': (await import('eslint-plugin-react-refresh')).default,
+            },
+            rules: {
+                'react-refresh/only-export-components': [WARN, { allowConstantExport: true }],
+            },
+        }
+        : null,
+
+    // JSX A11y - Accessibility rules for JSX
+    hasReact
+        ? {
+            files: ['**/*.tsx', '**/*.jsx'],
+            ...(await import('eslint-plugin-jsx-a11y')).default.flatConfigs.recommended,
+            rules: {
+                // Override specific rules if needed
+                'jsx-a11y/anchor-is-valid': ERROR,
+                'jsx-a11y/click-events-have-key-events': ERROR,
+                'jsx-a11y/no-static-element-interactions': ERROR,
+            },
+        }
+        : null,
+
 
     // TS and TSX files
-    ...(hasTypeScript
-        ? /*tseslint.config(
-            tseslint.configs.recommendedTypeChecked,*/
-            {
-                languageOptions: {
-                    parser: tseslint.parser,
-                    parserOptions: {
-                        projectService: true,
-                        tsconfigRootDir: import.meta.dirname.toString().substring(0, import.meta.dirname.toString().indexOf("/node_modules/")),
-                    },
-                },
-                files: ['**/*.d.ts', '**/*.ts?(x)'],
-                plugins: {
-                    '@typescript-eslint': tseslint.plugin,
-                },
-                rules: {
-                    "@typescript-eslint/no-empty-object-type": "error",
-                    "@typescript-eslint/use-unknown-in-catch-callback-variable": "error",
-                    "@typescript-eslint/no-unsafe-function-type": "error",
-                    "@typescript-eslint/no-wrapper-object-types": "error",
-                    "no-redeclare": "off",
-                    "@typescript-eslint/no-explicit-any": "error",
-                    "@typescript-eslint/array-type": [
-                        "error",
-                        {
-                            "default": "generic"
-                        }
-                    ],
-                    "@typescript-eslint/await-thenable": [
-                        "error"
-                    ],
-                    "@typescript-eslint/no-floating-promises": ["error"],
-                    "@typescript-eslint/no-misused-promises": ["error"],
-                    "@typescript-eslint/no-unnecessary-condition": ["error"],
-                    "@typescript-eslint/no-unnecessary-type-assertion": "error",
-                    "@typescript-eslint/no-unused-vars": [
-                        "error",
-                        {
-                            args: "after-used",
-                            "argsIgnorePattern": "^_",
-                            "caughtErrorsIgnorePattern": "^_",
-                            "varsIgnorePattern": "^_",
-                            ignoreRestSiblings: true,
-                        }
-                    ],
-                    "@typescript-eslint/promise-function-async": [
-                        "error"
-                    ],
-                    "@typescript-eslint/method-signature-style": [
-                        "error",
-                        "property"
-                    ],
-                    'import/consistent-type-specifier-style': [WARN, 'prefer-inline'],
-
-
-                    // here are rules we've decided to not enable. Commented out rather
-                    // than setting them to disabled to avoid them being referenced at all
-                    // when config resolution happens.
-
-                    // @typescript-eslint/require-await - sometimes you really do want
-                    // async without await to make a function async. TypeScript will ensure
-                    // it's treated as an async function by consumers and that's enough for me.
-
-                    // @typescript-eslint/prefer-promise-reject-errors - sometimes you
-                    // aren't the one creating the error and you just want to propogate an
-                    // error object with an unknown type.
-
-                    // @typescript-eslint/only-throw-error - same reason as above.
-                    // However this rule supports options to allow you to throw `any` and
-                    // `unknown`. Unfortunately, in Remix you can throw Response objects
-                    // and we don't want to enable this rule for those cases.
-
-                    // @typescript-eslint/no-unsafe-declaration-merging - this is a rare
-                    // enough problem (especially if you focus on types over interfaces)
-                    // that it's not worth enabling.
-
-                    // @typescript-eslint/no-unsafe-enum-comparison - enums are not
-                    // recommended or used in epic projects, so it's not worth enabling.
-
-                    // @typescript-eslint/no-unsafe-unary-minus - this is a rare enough
-                    // problem that it's not worth enabling.
-
-                    // @typescript-eslint/no-base-to-string - this doesn't handle when
-                    // your object actually does implement toString unless you do so with
-                    // a class which is not 100% of the time. For example, the timings
-                    // object in the epic stack uses defineProperty to implement toString.
-                    // It's not high enough risk/impact to enable.
-
-                    // @typescript-eslint/no-non-null-assertion - normally you should not
-                    // use ! to tell TS to ignore the null case, but you're a responsible
-                    // adult and if you're going to do that, the linter shouldn't yell at
-                    // you about it.
-
-                    // @typescript-eslint/restrict-template-expressions - toString is a
-                    // feature of many built-in objects and custom ones. It's not worth
-                    // enabling.
-
-                    // @typescript-eslint/no-confusing-void-expression - what's confusing
-                    // to one person isn't necessarily confusing to others. Arrow
-                    // functions that call something that returns void is not confusing
-                    // and the types will make sure you don't mess something up.
-
-                    // these each protect you from `any` and while it's best to avoid
-                    // using `any`, it's not worth having a lint rule yell at you when you
-                    // do:
-                    // - @typescript-eslint/no-unsafe-argument
-                    // - @typescript-eslint/no-unsafe-call
-                    // - @typescript-eslint/no-unsafe-member-access
-                    // - @typescript-eslint/no-unsafe-return
-                    // - @typescript-eslint/no-unsafe-assignment
-                },
-            }/*)*/
-        : null/*{}*/),
+    ...typescriptRules,
 
     // This assumes test files are those which are in the test directory or have
     // *.test.* in the filename. If a file doesn't match this assumption, then it

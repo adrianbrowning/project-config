@@ -1,0 +1,17 @@
+{
+  "name": "@gingacodemonkey/config-tests",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:docker": "docker-compose -f ../docker-compose.yml up --build --abort-on-container-exit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

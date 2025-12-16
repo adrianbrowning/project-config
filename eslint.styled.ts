@@ -1,24 +1,10 @@
 // https://typescript-eslint.io/users/configs/#recommended
-//
-// export default tseslint.config(...tseslint.configs.stylistic);
-// export default tseslint.config(...tseslint.configs.stylisticTypeChecked);
 
 import stylistic from "@stylistic/eslint-plugin";
-import path from "node:path";
-import {fileURLToPath} from "node:url";
-import js from "@eslint/js";
-import {FlatCompat} from "@eslint/eslintrc";
 import unusedImports from "eslint-plugin-unused-imports";
 import {fixupPluginRules} from "@eslint/compat";
 import {has} from "./src/utils.ts";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
 
 const hasTypeScript = has('typescript')
 
@@ -118,10 +104,9 @@ export const config = [
             }],
             "@stylistic/object-property-newline": ["error", {
                 allowAllPropertiesOnSameLine: true,
-                allowMultiplePropertiesPerLine: false,
             }],
             "@stylistic/quotes": ["error", "double", {
-                allowTemplateLiterals: true,
+                allowTemplateLiterals: "always",
             }],
             "@stylistic/semi": ["error", "always"],
             "@stylistic/type-annotation-spacing": "error",

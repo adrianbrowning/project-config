@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": ["../base.tsconfig.dom.json", "./bundler.tsconfig.json"],
+  "compilerOptions": {
+  }
+}

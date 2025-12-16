@@ -1,7 +1,6 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {execSync} from 'child_process';
 import fs from 'fs';
-import {compareVersions, getPkgVersion, has, installPkg} from "./utils.ts";
+import {compareVersions, getPkgVersion, installPkg} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__eslint_version__";
@@ -29,7 +28,7 @@ export const esLintTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading ESLint to the supported version...',
-                        task: async (ctx, task) => {
+                        task: async (ctx) => {
                             installLatestESLint(ctx.packageManager);
                         }
                         }],
@@ -38,7 +37,7 @@ export const esLintTasks: Array<ListrTask> = [
                 task.skip('Skipping ESLint upgrade.');
                 // throw new Error('Task aborted due to outdated ESLint version');
             }
-
+            return;
         }
     },
     {
@@ -51,7 +50,7 @@ export const esLintTasks: Array<ListrTask> = [
     },
     {
         title: 'Adding lint scripts to package.json',
-        task: async (ctx: any, task: any) => {
+        task: async () => {
             const { updatePkgJsonScript } = await import('./utils.ts');
             updatePkgJsonScript('lint', 'eslint .');
             updatePkgJsonScript('lint:fix', 'eslint . --fix');
@@ -62,7 +61,7 @@ export const esLintTasks: Array<ListrTask> = [
 
 
 function eslintConfigFile(fileName: string, importName: string) {
-    return async function (ctx: any, task: any) {
+    return async function (_: any, task: any) {
 
         return task.newListr([
                 {
@@ -88,7 +87,7 @@ function eslintConfigFile(fileName: string, importName: string) {
                 {
                     title: `Setting up ${fileName}`,
                     enabled: (ctx: any) => ctx.overwrite === true,
-                    task: async (ctx: any, task: any) => {
+                    task: async () => {
 
                         const extendsStr = [
                             `import type { Linter } from "eslint";`,
@@ -104,16 +103,6 @@ function eslintConfigFile(fileName: string, importName: string) {
                 }
             ],
             {concurrent: false})
-    }
-}
-
-// Helper function declarations
-function isESlintInstalled(): string | false {
-    try {
-        const version = execSync('npx eslint --version').toString().trim().split(' ')[0];
-        return version;
-    } catch {
-        return false;
     }
 }
 

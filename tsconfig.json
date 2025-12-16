@@ -9,7 +9,8 @@
     "src",
     "rollup.config.ts",
     "eslint.ts",
-    "eslint.styled.ts"
+    "eslint.styled.ts",
+    "eslint-plugin.d.ts"
   ],
   "exclude": [
     "node_modules"

@@ -209,7 +209,7 @@ export default {
 ### Semantic Release Notes
 
 ```shell
-pnpm add @gingacodemonkey/semantic-release-unsquash
+pnpm semantic-release-unsquash
 ```
 
 Add a file called `.releaserc.json`
@@ -220,7 +220,7 @@ Add a file called `.releaserc.json`
   ],
   "plugins": [
     [
-      "@gingacodemonkey/semantic-release-unsquash",
+      "semantic-release-unsquash",
       {
         "commitAnalyzerConfig": {
           "releaseRules": [

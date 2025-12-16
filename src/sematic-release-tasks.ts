@@ -1,10 +1,10 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, has, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
 import fs from "fs";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__semanticrelease_version__";
-const pkgName = '@gingacodemonkey/semantic-release-unsquash'
+const pkgName = 'semantic-release-unsquash'
 
 const configFile = {
     path: '.releaserc.json',
@@ -14,7 +14,7 @@ const configFile = {
         ],
         "plugins": [
             [
-                "@gingacodemonkey/semantic-release-unsquash",
+                "semantic-release-unsquash",
                 {
                     "commitAnalyzerConfig": {
                         "releaseRules": [
@@ -143,7 +143,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
     {
         title: 'Checking if SemanticRelease is installed',
         task: async (ctx: any, task: any) => {
-            const eslintInstalled = getPkgVersion("@gingacodemonkey/semantic-release-unsquash");
+            const eslintInstalled = getPkgVersion("semantic-release-unsquash");
             if (!eslintInstalled) {
                 task.title = 'SemanticRelease not installed. Installing...';
                 installLatestSemanticRelease(ctx.packageManager);
@@ -162,7 +162,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading SemanticRelease to the supported version...',
-                        task: async (ctx: any, task: any) => {
+                        task: async (ctx: any) => {
                             installLatestSemanticRelease(ctx.packageManager);
                         }
                         }],
@@ -213,7 +213,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
     },
     {
         title: 'Adding semantic-release script to package.json',
-        task: async (ctx: any, task: any) => {
+        task: async () => {
             const { updatePkgJsonScript } = await import('./utils.ts');
             updatePkgJsonScript('semantic-release', 'semantic-release');
         }

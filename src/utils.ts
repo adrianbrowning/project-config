@@ -2,7 +2,7 @@ import {execSync} from "child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {ListrEnquirerPromptAdapter} from "@listr2/prompt-adapter-enquirer";
-import type {ListrTask} from "listr2";
+// import type {ListrTask} from "listr2";
 
 interface PackageJson {
     scripts?: Record<string, string>;
@@ -16,6 +16,7 @@ export function getPackageJson(): PackageJson {
     if (pj) return pj;
     if (!fs.existsSync('package.json')) throw new Error("No package.json found");
     pj = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    if(!pj) throw new Error("No package.json found");
     return pj;
 }
 
@@ -41,11 +42,16 @@ export function has(pkg: string): boolean {
     }
 }
 
-export async function detectPackageManager(task: any): Promise<"npm" | "yarn" | "pnpm" | "bun"> {
+export async function detectPackageManager(task: any, nonInteractive = false): Promise<"npm" | "yarn" | "pnpm" | "bun"> {
     if (fs.existsSync('package-lock.json')) return 'npm';
     if (fs.existsSync('yarn.lock')) return 'yarn';
     if (fs.existsSync('pnpm-lock.yaml')) return 'pnpm';
     if (fs.existsSync('bun.lockb')) return 'bun';
+
+    // In non-interactive mode, default to pnpm
+    if (nonInteractive) {
+        return 'pnpm';
+    }
 
     const {packageManager} = await task.prompt(ListrEnquirerPromptAdapter).run({
         type: 'select',
@@ -84,7 +90,7 @@ export function compareVersions(v1: string, v2: string): -1 | 0 | 1 {
 }
 
 export function writeConfigFile(fileName: string, content: string) {
-    return async function (ctx: any, task: any) {
+    return async function (_: any, task: any) {
 
         return task.newListr([
                 {
@@ -110,7 +116,7 @@ export function writeConfigFile(fileName: string, content: string) {
                 {
                     title: `Setting up ${fileName}`,
                     enabled: (ctx: any) => ctx.overwrite === true,
-                    task: async (ctx: any, task: any) => {
+                    task: async () => {
                         const dir = path.dirname(fileName); // Get the directory path
                         if (!fs.existsSync(dir)) {
                             fs.mkdirSync(dir, {recursive: true}); // Ensure the directory and parents exist
@@ -131,5 +137,17 @@ export function updatePkgJsonScript(name: string, value: string): void {
     const pkgJ = getPackageJson();
     pkgJ.scripts = pkgJ.scripts || {}
     pkgJ.scripts[name] = value;
+    fs.writeFileSync('package.json', JSON.stringify(pkgJ, null, 2));
+}
+
+export function updatePkgJson(key: string, value: unknown): void {
+    const pkgJ = getPackageJson() as Record<string, unknown>;
+    // Merge objects if both are objects
+    if (typeof value === 'object' && value !== null && !Array.isArray(value) &&
+        typeof pkgJ[key] === 'object' && pkgJ[key] !== null && !Array.isArray(pkgJ[key])) {
+        pkgJ[key] = { ...(pkgJ[key] as object), ...(value as object) };
+    } else {
+        pkgJ[key] = value;
+    }
     fs.writeFileSync('package.json', JSON.stringify(pkgJ, null, 2));
 }

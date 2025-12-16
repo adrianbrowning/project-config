@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./base.tsconfig.json",
+  "compilerOptions": {
+    /* Node.js specific options: */
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "lib": ["es2022"]
+  }
+}

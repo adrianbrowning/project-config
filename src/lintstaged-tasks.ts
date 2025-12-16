@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {compareVersions, getPkgVersion, has, installPkg, writeConfigFile} from "./utils.ts";
+import {compareVersions, getPkgVersion, installPkg, writeConfigFile} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__lintstaged_version__";
@@ -35,7 +35,7 @@ export const lintstagedTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading LintStaged to the supported version...',
-                        task: async (ctx: any, task: any) => {
+                        task: async (ctx: any) => {
                             installLatestLintStaged(ctx.packageManager);
                         }
                         }],

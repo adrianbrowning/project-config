@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Main test runner service
+  test-runner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      # Mount the tarball (read-only)
+      - ./gingacodemonkey-config-0.0.24-33.tgz:/pkg/gingacodemonkey-config.tgz:ro
+      # Mount test files (read-only)
+      - ./tests:/tests:ro
+      # Mount for test output
+      - ./test-results:/test-results
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TARBALL_PATH=/pkg/gingacodemonkey-config.tgz
+    working_dir: /tests
+    command: ["-c", "pnpm install && pnpm test"]
+
+  # Interactive debug container
+  test-debug:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./gingacodemonkey-config-0.0.24-33.tgz:/pkg/gingacodemonkey-config.tgz:ro
+      - ./tests:/tests:ro
+      - ./test-results:/test-results
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - TARBALL_PATH=/pkg/gingacodemonkey-config.tgz
+    working_dir: /tests
+    stdin_open: true
+    tty: true
+    profiles:
+      - debug

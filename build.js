@@ -7,36 +7,15 @@ import { execSync } from 'child_process';
 const packageJson = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 const peerDeps = packageJson.peerDependencies || {};
 
-// Build version replacement map (replacements need to match what's in the source strings)
+// Build version replacement map
 const versionReplacements = {
   '__eslint_version__': peerDeps.eslint || '^9.8.0',
   '__commitlint_version__': peerDeps['@commitlint/cli'] || '20.0.0',
   '__husky_version__': peerDeps.husky || '9.0.6',
   '__knip_version__': peerDeps.knip || '5.70.1',
   '__lintstaged_version__': peerDeps['lint-staged'] || '15.2.10',
-  '__semanticrelease_version__': peerDeps['@gingacodemonkey/semantic-release-unsquash'] || '0.2.7',
+  '__semanticrelease_version__': peerDeps['semantic-release-unsquash'] || '0.4.0',
   '__ts_version__': '',
-};
-
-// Create a plugin for text replacements
-const textReplacementPlugin = {
-  name: 'text-replacement',
-  setup(build) {
-    build.onLoad({ filter: /\.js$/ }, (args) => {
-      let contents = fs.readFileSync(args.path, 'utf8');
-
-      // Replace all version placeholders
-      for (const [placeholder, replacement] of Object.entries(versionReplacements)) {
-        // Replace as bare identifiers in string assignments
-        contents = contents.replace(
-          new RegExp(`\\b${placeholder}\\b`, 'g'),
-          replacement
-        );
-      }
-
-      return { contents, loader: 'js' };
-    });
-  }
 };
 
 // Extract the imports object
@@ -56,19 +35,45 @@ const aliasPlugins = Object.keys(importMap).map((alias) => {
     };
 });
 
-// Build using esbuild with plugins
-esbuild.build({
-    entryPoints: ['src/setup.js'],
+// Build the main setup.cjs
+// Use CommonJS format to avoid issues with enquirer's dynamic require() calls
+// Use .cjs extension because package.json has "type": "module"
+const setupBuild = esbuild.build({
+    entryPoints: ['src/setup.ts'],
     bundle: true,
-    outfile: 'dist/setup.js',
+    outfile: 'dist/setup.cjs',
     platform: 'node',
+    format: 'cjs',
+    banner: { js: '#!/usr/bin/env node' },
+    plugins: [...aliasPlugins],
+});
+
+// Build ESLint configs (.ts to .js) - bundle to inline local imports
+const eslintBuild = esbuild.build({
+    entryPoints: ['eslint.ts', 'eslint.styled.ts'],
+    outdir: 'dist',
+    platform: 'node',
+    bundle: true,
     packages: 'external',
     format: 'esm',
-    banner: { js: '#!/usr/bin/env node' },
-    plugins: [textReplacementPlugin, ...aliasPlugins],
-}).then(() => {
+    minifySyntax: false,  // Preserve exact syntax including operator precedence
+    minifyWhitespace: false,
+    minifyIdentifiers: false,
+});
+
+Promise.all([setupBuild, eslintBuild]).then(() => {
+    // Replace version placeholders in the bundled output
+    let setupContent = fs.readFileSync('dist/setup.cjs', 'utf8');
+    for (const [placeholder, replacement] of Object.entries(versionReplacements)) {
+        setupContent = setupContent.replace(
+            new RegExp(placeholder, 'g'),
+            replacement
+        );
+    }
+    fs.writeFileSync('dist/setup.cjs', setupContent);
+
     // Make the file executable
-    execSync('chmod +x dist/setup.js');
+    execSync('chmod +x dist/setup.cjs');
     console.log('✓ Build complete');
 }).catch((err) => {
     console.error('Build failed:', err);

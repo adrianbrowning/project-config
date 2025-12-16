@@ -1,14 +1,20 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import {execSync} from 'node:child_process';
 import fs from 'node:fs';
-import {compareVersions, getPkgVersion, has, installPkg} from "./utils.ts";
+import {compareVersions, getPkgVersion, installPkg} from "./utils.ts";
 import type {ListrTask} from "listr2";
 
 const Supported_Version = "__husky_version__";
 
-const commitMsg = `pnpm exec commitlint --edit "$1";
+const commitMsg = `#!/bin/sh
+# Skip hook for semantic-release commits
+MESSAGE=$(cat "$1")
+if echo "$MESSAGE" | grep -q "\\[skip ci\\]"; then
+  exit 0
+fi
+
+pnpm exec commitlint --edit "$1";
 FILE=$1
-MESSAGE=$(cat $FILE)
 TICKET=[$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\\w+/)?(\\w+[-_])?[0-9]+' | grep -Eo '(\\w+[-])?[0-9]+' | tr "[:lower:]" "[:upper:]")]
 if [[ $TICKET == "[]" || "$MESSAGE" == "$TICKET"* ]];then
   exit 0;
@@ -43,7 +49,7 @@ export const huskyTasks: Array<ListrTask> = [
                 if (upgrade) {
                     return task.newListr([{
                         title: 'Upgrading Husky to the supported version...',
-                        task: async (ctx: any, task: any) => {
+                        task: async (ctx: any) => {
                             installLatestHusky(ctx.packageManager);
                         }
                         }],
@@ -57,17 +63,17 @@ export const huskyTasks: Array<ListrTask> = [
     },
     {
         title: 'Check if Husky is configured',
-        task: async function (ctx: any, task: any) {
+        task: async function (_: any, task: any) {
             const taskList: Array<any> = [{
                 title: "Husky init",
-                task: async (ctx: any, task: any) => {
+                task: async () => {
                     execSync(`pnpm exec husky init`);
                 }
             }];
             if (!fs.existsSync(".husky/pre-commit")) {
                 taskList.push({
                     title: "Adding Pre-Commit Hook",
-                    task: async (ctx: any, task: any) => {
+                    task: async () => {
                         fs.writeFileSync(".husky/pre-commit", "pnpm exec lint-staged");
                     }
                 })
@@ -75,8 +81,17 @@ export const huskyTasks: Array<ListrTask> = [
             if (!fs.existsSync(".husky/commit-msg")) {
                 taskList.push({
                         title: "Adding Commit-Msg Hook",
-                        task: async (ctx: any, task: any) => {
+                        task: async () => {
                             fs.writeFileSync(".husky/commit-msg", commitMsg);
+                        }
+                    }
+                )
+            }
+            if (!fs.existsSync(".husky/pre-push")) {
+                taskList.push({
+                        title: "Adding Pre-Push Hook",
+                        task: async () => {
+                            fs.writeFileSync(".husky/pre-push", "#!/bin/sh\npnpm lint");
                         }
                     }
                 )

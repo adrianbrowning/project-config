@@ -28,7 +28,7 @@ const pkgJSON = z.object({
     "husky": z.string(),
     "knip": z.string(),
     "lint-staged": z.string(),
-    "@gingacodemonkey/semantic-release-unsquash": z.string(),
+    "semantic-release-unsquash": z.string(),
     "typescript": z.string(),
   })
 }).parse(JSON.parse(fs.readFileSync(path.join(projectRootDir, "package.json"), { encoding: "utf-8" })));
@@ -54,7 +54,7 @@ export default {
       "__husky_version__": pkgJSON.peerDependencies.husky,
       "__knip_version__": pkgJSON.peerDependencies.knip,
       "__lintstaged_version__": pkgJSON.peerDependencies["lint-staged"],
-      "__semanticrelease_version__": pkgJSON.peerDependencies["@gingacodemonkey/semantic-release-unsquash"],
+      "__semanticrelease_version__": pkgJSON.peerDependencies["semantic-release-unsquash"],
       "__ts_version__": "",
       preventAssignment: true,
     }),

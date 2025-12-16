@@ -2,17 +2,23 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "@gingacodemonkey/config",
   "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
-  "version": "0.0.24-5",
+  "version": "0.0.24-34",
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
     "build": "node build.js && pnpm pack",
     "build:bump": "node build.js && pnpm version patch --no-git-tag-version && pnpm pack",
     "build:bump-dev": "node build.js && pnpm version prerelease --no-git-tag-version && pnpm pack",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "pnpm --filter @gingacodemonkey/config-tests test",
+    "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
+    "test:docker": "docker-compose up --build --abort-on-container-exit"
   },
-  "main": "dist/setup.js",
+  "pnpm": {
+    "minimumReleaseAge": 4320
+  },
+  "main": "dist/setup.cjs",
   "bin": {
-    "gingacodemonkey-config": "dist/setup.js"
+    "gingacodemonkey-config": "dist/setup.cjs"
   },
   "repository": {
     "type": "git",
@@ -26,19 +32,15 @@
   "type": "module",
   "license": "MIT",
   "exports": {
-    "./tsc": "./tsc/dom/app.json",
-    "./tsc/dom": "./tsc/dom/app.json",
-    "./tsc/dom/app": "./tsc/dom/app.json",
-    "./tsc/dom/library": "./tsc/dom/library.json",
-    "./tsc/dom/library-monorepo": "./tsc/dom/library-monorepo.json",
-    "./tsc/no-dom": "./tsc/no-dom/app.json",
-    "./tsc/no-dom/app": "./tsc/no-dom/app.json",
-    "./tsc/no-dom/library": "./tsc/no-dom/library.json",
-    "./tsc/no-dom/library-monorepo": "./tsc/no-dom/library-monorepo.json",
-    "./tsc/node": "./tsc/node/app.json",
-    "./tsc/node/app": "./tsc/node/app.json",
-    "./tsc/node/library": "./tsc/node/library.json",
-    "./tsc/node/library-monorepo": "./tsc/node/library-monorepo.json",
+    "./tsc": "./tsc/tsc/dom/app.json",
+    "./tsc/dom": "./tsc/tsc/dom/app.json",
+    "./tsc/dom/app": "./tsc/tsc/dom/app.json",
+    "./tsc/dom/library": "./tsc/tsc/dom/library.json",
+    "./tsc/dom/library-monorepo": "./tsc/tsc/dom/library-monorepo.json",
+    "./tsc/no-dom": "./tsc/tsc/no-dom/app.json",
+    "./tsc/no-dom/app": "./tsc/tsc/no-dom/app.json",
+    "./tsc/no-dom/library": "./tsc/tsc/no-dom/library.json",
+    "./tsc/no-dom/library-monorepo": "./tsc/tsc/no-dom/library-monorepo.json",
     "./bundler": "./tsc/bundler/dom.json",
     "./bundler/dom": "./tsc/bundler/dom.json",
     "./bundler/dom/app": "./tsc/bundler/dom.json",
@@ -48,10 +50,10 @@
     "./bundler/no-dom/app": "./tsc/bundler/no-dom.json",
     "./bundler/no-dom/library": "./tsc/bundler/no-dom.json",
     "./bundler/no-dom/library-monorepo": "./tsc/bundler/no-dom.json",
-    "./eslint": "./eslint.ts",
-    "./styled": "./eslint.styled.ts",
-    "./eslint.ts": "./eslint.ts",
-    "./styled.ts": "./eslint.styled.ts"
+    "./eslint": "./dist/eslint.js",
+    "./styled": "./dist/eslint.styled.js",
+    "./eslint.ts": "./dist/eslint.js",
+    "./styled.ts": "./dist/eslint.styled.js"
   },
   "dependencies": {
     "@eslint/compat": "^2.0.0",
@@ -62,16 +64,22 @@
     "@total-typescript/ts-reset": "^0.6.1",
     "enquirer": "^2.4.1",
     "eslint": "^9.39.1",
+    "eslint-plugin-barrel-files": "^3.0.1",
+    "eslint-plugin-depend": "^1.4.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-jest-dom": "^5.5.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-no-barrel-files": "^1.2.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.2.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-security-node": "^1.1.4",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-sonarjs": "^3.0.5",
     "eslint-plugin-testing-library": "^7.13.4",
     "eslint-plugin-unicorn": "^62.0.0",
     "eslint-plugin-unused-imports": "^4.3.0",
@@ -83,15 +91,19 @@
     "typescript-eslint": "^8.47.0"
   },
   "devDependencies": {
+    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-34.tgz",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@types/eslint-plugin-jsx-a11y": "^6.10.1",
+    "@types/node": "^22.19.1",
     "@types/react": "^19.2.6",
     "esbuild": "^0.27.0",
     "esbuild-plugin-alias": "^0.2.1",
     "eslint": "^9.8.0",
     "husky": "^9.1.7",
+    "json5": "^2.2.3",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.6.2",
     "react": "^19.2.0",
@@ -105,17 +117,17 @@
   "peerDependencies": {
     "@commitlint/cli": "20.0.0",
     "@commitlint/config-conventional": "20.0.0",
-    "@gingacodemonkey/semantic-release-unsquash": "0.2.7",
     "eslint": "^9.8.0",
     "husky": "9.0.6",
     "knip": "5.70.1",
     "lint-staged": "15.2.10",
+    "semantic-release-unsquash": "^0.4.0",
     "typescript": "5.7.3"
   },
   "files": [
     "dist",
     "tsc",
-    "eslint.ts",
-    "eslint.styled.ts"
+    "eslint.js",
+    "eslint.styled.js"
   ]
 }

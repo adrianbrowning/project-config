@@ -1,4 +1,4 @@
-import { Plugin } from "rollup";
+import type { Plugin } from "rollup";
 import { rm } from "node:fs/promises";
 import { glob } from "node:fs";
 
@@ -20,7 +20,7 @@ export default function nativeDelete(options: NativeDeleteOptions): Plugin {
 
             for (const pattern of list) {
                 const matches = await new Promise<string[]>((resolve, reject) =>
-                    glob(pattern, { dot: true }, (err, files) =>
+                    glob(pattern, (err:any, files:any) =>
                         err ? reject(err) : resolve(files)
                     )
                 );
