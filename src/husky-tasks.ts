@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__husky_version__";
@@ -20,15 +21,15 @@ if [[ $TICKET == "[]" || "$MESSAGE" == "$TICKET"* ]];then
   exit 0;
 fi
 # Strip leading '['
-TICKET="\${TICKET#\[}"
+TICKET="\${TICKET#[}"
 # Strip trailing ']'
-TICKET="\${TICKET %\]}"
+TICKET="\${TICKET %]}"
 echo $"$TICKET\\n\\n$MESSAGE" > $FILE`;
 
-export const huskyTasks: Array<ListrTask> = [
+export const huskyTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if Husky is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       const eslintInstalled = getPkgVersion("husky");
       if (!eslintInstalled) {
         task.title = "Husky not installed. Installing...";
@@ -48,7 +49,7 @@ export const huskyTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading Husky to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`husky@${Supported_Version}`);
             },
           }],
@@ -57,13 +58,13 @@ export const huskyTasks: Array<ListrTask> = [
         task.skip("Skipping Husky upgrade.");
         // throw new Error('Task aborted due to outdated Husky version');
       }
-
+      return;
     },
   },
   {
     title: "Check if Husky is configured",
-    task: async function (_: any, task: any) {
-      const taskList: Array<any> = [{
+    task: async function (_, task) {
+      const taskList: Array<ListrTask<TaskContext>> = [{
         title: "Husky init",
         task: async () => {
           execSync(`pnpm exec husky init`);

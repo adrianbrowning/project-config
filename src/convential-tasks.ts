@@ -1,14 +1,15 @@
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 
 let Supported_Version = "";
 let pkgName = "";
 
-export const commitLintTasks: Array<ListrTask> = [
+export const commitLintTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if CommitLint is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       pkgName = "@commitlint/cli";
       Supported_Version = "__commitlint_version__";
       const eslintInstalled = getPkgVersion(pkgName);
@@ -30,7 +31,7 @@ export const commitLintTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading CommitLint to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`${pkgName}@${Supported_Version}`);
             },
           }],
@@ -39,12 +40,12 @@ export const commitLintTasks: Array<ListrTask> = [
         task.skip("Skipping CommitLint upgrade.");
         // throw new Error('Task aborted due to outdated CommitLint version');
       }
-
+      return undefined;
     },
   },
   {
     title: "Checking if @commitlint/config-conventional is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       pkgName = "@commitlint/config-conventional";
       Supported_Version = "__commitlint_version__";
       const eslintInstalled = getPkgVersion(pkgName);
@@ -66,7 +67,7 @@ export const commitLintTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading CommitLint/config-conventional to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`${pkgName}@${Supported_Version}`);
             },
           }],
@@ -75,7 +76,7 @@ export const commitLintTasks: Array<ListrTask> = [
         task.skip("Skipping CommitLint upgrade.");
         // throw new Error('Task aborted due to outdated CommitLint version');
       }
-
+      return undefined;
     },
   },
   {

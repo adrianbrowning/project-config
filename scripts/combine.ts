@@ -1,13 +1,12 @@
-import fs from "fs";
+import fs from "node:fs";
 
-import path from "path";
+import path from "node:path";
 
 import JSON5 from "json5";
 
-
 // Helper function to read and parse JSON5 or JSON
 function readJsonFile(filePath: string) {
-  const data = fs.readFileSync(filePath, 'utf8');
+  const data = fs.readFileSync(filePath, "utf8");
   return JSON5.parse(data);
 }
 
@@ -15,25 +14,32 @@ function readJsonFile(filePath: string) {
 const args = process.argv.slice(2);
 let basePath = "";
 const tsConfigPaths: Array<string> = [];
-let outDir = '.';
+let outDir = ".";
 
+let skipNext = false;
 for (let index = 0; index < args.length; index++){
+  if (skipNext) {
+    skipNext = false;
+    continue;
+  }
   const arg = args[index];
-  if (arg === '-o') {
+  if (arg === "-o") {
     outDir = args[index + 1]!;
-    index = index + 1;
-  } else if (arg?.startsWith('-')) {
+    skipNext = true;
+  }
+  else if (arg?.startsWith("-")) {
     console.error(`Unknown option: ${arg}`);
-    console.error('Usage: node create-base-config.js -o output_directory tsconfig1.json');
+    console.error("Usage: node create-base-config.js -o output_directory tsconfig1.json");
     process.exit(1);
-  } else if(arg) {
-      basePath = arg;
+  }
+  else if(arg) {
+    basePath = arg;
   }
 }
 
 if (basePath.length === 0) {
-  console.error('Error: At least one tsconfig file must be provided.');
-  console.error('Usage: node create-base-config.js -o output_directory tsconfig1.json');
+  console.error("Error: At least one tsconfig file must be provided.");
+  console.error("Usage: node create-base-config.js -o output_directory tsconfig1.json");
   process.exit(1);
 }
 
@@ -43,41 +49,41 @@ if (!fs.existsSync(outDir)) {
 }
 
 function getTsConfigPaths(tsConfigPath: string, relativeTo = "") {
-    const baseTsConfig = readJsonFile(path.relative(relativeTo, tsConfigPath));
-    if (baseTsConfig.extends) {
-        if (Array.isArray(baseTsConfig.extends)) {
-            tsConfigPaths.push(...baseTsConfig.extends.map((p: string) => path.join(path.dirname(tsConfigPath), p)));
-        } else {
-            tsConfigPaths.push(path.join(path.dirname(tsConfigPath), baseTsConfig.extends));
-        }
+  const baseTsConfig = readJsonFile(path.relative(relativeTo, tsConfigPath));
+  if (baseTsConfig.extends) {
+    if (Array.isArray(baseTsConfig.extends)) {
+      tsConfigPaths.push(...baseTsConfig.extends.map((p: string) => path.join(path.dirname(tsConfigPath), p)));
     }
-    return baseTsConfig;
+    else {
+      tsConfigPaths.push(path.join(path.dirname(tsConfigPath), baseTsConfig.extends));
+    }
+  }
+  return baseTsConfig;
 }
 
 let baseCompilerOptions = getTsConfigPaths(basePath).compilerOptions || {};
 for (const tsConfigPath of tsConfigPaths) {
-    const tsConfig = getTsConfigPaths(tsConfigPath);
-    baseCompilerOptions = { ...baseCompilerOptions, ...tsConfig.compilerOptions };
+  const tsConfig = getTsConfigPaths(tsConfigPath);
+  baseCompilerOptions = { ...baseCompilerOptions, ...tsConfig.compilerOptions };
 
 }
 
-
-console.log(JSON.stringify({compilerOptions: sortObject(baseCompilerOptions)}, null, 2));
+console.log(JSON.stringify({ compilerOptions: sortObject(baseCompilerOptions) }, null, 2));
 process.exit(0);
 
-function sortObject(obj: any) {
-    return Object.keys(obj)
-        .sort()
-        .reduce((result: any, key) => {
-            result[key] = obj[key];
-            return result;
-        }, {});
+function sortObject(obj: Record<string, unknown>) {
+  return Object.keys(obj)
+    .sort((a, b) => a.localeCompare(b))
+    .reduce<Record<string, unknown>>((result, key) => {
+      result[key] = obj[key];
+      return result;
+    }, {});
 }
 const compilerOptionsList = tsConfigPaths.filter(Boolean)
-    .map(filePath => {
-        const tsConfig = readJsonFile(filePath!);
-        return tsConfig.compilerOptions || {};
-    });
+  .map(filePath => {
+    const tsConfig = readJsonFile(filePath);
+    return tsConfig.compilerOptions || {};
+  });
 
 // // Read and parse all tsconfig files
 // const compilerOptionsList = tsConfigPaths.filter(Boolean)
@@ -89,9 +95,9 @@ const compilerOptionsList = tsConfigPaths.filter(Boolean)
 // Find common compilerOptions
 const commonCompilerOptions = compilerOptionsList.reduce((commonOptions, currentOptions) => {
   const newCommonOptions = {};
-  for (const [key, value] of Object.entries(commonOptions)) {
+  for (const [ key, value ] of Object.entries(commonOptions)) {
     if (currentOptions[key] === value) {
-        //@ts-expect-error
+      //@ts-expect-error
       newCommonOptions[key] = value;
     }
   }
@@ -100,7 +106,7 @@ const commonCompilerOptions = compilerOptionsList.reduce((commonOptions, current
 
 // Write base tsconfig.json
 const baseConfig = { compilerOptions: commonCompilerOptions };
-const baseConfigPath = path.join(outDir, 'base.tsconfig.json');
-fs.writeFileSync(baseConfigPath, JSON.stringify(baseConfig, null, 2), 'utf8');
+const baseConfigPath = path.join(outDir, "base.tsconfig.json");
+fs.writeFileSync(baseConfigPath, JSON.stringify(baseConfig, null, 2), "utf8");
 
 console.log(`Base config created: ${baseConfigPath}`);

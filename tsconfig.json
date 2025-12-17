@@ -4,14 +4,18 @@
 //    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "jsx": "react-jsx"
   },
   "include": [
-    "./src/**.ts",
+    "./src/**/*.ts",
+    "./scripts/**/*.ts",
     "rollup.config.ts",
-    "eslint.ts",
-    "eslint.styled.ts",
-    "eslint-plugin.d.ts"
+    "eslint-plugin.d.ts",
+    "eslint.config.style.ts",
+    "eslint.config.ts",
+    "build.ts",
+    "reset.d.ts"
   ],
   "exclude": [
     "node_modules"

@@ -9,10 +9,12 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
-    "lib": ["ES2022"]
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx"
   },
   "include": [
-    "./**/*.ts"
+    "./**/*.ts",
+    "./**/*.tsx"
   ],
   "exclude": [
     "node_modules"

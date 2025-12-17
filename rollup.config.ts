@@ -6,20 +6,19 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import typescript from "@rollup/plugin-typescript";
-import commonjs from "@rollup/plugin-commonjs";
-import { type RollupOptions } from "rollup";
-import nativeDelete from './rollup-plugins/rollup-plugin-native-delete.ts';
-import {z} from "zod";
+import type { RollupOptions } from "rollup";
 import esbuild from "rollup-plugin-esbuild";
+import { z } from "zod";
+import nativeDelete from "./rollup-plugins/rollup-plugin-native-delete.ts";
 
 //
 const __dirnameESM = path.dirname(new URL(import.meta.url).pathname);
 
 const projectRootDir = path.resolve(__dirnameESM);
-
 
 const pkgJSON = z.object({
   peerDependencies: z.object({
@@ -30,13 +29,12 @@ const pkgJSON = z.object({
     "lint-staged": z.string(),
     "semantic-release-unsquash": z.string(),
     "typescript": z.string(),
-  })
+  }),
 }).parse(JSON.parse(fs.readFileSync(path.join(projectRootDir, "package.json"), { encoding: "utf-8" })));
-
 
 export default {
   input: path.join(`src`, "setup.js"),
-  preserveEntrySignatures: "exports-only",//"false",
+  preserveEntrySignatures: "exports-only", //"false",
   ////@ts-expect-error using the false value
   // preserveEntrySignatures: "false",//"exports-only",//"false",
   output: {
@@ -58,10 +56,10 @@ export default {
       "__ts_version__": "",
       preventAssignment: true,
     }),
-    resolve({preferBuiltins: true}),
+    resolve({ preferBuiltins: true }),
     typescript(),
     esbuild({
-      platform: 'node', // Targets node environment
+      platform: "node", // Targets node environment
     }),
     commonjs(),
   ],

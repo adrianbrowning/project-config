@@ -2,12 +2,12 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "@gingacodemonkey/config",
   "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
-  "version": "0.0.24-42",
+  "version": "0.0.24-45",
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
-    "build": "node build.js && pnpm pack",
-    "build:bump": "node build.js && pnpm version patch --no-git-tag-version && pnpm pack",
-    "build:bump-dev": "node build.js && pnpm version prerelease --no-git-tag-version && pnpm pack",
+    "build": "node build.ts && pnpm pack",
+    "build:bump": "node build.ts && pnpm version patch --no-git-tag-version && pnpm pack",
+    "build:bump-dev": "node build.ts && pnpm version prerelease --no-git-tag-version && pnpm pack",
     "prepare": "husky",
     "test": "pnpm --filter @gingacodemonkey/config-tests test",
     "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
@@ -62,6 +62,7 @@
     "./styled.ts": "./dist/eslint.styled.js"
   },
   "dependencies": {
+    "@eslint-react/eslint-plugin": "^2.3.13",
     "@eslint/compat": "^2.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.1",
@@ -89,7 +90,7 @@
     "eslint-plugin-testing-library": "^7.13.4",
     "eslint-plugin-unicorn": "^62.0.0",
     "eslint-plugin-unused-imports": "^4.3.0",
-    "eslint-plugin-vitest": "^0.5.4",
+    "@vitest/eslint-plugin": "^1.5.2",
     "globals": "^16.5.0",
     "listr2": "^9.0.5",
     "prettier-plugin-tailwindcss": "^0.7.1",
@@ -99,7 +100,7 @@
   "devDependencies": {
     "@commitlint/cli": "20.0.0",
     "@commitlint/config-conventional": "20.0.0",
-    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-42.tgz",
+    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-43.tgz",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
@@ -132,7 +133,7 @@
     "knip": "5.70.1",
     "lint-staged": "15.2.10",
     "semantic-release-unsquash": "^0.4.0",
-    "typescript": "5.7.3"
+    "typescript": ">= 5.7.3"
   },
   "files": [
     "dist",

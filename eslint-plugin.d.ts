@@ -1,32 +1,32 @@
 // eslint-plugin-promise.d.ts
-declare module 'eslint-plugin-promise' {
-    import { Linter } from 'eslint';
+declare module "eslint-plugin-promise" {
+  import type { Linter } from "eslint";
 
-    const plugin: {
-        configs?: {
-            recommended?: Linter.Config;
-            // add more if you know them
-        };
-        rules?: {
-            [ruleName: string]: Linter.RuleModule;
-        };
+  const plugin: {
+    configs?: {
+      recommended?: Linter.Config;
+      // add more if you know them
     };
+    rules?: {
+      [ruleName: string]: Linter.RuleModule;
+    };
+  };
 
-    export = plugin;
+  export = plugin;
 }
 
-declare module 'eslint-plugin-security-node' {
-    import { Linter } from 'eslint';
+declare module "eslint-plugin-security-node" {
+  import type { Linter } from "eslint";
 
-    const plugin: {
-        configs?: {
-            recommended?: Linter.Config;
-            // add more if you know them
-        };
-        rules?: {
-            [ruleName: string]: Linter.RuleModule;
-        };
+  const plugin: {
+    configs?: {
+      recommended?: Linter.Config;
+      // add more if you know them
     };
+    rules?: {
+      [ruleName: string]: Linter.RuleModule;
+    };
+  };
 
-    export = plugin;
+  export = plugin;
 }

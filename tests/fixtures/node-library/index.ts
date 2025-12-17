@@ -16,22 +16,22 @@ export function multiply(a: number, b: number): number {
 
 export function divide(a: number, b: number): number {
   if (b === 0) {
-    throw new Error('Cannot divide by zero');
+    throw new Error("Cannot divide by zero");
   }
   return a / b;
 }
 
-export type MathOperation = 'add' | 'subtract' | 'multiply' | 'divide';
+export type MathOperation = "add" | "subtract" | "multiply" | "divide";
 
 export function calculate(op: MathOperation, a: number, b: number): number {
   switch (op) {
-    case 'add':
+    case "add":
       return add(a, b);
-    case 'subtract':
+    case "subtract":
       return subtract(a, b);
-    case 'multiply':
+    case "multiply":
       return multiply(a, b);
-    case 'divide':
+    case "divide":
       return divide(a, b);
   }
 }

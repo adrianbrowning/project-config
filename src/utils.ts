@@ -2,7 +2,9 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
-// import type {ListrTask} from "listr2";
+import type { ListrTaskWrapper } from "listr2";
+import type { TaskContext } from "./cli-args";
+import type { YES_ANY_IS_OK_HERE } from "./types";
 
 interface PackageJson {
   scripts?: Record<string, string>;
@@ -21,7 +23,6 @@ export function getPackageJson(): PackageJson {
 }
 
 export function getPkgVersion(pkg: string): string | null {
-  debugger;
   const pj = getPackageJson();
   let version = "";
   if (pj.dependencies && pj.dependencies[pkg]) {
@@ -44,7 +45,7 @@ export function has(pkg: string): boolean {
   }
 }
 
-export async function detectPackageManager(task: any, nonInteractive = false): Promise<"npm" | "yarn" | "pnpm" | "bun"> {
+export async function detectPackageManager(task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>, nonInteractive = false): Promise<"npm" | "yarn" | "pnpm" | "bun"> {
   if (fs.existsSync("package-lock.json")) return "npm";
   if (fs.existsSync("yarn.lock")) return "yarn";
   if (fs.existsSync("pnpm-lock.yaml")) return "pnpm";
@@ -73,6 +74,7 @@ export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg:
     bun: `bun add ${pkg} --dev`,
   }[packageManager];
 
+  // eslint-disable-next-line sonarjs/os-command
   execSync(installCommand, { stdio: "inherit" });
 }
 
@@ -90,15 +92,20 @@ export function compareVersions(v1: string, v2: string): -1 | 0 | 1 {
   return 0;
 }
 
+type ConfigContext = {
+  overwrite: boolean;
+};
+
 export function writeConfigFile(fileName: string, content: string) {
-  return async function (_: any, task: any) {
+
+  return async function (_: unknown, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
 
     return task.newListr([
       {
         title: `Checking if ${fileName} exists`,
-        task: async (ctx: any, task: any) => {
+
+        task: async (ctx: ConfigContext, task) => {
           const lintConfigExists = getLintConfig(fileName);
-          debugger;
           ctx.overwrite = true;
           if (lintConfigExists) {
             ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
@@ -116,7 +123,7 @@ export function writeConfigFile(fileName: string, content: string) {
       },
       {
         title: `Setting up ${fileName}`,
-        enabled: (ctx: any) => ctx.overwrite === true,
+        enabled: (ctx: ConfigContext) => ctx.overwrite === true,
         task: async () => {
           const dir = path.dirname(fileName); // Get the directory path
           if (!fs.existsSync(dir)) {

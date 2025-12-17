@@ -1,5 +1,6 @@
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 
 const Supported_Version = "__lintstaged_version__";
@@ -12,10 +13,10 @@ const configFile = {
   },
 };
 
-export const lintstagedTasks: Array<ListrTask> = [
+export const lintstagedTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if LintStaged is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       const eslintInstalled = getPkgVersion(pkgName);
       if (!eslintInstalled) {
         task.title = "LintStaged not installed. Installing...";
@@ -35,7 +36,7 @@ export const lintstagedTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading LintStaged to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`${pkgName}@${Supported_Version}`);
             },
           }],
@@ -44,7 +45,7 @@ export const lintstagedTasks: Array<ListrTask> = [
         task.skip("Skipping LintStaged upgrade.");
         // throw new Error('Task aborted due to outdated LintStaged version');
       }
-
+      return;
     },
   },
   {

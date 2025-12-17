@@ -1,20 +1,22 @@
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
-import type { ListrTask } from "listr2";
+import type { ListrTask, ListrTaskWrapper } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
+import type { YES_ANY_IS_OK_HERE } from "./types";
 import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__eslint_version__";
 
-export const esLintTasks: Array<ListrTask> = [
+export const esLintTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if ESLint is installed",
     task: async (ctx, task) => {
       const eslintInstalled = getPkgVersion("@eslint/js");
       if (!eslintInstalled) {
         task.title = "ESLint not installed. Installing...";
-        ctx.packages.add(`@eslint/js@${Supported_Version}`);
+        // ctx.packages.add(`@eslint/js@${Supported_Version}`);
         ctx.packages.add("eslint");
-        ctx.packages.add("typescript-eslint");
+        // ctx.packages.add("typescript-eslint");
         return;
       }
 
@@ -31,9 +33,9 @@ export const esLintTasks: Array<ListrTask> = [
           return task.newListr([{
             title: "Upgrading ESLint to the supported version...",
             task: async ctx => {
-              ctx.packages.add(`@eslint/js@${Supported_Version}`);
+              // ctx.packages.add(`@eslint/js@${Supported_Version}`);
               ctx.packages.add("eslint");
-              ctx.packages.add("typescript-eslint");
+              // ctx.packages.add("typescript-eslint");
             },
           }],
           { concurrent: false });
@@ -41,7 +43,7 @@ export const esLintTasks: Array<ListrTask> = [
         task.skip("Skipping ESLint upgrade.");
         // throw new Error('Task aborted due to outdated ESLint version');
       }
-      return;
+      return undefined;
     },
   },
   {
@@ -64,14 +66,13 @@ export const esLintTasks: Array<ListrTask> = [
 ];
 
 function eslintConfigFile(fileName: string, importName: string) {
-  return async function (_: any, task: any) {
+  return async function (_: unknown, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
 
     return task.newListr([
       {
         title: `Checking if ${fileName} exists`,
-        task: async (ctx: any, task: any) => {
+        task: async (ctx, task) => {
           const lintConfigExists = getLintConfig(fileName);
-          debugger;
           ctx.overwrite = true;
           if (lintConfigExists) {
             ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
@@ -89,7 +90,7 @@ function eslintConfigFile(fileName: string, importName: string) {
       },
       {
         title: `Setting up ${fileName}`,
-        enabled: (ctx: any) => ctx.overwrite === true,
+        enabled: ctx => ctx.overwrite === true,
         task: async () => {
 
           const extendsStr = [

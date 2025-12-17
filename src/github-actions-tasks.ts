@@ -39,7 +39,7 @@ jobs:
       # 2.1. Cache pnpm store
       - name: Get pnpm store
         id: pnpm-cache-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> \$GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store
@@ -112,7 +112,7 @@ jobs:
       # 2.1. Cache pnpm store
       - name: Get pnpm store
         id: pnpm-cache-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> \$GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store
@@ -144,7 +144,7 @@ jobs:
           # Run ESLint with --fix
 
           pnpm run lint:fix
-          FIX_EXIT_CODE=\$?
+          FIX_EXIT_CODE=$?
 
           # Configure Git
           git config user.name "github-actions[bot]"
@@ -157,8 +157,8 @@ jobs:
             git push origin HEAD:\${{ github.head_ref }}
           fi
 
-          if [ \$FIX_EXIT_CODE -ne 0 ]; then
-            echo "ESLint checks failed. FIX_EXIT_CODE=\$FIX_EXIT_CODE"
+          if [ $FIX_EXIT_CODE -ne 0 ]; then
+            echo "ESLint checks failed. FIX_EXIT_CODE=$FIX_EXIT_CODE"
             exit 1
           fi
 `;
@@ -206,7 +206,7 @@ jobs:
       # 2.1. Cache pnpm store
       - name: Get pnpm store
         id: pnpm-cache-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> \$GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store
@@ -275,7 +275,7 @@ jobs:
       # 2.1. Cache pnpm store
       - name: Get pnpm store
         id: pnpm-cache-store
-        run: echo "STORE_PATH=$(pnpm store path)" >> \$GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store

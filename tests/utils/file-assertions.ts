@@ -2,8 +2,8 @@
  * Custom file assertions for testing
  */
 
-import { expect } from 'vitest';
-import type { TestProject } from './test-project.ts';
+import { expect } from "vitest";
+import type { TestProject } from "./test-project.ts";
 
 /**
  * Assert that a file exists in the project
@@ -45,7 +45,7 @@ export function assertJsonHasProperty<T>(
   expectedValue?: T
 ): void {
   const json = project.readJson(filePath);
-  const keys = propertyPath.split('.');
+  const keys = propertyPath.split(".");
   let current: unknown = json;
 
   for (const key of keys) {
@@ -66,8 +66,8 @@ export function assertPackageJsonScript(
   scriptName: string,
   scriptValue?: string
 ): void {
-  const pkg = project.readJson<{ scripts?: Record<string, string> }>('package.json');
-  expect(pkg.scripts, 'Expected package.json to have scripts').toBeDefined();
+  const pkg = project.readJson<{ scripts?: Record<string, string>; }>("package.json");
+  expect(pkg.scripts, "Expected package.json to have scripts").toBeDefined();
   expect(pkg.scripts![scriptName], `Expected script "${scriptName}" to exist`).toBeDefined();
 
   if (scriptValue !== undefined) {
@@ -81,9 +81,9 @@ export function assertPackageJsonScript(
 export function assertPackageJsonDependency(
   project: TestProject,
   pkgName: string,
-  type: 'dependencies' | 'devDependencies' = 'devDependencies'
+  type: "dependencies" | "devDependencies" = "devDependencies"
 ): void {
-  const pkg = project.readJson<Record<string, Record<string, string>>>('package.json');
+  const pkg = project.readJson<Record<string, Record<string, string>>>("package.json");
   expect(pkg[type], `Expected package.json to have ${type}`).toBeDefined();
   expect(pkg[type][pkgName], `Expected ${pkgName} to be in ${type}`).toBeDefined();
 }

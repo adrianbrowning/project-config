@@ -27,7 +27,11 @@
       "Bash(pnpm test:*)",
       "Bash(cat:*)",
       "Skill(beads:beads)",
-      "Bash(pnpm vitest:*)"
+      "Bash(pnpm vitest:*)",
+      "Bash(pnpm lint:esl:*)",
+      "Bash(pnpm lint:ts:*)",
+      "WebFetch(domain:www.eslint-react.xyz)",
+      "WebFetch(domain:eslint.style)"
     ],
     "deny": [],
     "ask": []

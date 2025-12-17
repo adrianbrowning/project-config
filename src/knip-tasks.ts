@@ -1,5 +1,6 @@
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 
 const Supported_Version = "__knip_version__";
@@ -19,10 +20,10 @@ const configFile = {
   },
 };
 
-export const knipTasks: Array<ListrTask> = [
+export const knipTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if Knip is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       const knipInstalled = getPkgVersion(pkgName);
       if (!knipInstalled) {
         task.title = "Knip not installed. Installing...";
@@ -42,7 +43,7 @@ export const knipTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading Knip to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`${pkgName}@${Supported_Version}`);
             },
           }],
@@ -51,7 +52,7 @@ export const knipTasks: Array<ListrTask> = [
         task.skip("Skipping Knip upgrade.");
         // throw new Error('Task aborted due to outdated Knip version');
       }
-
+      return;
     },
   },
   {

@@ -24,6 +24,71 @@ export type CliArgs = {
 
 const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip" ] as const;
 
+function parseBooleanFlag(arg: string): boolean | undefined {
+  if (arg === "--all" || arg === "-a") return true;
+  if (arg === "--yes" || arg === "-y") return true;
+  if (arg === "--no-release") return true;
+  if (arg === "--help" || arg === "-h") return true;
+  if (arg === "--ts-dom") return true;
+  if (arg === "--ts-no-dom") return false;
+  return undefined;
+}
+
+function parseTsMode(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--ts-mode=")) return;
+  const value = arg.split("=")[1];
+  if (value === "bundler" || value === "tsc") {
+    args.tsMode = value;
+  }
+}
+
+function parseTsDom(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--ts-dom=")) return;
+  const value = arg.split("=")[1];
+  args.tsDom = value === "dom" || value === "true";
+}
+
+function parseTsType(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--ts-type=")) return;
+  const value = arg.split("=")[1]?.toLowerCase();
+  if (value === "app" || value === "library" || value === "library-monorepo") {
+    args.tsType = value;
+  }
+}
+
+function parseTsJsx(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--ts-jsx=")) return;
+  const value = arg.split("=")[1];
+  if (value === "react" || value === "react-jsx" || value === "preserve") {
+    args.tsJsx = value;
+  }
+  else if (value === "none" || value === "false") {
+    args.tsJsx = null;
+  }
+}
+
+function parseTsOutdir(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--ts-outdir=")) return;
+  const outdir = arg.split("=")[1];
+  if (outdir) args.tsOutdir = outdir;
+}
+
+function parseTool(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--tool=")) return;
+  const tool = arg.split("=")[1];
+  if (tool && TOOL_VALUES.includes(tool as typeof TOOL_VALUES[number])) {
+    args.tools.push(tool);
+  }
+}
+
+function applyAllToolsFlag(args: CliArgs): void {
+  if (!args.all) return;
+  args.tools = [ ...TOOL_VALUES ];
+  if (args.noRelease) {
+    args.tools = args.tools.filter(t => t !== "semanticReleaseNotes");
+  }
+}
+
 export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliArgs {
   const args: CliArgs = {
     all: false,
@@ -39,69 +104,26 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
   };
 
   for (const arg of argv) {
-    if (arg === "--all" || arg === "-a") {
-      args.all = true;
+    const boolFlag = parseBooleanFlag(arg);
+    if (boolFlag !== undefined) {
+      if (arg === "--all" || arg === "-a") args.all = true;
+      else if (arg === "--yes" || arg === "-y") args.yes = true;
+      else if (arg === "--no-release") args.noRelease = true;
+      else if (arg === "--help" || arg === "-h") args.help = true;
+      else if (arg === "--ts-dom") args.tsDom = true;
+      else if (arg === "--ts-no-dom") args.tsDom = false;
+      continue;
     }
-    else if (arg === "--yes" || arg === "-y") {
-      args.yes = true;
-    }
-    else if (arg === "--no-release") {
-      args.noRelease = true;
-    }
-    else if (arg === "--help" || arg === "-h") {
-      args.help = true;
-    }
-    else if (arg.startsWith("--ts-mode=")) {
-      const value = arg.split("=")[1];
-      if (value === "bundler" || value === "tsc") {
-        args.tsMode = value;
-      }
-    }
-    else if (arg.startsWith("--ts-dom=")) {
-      const value = arg.split("=")[1];
-      args.tsDom = value === "dom" || value === "true";
-    }
-    else if (arg === "--ts-dom") {
-      args.tsDom = true;
-    }
-    else if (arg === "--ts-no-dom") {
-      args.tsDom = false;
-    }
-    else if (arg.startsWith("--ts-type=")) {
-      const value = arg.split("=")[1]?.toLowerCase();
-      if (value === "app" || value === "library" || value === "library-monorepo") {
-        args.tsType = value;
-      }
-    }
-    else if (arg.startsWith("--ts-jsx=")) {
-      const value = arg.split("=")[1];
-      if (value === "react" || value === "react-jsx" || value === "preserve") {
-        args.tsJsx = value;
-      }
-      else if (value === "none" || value === "false") {
-        args.tsJsx = null;
-      }
-    }
-    else if (arg.startsWith("--ts-outdir=")) {
-      const outdir = arg.split("=")[1];
-      if (outdir) args.tsOutdir = outdir;
-    }
-    else if (arg.startsWith("--tool=")) {
-      const tool = arg.split("=")[1];
-      if (tool && TOOL_VALUES.includes(tool as typeof TOOL_VALUES[number])) {
-        args.tools.push(tool);
-      }
-    }
+
+    parseTsMode(arg, args);
+    parseTsDom(arg, args);
+    parseTsType(arg, args);
+    parseTsJsx(arg, args);
+    parseTsOutdir(arg, args);
+    parseTool(arg, args);
   }
 
-  // If --all is specified, select all tools (respecting --no-release)
-  if (args.all) {
-    args.tools = [ ...TOOL_VALUES ];
-    if (args.noRelease) {
-      args.tools = args.tools.filter(t => t !== "semanticReleaseNotes");
-    }
-  }
-
+  applyAllToolsFlag(args);
   return args;
 }
 
@@ -178,4 +200,6 @@ export type TaskContext = {
   packageManager: "npm" | "yarn" | "pnpm" | "bun";
   cliArgs: CliArgs;
   packages: PackageCollector;
+  tsVersion?: string;
+  overwrite?: boolean;
 };

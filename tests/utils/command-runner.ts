@@ -2,8 +2,8 @@
  * Command execution utilities for tests
  */
 
-import { execSync } from 'child_process';
-import type { TestProject } from './test-project.ts';
+import { execSync } from "node:child_process";
+import type { TestProject } from "./test-project.ts";
 
 export type CommandResult = {
   exitCode: number;
@@ -17,23 +17,24 @@ export type CommandResult = {
 export function runCommand(
   project: TestProject,
   command: string,
-  options?: { expectFailure?: boolean }
+  options?: { expectFailure?: boolean; }
 ): CommandResult {
   try {
     const stdout = execSync(command, {
       cwd: project.dir,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, CI: 'true' },
+      encoding: "utf-8",
+      stdio: [ "pipe", "pipe", "pipe" ],
+      env: { ...process.env, CI: "true" },
     });
-    return { exitCode: 0, stdout, stderr: '' };
-  } catch (error: unknown) {
-    const err = error as { status?: number; stdout?: Buffer | string; stderr?: Buffer | string };
+    return { exitCode: 0, stdout, stderr: "" };
+  }
+  catch (error: unknown) {
+    const err = error as { status?: number; stdout?: Buffer | string; stderr?: Buffer | string; };
     if (options?.expectFailure) {
       return {
         exitCode: err.status ?? 1,
-        stdout: typeof err.stdout === 'string' ? err.stdout : err.stdout?.toString() ?? '',
-        stderr: typeof err.stderr === 'string' ? err.stderr : err.stderr?.toString() ?? '',
+        stdout: typeof err.stdout === "string" ? err.stdout : err.stdout?.toString() ?? "",
+        stderr: typeof err.stderr === "string" ? err.stderr : err.stderr?.toString() ?? "",
       };
     }
     throw error;
@@ -44,28 +45,28 @@ export function runCommand(
  * Run lint command
  */
 export function runLint(project: TestProject): CommandResult {
-  return runCommand(project, 'pnpm lint', { expectFailure: true });
+  return runCommand(project, "pnpm lint", { expectFailure: true });
 }
 
 /**
  * Run lint:fix command
  */
 export function runLintFix(project: TestProject): CommandResult {
-  return runCommand(project, 'pnpm lint:fix', { expectFailure: true });
+  return runCommand(project, "pnpm lint:fix", { expectFailure: true });
 }
 
 /**
  * Run lint:ts command
  */
 export function runTypeCheck(project: TestProject): CommandResult {
-  return runCommand(project, 'pnpm lint:ts', { expectFailure: true });
+  return runCommand(project, "pnpm lint:ts", { expectFailure: true });
 }
 
 /**
  * Run knip command
  */
 export function runKnip(project: TestProject): CommandResult {
-  return runCommand(project, 'pnpm knip', { expectFailure: true });
+  return runCommand(project, "pnpm knip", { expectFailure: true });
 }
 
 /**
@@ -81,8 +82,8 @@ export function runCommitLint(project: TestProject, message: string): CommandRes
 export function gitCommit(
   project: TestProject,
   message: string,
-  options?: { expectFailure?: boolean }
+  options?: { expectFailure?: boolean; }
 ): CommandResult {
-  project.exec('git add -A');
+  project.exec("git add -A");
   return runCommand(project, `git commit -m "${message}"`, options);
 }

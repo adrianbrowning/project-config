@@ -2,15 +2,34 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
-import type { CliArgs } from "./cli-args.ts";
+import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { compareVersions } from "./utils.ts";
+
+type TsConfigObject = {
+  extends: string;
+  compilerOptions: {
+    jsx?: string;
+    outDir?: string;
+  };
+  include: Array<string>;
+  exclude: Array<string>;
+};
+
+type PromptAnswers = {
+  runtime?: string;
+  dom?: boolean;
+  bundler?: boolean;
+  type?: string;
+  jsx?: boolean;
+  outDir?: string;
+};
 
 const Supported_Version = "__ts_version__";
 
-export const tsTasks: Array<ListrTask> = [
+export const tsTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if TypeScript is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       const tsVersion = isTypescriptInstalled();
       if (!tsVersion) {
         task.title = "TypeScript not installed. Installing...";
@@ -31,7 +50,7 @@ export const tsTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading TypeScript to the latest version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add("typescript@"+Supported_Version);
               ctx.packages.add("@types/node@^24.0.0");
             },
@@ -41,15 +60,15 @@ export const tsTasks: Array<ListrTask> = [
         task.skip("Aborting task.");
         throw new Error("Task aborted due to outdated TypeScript version");
       }
-
+      return undefined;
     },
   },
   {
     title: "tsconfig.json",
-    task: async (_ctx: any, task: any) => task.newListr([
+    task: async (_ctx, task) => task.newListr([
       {
         title: "Checking if tsconfig.json exists",
-        task: async (ctx: any, task: any) => {
+        task: async (ctx, task) => {
           const tsConfigExists = getTsConfig();
           if (tsConfigExists) {
             ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
@@ -69,8 +88,8 @@ export const tsTasks: Array<ListrTask> = [
       },
       {
         title: "Setting up tsconfig.json",
-        enabled:  (ctx: any) => ctx.overwrite === true,
-        task: async (_ctx: any, task: any) => {
+        enabled:  ctx => ctx.overwrite === true,
+        task: async (_ctx, task) => {
           console.clear();
           const { dom, bundler, type, jsx, outDir } = await task.prompt(ListrEnquirerPromptAdapter).run([
             // {
@@ -80,18 +99,18 @@ export const tsTasks: Array<ListrTask> = [
             //     choices: ['Browser', 'Node.js']
             // },
             {
-              type: (_: any, answers: any) => (answers.runtime === "Browser" ? "confirm" : null),
+              type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Browser" ? "confirm" : null),
               name: "dom",
               message: "Would you like to add DOM support?",
             },
             {
-              type: (_: any, answers: any) => (answers.runtime === "Browser" ? "confirm" : null),
+              type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Browser" ? "confirm" : null),
               name: "bundler",
               message: "Are you using TSC to generate .js files?",
               choices: [ "Yes", "No" ],
             },
             {
-              type: (_: any, answers: any) => (answers.runtime === "Node.js" && !answers.bundler ? "confirm" : null),
+              type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Node.js" && !answers.bundler ? "confirm" : null),
               name: "bundler",
               message: "Are you using TSC to generate .js files?",
               choices: [ "Yes", "No" ],
@@ -103,12 +122,12 @@ export const tsTasks: Array<ListrTask> = [
               choices: [ "App", "Library", "Library-Monorepo" ],
             },
             {
-              type: (_: any, answers: any) => (answers.dom ? "confirm" : null),
+              type: (_: unknown, answers: PromptAnswers) => (answers.dom ? "confirm" : null),
               name: "jsx",
               message: "Do you want to add JSX compiler option?",
             },
             {
-              type: (_: any, answers: any) => (answers.bundler ? "input" : null),
+              type: (_: unknown, answers: PromptAnswers) => (answers.bundler ? "input" : null),
               name: "outDir",
               message: "Where would you like the files to be outputted?",
               initial: "dist",
@@ -156,16 +175,17 @@ export const tsTasks: Array<ListrTask> = [
 ];
 
 // Helper function declarations
-function isTypescriptInstalled(): string | false {
+function isTypescriptInstalled(): string | undefined {
   try {
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Using package manager command to check installed TypeScript version in the project
     const version = execSync("pnpm list typescript | grep typescript").toString()
       .trim()
       .split(" ")[1];
-    if (!version) return false;
+    if (!version) return undefined;
     return version;
   }
   catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -173,7 +193,7 @@ function getTsConfig(): boolean {
   return fs.existsSync("tsconfig.json");
 }
 
-function createTsConfig(config: any): void {
+function createTsConfig(config: TsConfigObject): void {
   fs.writeFileSync("tsconfig.json", JSON.stringify(config, null, 2));
 }
 
@@ -184,11 +204,11 @@ function createTsReset(config: string): void {
 /**
  * Create TS tasks for non-interactive mode using CLI args
  */
-export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask> {
+export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskContext>> {
   return [
     {
       title: "Checking if TypeScript is installed",
-      task: async (ctx: any, task: any) => {
+      task: async (ctx: TaskContext, task) => {
         const tsVersion = isTypescriptInstalled();
         if (!tsVersion) {
           task.title = "TypeScript not installed. Installing...";

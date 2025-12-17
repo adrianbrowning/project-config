@@ -3,10 +3,10 @@
  * Creates and manages isolated test project directories
  */
 
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import { execSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 export type ProjectOptions = {
   name: string;
@@ -19,7 +19,8 @@ export class TestProject implements Disposable {
 
   constructor(options: ProjectOptions) {
     const baseDir = options.baseDir ?? os.tmpdir();
-    this.dir = path.join(baseDir, `test-${options.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    this.dir = path.join(baseDir, `test-${options.name}-${Date.now()}-${Math.random().toString(36)
+      .slice(2, 8)}`);
     fs.mkdirSync(this.dir, { recursive: true });
   }
 
@@ -27,27 +28,28 @@ export class TestProject implements Disposable {
    * Initialize as a new npm/pnpm project with git
    */
   init(): void {
-    this.exec('pnpm init');
-    this.exec('git init');
+    this.exec("pnpm init");
+    this.exec("git init");
     // Add .gitignore to prevent staging node_modules
-    this.writeFile('.gitignore', 'node_modules\ndist\n.cache\n');
+    this.writeFile(".gitignore", "node_modules\ndist\n.cache\n");
   }
 
   /**
    * Execute a shell command in the project directory
    */
-  exec(command: string, options?: { stdio?: 'pipe' | 'inherit'; expectFailure?: boolean }): string {
+  exec(command: string, options?: { stdio?: "pipe" | "inherit"; expectFailure?: boolean; }): string {
     try {
       return execSync(command, {
         cwd: this.dir,
-        stdio: options?.stdio ?? 'pipe',
-        encoding: 'utf-8',
-        env: { ...process.env, CI: 'true' },
+        stdio: options?.stdio ?? "pipe",
+        encoding: "utf-8",
+        env: { ...process.env, CI: "true" },
       });
-    } catch (error) {
-      const err = error as { stdout?: string | Buffer; stderr?: string | Buffer; status?: number };
-      const stderr = err.stderr?.toString() ?? '';
-      const stdout = err.stdout?.toString() ?? '';
+    }
+    catch (error) {
+      const err = error as { stdout?: string | Buffer; stderr?: string | Buffer; status?: number; };
+      const stderr = err.stderr?.toString() ?? "";
+      const stdout = err.stdout?.toString() ?? "";
       if (options?.expectFailure) {
         return stderr || stdout;
       }
@@ -61,7 +63,7 @@ export class TestProject implements Disposable {
    * Read a file from the project
    */
   readFile(filePath: string): string {
-    return fs.readFileSync(path.join(this.dir, filePath), 'utf-8');
+    return fs.readFileSync(path.join(this.dir, filePath), "utf-8");
   }
 
   /**
@@ -104,8 +106,8 @@ export class TestProject implements Disposable {
   /**
    * Run the CLI with specified flags
    */
-  runCli(flags: string[] = []): string {
-    const flagStr = flags.join(' ');
+  runCli(flags: Array<string> = []): string {
+    const flagStr = flags.join(" ");
     return this.exec(`pnpm exec gingacodemonkey-config ${flagStr}`);
   }
 
@@ -114,20 +116,20 @@ export class TestProject implements Disposable {
    * Uses --no-frozen-lockfile because test projects have no lockfile
    */
   install(): void {
-    this.exec('pnpm install --no-frozen-lockfile');
+    this.exec("pnpm install --no-frozen-lockfile");
   }
 
   /**
    * Stage all files for git
    */
   gitAdd(): void {
-    this.exec('git add -A');
+    this.exec("git add -A");
   }
 
   /**
    * Commit with a message
    */
-  gitCommit(message: string, options?: { expectFailure?: boolean }): string {
+  gitCommit(message: string, options?: { expectFailure?: boolean; }): string {
     this.gitAdd();
     return this.exec(`git commit -m "${message}"`, options);
   }
@@ -143,7 +145,7 @@ export class TestProject implements Disposable {
    * Get latest commit message
    */
   getLastCommitMessage(): string {
-    return this.exec('git log -1 --format=%s').trim();
+    return this.exec("git log -1 --format=%s").trim();
   }
 
   /**
@@ -154,7 +156,8 @@ export class TestProject implements Disposable {
     this._cleaned = true;
     try {
       fs.rmSync(this.dir, { recursive: true, force: true });
-    } catch {
+    }
+    catch {
       // Ignore cleanup errors
     }
   }

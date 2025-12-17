@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 
 const Supported_Version = "__semanticrelease_version__";
@@ -139,10 +140,10 @@ jobs:
 `,
 };
 
-export const semanticReleaseNotesTasks: Array<ListrTask> = [
+export const semanticReleaseNotesTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if SemanticRelease is installed",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx, task) => {
       const eslintInstalled = getPkgVersion("semantic-release-unsquash");
       if (!eslintInstalled) {
         task.title = "SemanticRelease not installed. Installing...";
@@ -167,7 +168,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
         if (upgrade) {
           return task.newListr([{
             title: "Upgrading SemanticRelease to the supported version...",
-            task: async (ctx: any) => {
+            task: async ctx => {
               ctx.packages.add(`${pkgName}@${Supported_Version}`);
               ctx.packages.add("semantic-release");
               ctx.packages.add("@semantic-release/changelog");
@@ -181,7 +182,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
         task.skip("Skipping SemanticRelease upgrade.");
         // throw new Error('Task aborted due to outdated SemanticRelease version');
       }
-
+      return;
     },
   },
   {
@@ -190,7 +191,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
   },
   {
     title: "Adding github action",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx: TaskContext & { actionName?: string; }, task) => {
 
       ctx.actionName = "release";
 
@@ -207,7 +208,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
   },
   {
     title: "Adding github action",
-    task: async (ctx: any, task: any) => {
+    task: async (ctx: TaskContext & { actionName?: string; }, task) => {
 
       const branchName = await task.prompt(ListrEnquirerPromptAdapter).run({
         type: "input",
@@ -216,7 +217,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask> = [
         message: `What is the name of the branch you want to release from?`,
       });
 
-      return writeConfigFile(workflow.path.replace("{{actionName}}", ctx.actionName), workflow.content.replace("{{branch}}", branchName))(ctx, task);
+      return writeConfigFile(workflow.path.replace("{{actionName}}", ctx.actionName ?? ""), workflow.content.replace("{{branch}}", branchName))(ctx, task);
     },
   },
   {

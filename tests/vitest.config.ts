@@ -1,14 +1,14 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
-    include: ['**/*.test.ts'],
+    environment: "node",
+    include: [ "**/*.test.ts" ],
     testTimeout: 120000, // 2 minutes for integration tests
     hookTimeout: 60000,
-    setupFiles: ['./setup.ts'],
-    pool: 'forks', // Use forks for better isolation
+    setupFiles: [ "./setup.ts" ],
+    pool: "forks", // Use forks for better isolation
     poolOptions: {
       forks: {
         singleFork: true, // Run tests serially for Docker stability

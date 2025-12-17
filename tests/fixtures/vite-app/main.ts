@@ -8,11 +8,11 @@ function setupCounter(element: HTMLButtonElement) {
     counter = count;
     element.innerHTML = `count is ${counter}`;
   };
-  element.addEventListener('click', () => setCounter(counter + 1));
+  element.addEventListener("click", () => setCounter(counter + 1));
   setCounter(0);
 }
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <h1>Vite + TypeScript</h1>
     <div class="card">
@@ -21,4 +21,4 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </div>
 `;
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!);
+setupCounter(document.querySelector<HTMLButtonElement>("#counter"));

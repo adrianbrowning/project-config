@@ -13,9 +13,39 @@ import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript } from "./utils.ts";
 import { installPkg } from "./utils.ts";
 
-const { MultiSelect } = enquirer.default as any;
+// Type definitions for enquirer MultiSelect
+type MultiSelectChoice = {
+  name: string;
+  value: string;
+  enabled?: boolean;
+  onChoice?: (state: MultiSelectState, choice: MultiSelectChoice, index: number) => void;
+};
 
-const tools = [
+type MultiSelectState = {
+  index: number;
+  choices: Array<MultiSelectChoice>;
+};
+
+type MultiSelectOptions = {
+  name: string;
+  message: string;
+  hint?: string;
+  choices: Array<MultiSelectChoice>;
+  result: (this: MultiSelectPrompt, names: Record<string, boolean>) => Array<string>;
+  onSubmit: (this: MultiSelectPrompt) => void;
+};
+
+type MultiSelectPrompt = {
+  run: () => Promise<Array<string>>;
+  selected: Array<unknown>;
+  focused: unknown;
+  enable: (item: unknown) => void;
+  map: (names: Record<string, boolean>) => Record<string, string>;
+};
+
+const { MultiSelect } = enquirer.default as unknown as { MultiSelect: new (options: MultiSelectOptions) => MultiSelectPrompt; };
+
+const tools: Array<MultiSelectChoice> = [
   { name: "TS", value: "ts" },
   { name: "ESLint", value: "eslint" },
   { name: "Husky", value: "husky" },
@@ -24,7 +54,7 @@ const tools = [
   { name: "Semantic Release Notes", value: "semanticReleaseNotes" },
   { name: "Knip", value: "knip" },
 ];
-const enable = (choices: any, fn: any) => choices.forEach((ch: any) => (ch.enabled = fn(ch)));
+const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
 const prompt = new MultiSelect({
   name: "tool",
   message: "Please select what to install",
@@ -33,15 +63,15 @@ const prompt = new MultiSelect({
     {
       name: "All",
       value: "all",
-      onChoice(state: any, choice: any, i: number) {
+      onChoice(state, choice, i) {
         if (state.index === i && choice.enabled) {
-          enable(state.choices, (ch: any) => ch.name !== "none");
+          enable(state.choices, ch => ch.name !== "none");
         }
       },
     },
     ...tools,
   ],
-  result(names: any) {
+  result(names) {
     return Object.values(this.map(names));
   },
   onSubmit() {

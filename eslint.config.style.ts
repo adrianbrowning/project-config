@@ -1,6 +1,6 @@
 import type { Linter } from "eslint";
-import { config as defaultConfig } from '@gingacodemonkey/config/styled';
+import { config as defaultConfig } from "./src/eslint.styled";
 
-const config: Linter.Config[] = [...defaultConfig];
+const config: Array<Linter.Config> = [ ...defaultConfig ];
 
 export default config;
