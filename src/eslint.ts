@@ -216,7 +216,7 @@ export const config = [
   {
     rules: {
       "sonarjs/no-redundant-jump": "off",
-      "sonarjs/void-use": "error",
+      "sonarjs/void-use": "off",
     },
   },
 
