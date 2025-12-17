@@ -100,7 +100,6 @@
   "devDependencies": {
     "@commitlint/cli": "20.0.0",
     "@commitlint/config-conventional": "20.0.0",
-    "@gingacodemonkey/config": "file:gingacodemonkey-config-0.0.24-43.tgz",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",

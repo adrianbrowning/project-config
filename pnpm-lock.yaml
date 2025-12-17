@@ -120,9 +120,6 @@ importers:
       '@commitlint/config-conventional':
         specifier: 20.0.0
         version: 20.0.0
-      '@gingacodemonkey/config':
-        specifier: file:gingacodemonkey-config-0.0.24-43.tgz
-        version: file:gingacodemonkey-config-0.0.24-43.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.50.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
       '@rollup/plugin-commonjs':
         specifier: ^29.0.0
         version: 29.0.0(rollup@4.53.3)
@@ -661,21 +658,6 @@ packages:
   '@fastify/busboy@2.1.1':
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
-
-  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-43.tgz':
-    resolution: {integrity: sha512-oIcEF0sHfP7fLZBfaVlTPRu/vEAJXeiPUgW+5j2rXf4R6hRZcy5X/sER7Z9+kK5XuwLQbmBojxkUqs3Gh0nklg==, tarball: file:gingacodemonkey-config-0.0.24-43.tgz}
-    version: 0.0.24-43
-    engines: {node: '>=24.0.0', pnpm: '>=10.0.0'}
-    hasBin: true
-    peerDependencies:
-      '@commitlint/cli': 20.0.0
-      '@commitlint/config-conventional': 20.0.0
-      eslint: ^9.8.0
-      husky: 9.0.6
-      knip: 5.70.1
-      lint-staged: 15.2.10
-      semantic-release-unsquash: ^0.4.0
-      typescript: 5.7.3
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -5198,77 +5180,6 @@ snapshots:
       levn: 0.4.1
 
   '@fastify/busboy@2.1.1': {}
-
-  '@gingacodemonkey/config@file:gingacodemonkey-config-0.0.24-43.tgz(@commitlint/cli@20.0.0(@types/node@22.19.1)(typescript@5.9.3))(@commitlint/config-conventional@20.0.0)(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(@typescript-eslint/utils@8.50.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))(husky@9.1.7)(knip@5.70.1(@types/node@22.19.1)(typescript@5.9.3))(lint-staged@15.2.10)(prettier@3.6.2)(semantic-release-unsquash@0.4.0(semantic-release@25.0.2(typescript@5.9.3)))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
-    dependencies:
-      '@commitlint/cli': 20.0.0(@types/node@22.19.1)(typescript@5.9.3)
-      '@commitlint/config-conventional': 20.0.0
-      '@eslint-react/eslint-plugin': 2.3.13(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      '@eslint/compat': 2.0.0(eslint@9.39.1(jiti@2.6.1))
-      '@eslint/eslintrc': 3.3.1
-      '@eslint/js': 9.39.1
-      '@listr2/prompt-adapter-enquirer': 3.0.5(enquirer@2.4.1)(listr2@9.0.5)
-      '@stylistic/eslint-plugin': 5.6.1(eslint@9.39.1(jiti@2.6.1))
-      '@total-typescript/ts-reset': 0.6.1
-      '@vitest/eslint-plugin': 1.5.2(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
-      enquirer: 2.4.1
-      eslint: 9.39.1(jiti@2.6.1)
-      eslint-plugin-barrel-files: 3.0.1(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-depend: 1.4.0
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-import-x: 4.16.1(@typescript-eslint/utils@8.50.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint-import-resolver-node@0.3.9)(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-jest-dom: 5.5.0(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-no-barrel-files: 1.2.2(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-node: 11.1.0(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-promise: 7.2.1(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-react: 7.37.5(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-react-compiler: 19.1.0-rc.2(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-react-hooks: 7.0.1(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-react-refresh: 0.4.24(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-security-node: 1.1.4
-      eslint-plugin-simple-import-sort: 12.1.1(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-sonarjs: 3.0.5(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-testing-library: 7.13.4(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      eslint-plugin-unicorn: 62.0.0(eslint@9.39.1(jiti@2.6.1))
-      eslint-plugin-unused-imports: 4.3.0(@typescript-eslint/eslint-plugin@8.47.0(@typescript-eslint/parser@8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))
-      globals: 16.5.0
-      husky: 9.1.7
-      knip: 5.70.1(@types/node@22.19.1)(typescript@5.9.3)
-      lint-staged: 15.2.10
-      listr2: 9.0.5
-      prettier-plugin-tailwindcss: 0.7.1(prettier@3.6.2)
-      semantic-release-unsquash: 0.4.0(semantic-release@25.0.2(typescript@5.9.3))
-      tslib: 2.8.1
-      typescript: 5.9.3
-      typescript-eslint: 8.47.0(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@ianvs/prettier-plugin-sort-imports'
-      - '@prettier/plugin-hermes'
-      - '@prettier/plugin-oxc'
-      - '@prettier/plugin-pug'
-      - '@shopify/prettier-plugin-liquid'
-      - '@testing-library/dom'
-      - '@trivago/prettier-plugin-sort-imports'
-      - '@typescript-eslint/eslint-plugin'
-      - '@typescript-eslint/parser'
-      - '@typescript-eslint/utils'
-      - '@zackad/prettier-plugin-twig'
-      - eslint-import-resolver-node
-      - eslint-import-resolver-typescript
-      - eslint-import-resolver-webpack
-      - prettier
-      - prettier-plugin-astro
-      - prettier-plugin-css-order
-      - prettier-plugin-jsdoc
-      - prettier-plugin-marko
-      - prettier-plugin-multiline-arrays
-      - prettier-plugin-organize-attributes
-      - prettier-plugin-organize-imports
-      - prettier-plugin-sort-imports
-      - prettier-plugin-svelte
-      - supports-color
-      - vitest
 
   '@humanfs/core@0.19.1': {}
 

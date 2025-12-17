@@ -1,5 +1,5 @@
 {
-  "extends": "@gingacodemonkey/config/bundler/no-dom/app",
+  "extends": "./tsc/bundler/no-dom.json",
   "compilerOptions": {
 //    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
