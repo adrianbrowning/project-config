@@ -92,25 +92,25 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
         task: async (_ctx, task) => {
           console.clear();
           const { dom, bundler, type, jsx, outDir } = await task.prompt(ListrEnquirerPromptAdapter).run([
-            // {
-            //     type: 'select',
-            //     name: 'runtime',
-            //     message: 'What runtime is this for?',
-            //     choices: ['Browser', 'Node.js']
-            // },
+            {
+              type: "select",
+              name: "runtime",
+              message: "What runtime is this for?",
+              choices: [ "Browser", "Node.js" ],
+            },
             {
               type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Browser" ? "confirm" : null),
               name: "dom",
               message: "Would you like to add DOM support?",
             },
+            // {
+            //   type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Browser" ? "confirm" : null),
+            //   name: "bundler",
+            //   message: "Are you using TSC to generate .js files?",
+            //   choices: [ "Yes", "No" ],
+            // },
             {
-              type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Browser" ? "confirm" : null),
-              name: "bundler",
-              message: "Are you using TSC to generate .js files?",
-              choices: [ "Yes", "No" ],
-            },
-            {
-              type: (_: unknown, answers: PromptAnswers) => (answers.runtime === "Node.js" && !answers.bundler ? "confirm" : null),
+              type: "confirm", //(_: unknown, answers: PromptAnswers) => (answers.runtime === "Node.js" && !answers.bundler ? "confirm" : null),
               name: "bundler",
               message: "Are you using TSC to generate .js files?",
               choices: [ "Yes", "No" ],
