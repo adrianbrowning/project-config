@@ -1,5 +1,5 @@
 {
   "./src/**/*.{js,ts,tsx}": [
-    "pnpm exec eslint --config eslint.config.style.ts --fix --max-warnings=0 --cache"
+    "pnpm lint:fix"
   ]
 }
