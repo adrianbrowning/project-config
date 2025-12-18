@@ -34,7 +34,7 @@ jobs:
       # 2. Set up pnpm
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       # 2.1. Cache pnpm store
       - name: Get pnpm store
@@ -107,7 +107,7 @@ jobs:
       # 2. Set up pnpm
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       # 2.1. Cache pnpm store
       - name: Get pnpm store
@@ -201,7 +201,7 @@ jobs:
       # 2. Set up pnpm
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       # 2.1. Cache pnpm store
       - name: Get pnpm store
@@ -270,7 +270,7 @@ jobs:
       # 2. Set up pnpm
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       # 2.1. Cache pnpm store
       - name: Get pnpm store
