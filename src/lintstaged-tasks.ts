@@ -9,7 +9,7 @@ const pkgName = "lint-staged";
 const configFile = {
   path: ".lintstagedrc",
   content: {
-    "*.{js,ts,tsx}": [ "eslint --config eslint.config.style.ts --fix --max-warnings=0 --cache" ],
+    "*.{js,ts,tsx}": [ "pnpm lint:fix" ],
   },
 };
 
