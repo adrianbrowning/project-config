@@ -1,5 +1,5 @@
 {
-  "extends": "./tsc/bundler/no-dom.json",
+  "extends": "./tsc/bundler/no-dom/app.json",
   "compilerOptions": {
 //    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,

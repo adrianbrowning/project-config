@@ -4,6 +4,7 @@
   "compilerOptions": {
     /* If NOT transpiling with TypeScript: */
     "module": "preserve",
+    "moduleResolution": "bundler",
     "noEmit": true
   }
 }
