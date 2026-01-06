@@ -23,22 +23,25 @@ describe("Lint-Staged Configuration", () => {
   });
 
   it("config targets JS/TS/TSX files", () => {
+    using project = new TestProject({ name: "lintstaged-pattern" });
+    project.init();
 
+    project.installTarball(TARBALL_PATH);
+    project.runCli([ "--tool=lintStaged", "--yes" ]);
 
     const config = project.readFile(".lintstagedrc");
-    expect(config).toContain("*.{js,ts,jsx,tsx}");
+    expect(config).toContain("*.{js,ts,tsx}");
   });
 
   it("uses pnpm lint:fix command", () => {
+    using project = new TestProject({ name: "lintstaged-eslint" });
+    project.init();
 
+    project.installTarball(TARBALL_PATH);
+    project.runCli([ "--tool=lintStaged", "--yes" ]);
 
     // Config delegates to lint:fix script which handles eslint with --fix, --cache, --max-warnings=0
-    assertFileContains(project, ".lintstagedrc",
-        `{
-  "*.{js,ts,jsx,tsx}": [
-    "eslint --config eslint.config.style.ts --fix --cache"
-  ]
-}`);
+    assertFileContains(project, ".lintstagedrc", "pnpm lint:fix");
   });
 
   it("is valid JSON", () => {

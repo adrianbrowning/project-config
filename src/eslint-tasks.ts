@@ -101,7 +101,7 @@ function eslintConfigFile(fileName: string, importName: string) {
           const extendsStr = importName === "eslint"
             ? [
               `import type { Linter } from "eslint";`,
-              `import { config as defaultConfig } from '@gingacodemonkey/config/eslint';`,
+              `import defaultConfig from '@gingacodemonkey/config/eslint';`,
               ``,
               `export const extraRules: Array<Linter.Config> = [];`,
               ``,

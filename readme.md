@@ -148,8 +148,12 @@ Two exports:
 ### `eslint.config.ts`
 
 ```ts
-import defaultConfig from "@gingacodemonkey/config/eslint";
-export default [...defaultConfig];
+import type { Linter } from "eslint";
+import defaultConfig from '@gingacodemonkey/config/eslint'
+
+const config: Linter.Config[] = [...defaultConfig]
+
+export default config
 ```
 
 ### `eslint.config.style.ts`

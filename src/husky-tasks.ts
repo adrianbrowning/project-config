@@ -67,16 +67,10 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
       const taskList: Array<ListrTask<TaskContext>> = [{
         title: "Husky init",
         task: async () => {
-          // eslint-disable-next-line sonarjs/no-os-command-from-path
-          execFileSync("pnpm", [ "exec", "husky", "init" ]);
-          // husky init always creates .husky/pre-commit with "{pkg_manager} test"
-          // Replace it with a placeholder so lint-staged (or user) can configure it
-          const defaultTestCmds = [ "npm test", "pnpm test", "yarn test", "bun test" ];
-          const hookPath = ".husky/pre-commit";
-          const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8").trim() : "";
-          if (!existing || defaultTestCmds.some(cmd => existing.includes(cmd))) {
-            fs.writeFileSync(hookPath, "# pre-commit hook - configure via lint-staged or manually\n");
-          }
+          execSync(`pnpm exec husky init`);
+          // husky init creates .husky/pre-commit with "{pkg_manager} test" by default
+          // Replace with no-op since lint-staged will configure it properly if selected
+          fs.writeFileSync(".husky/pre-commit", "# pre-commit hook - configure via lint-staged or manually\n");
         },
       }];
       if (!fs.existsSync(".husky/commit-msg")) {
