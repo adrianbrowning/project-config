@@ -10,6 +10,7 @@ import noBarrelFiles from "eslint-plugin-no-barrel-files";
 // eslint-disable-next-line depend/ban-dependencies
 import reactPlugin from "eslint-plugin-react"; // We are still using- jsx-props-no-spreading, jsx-no-bind
 import reactCompilerPlugin from "eslint-plugin-react-compiler";
+import reactYouMightNotNeedAnEffect from "eslint-plugin-react-you-might-not-need-an-effect";
 import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -378,6 +379,29 @@ export const config = [
       },
       rules: {
         "react-refresh/only-export-components": [ WARN, { allowConstantExport: true }],
+      },
+    }
+    : null,
+
+  // React "You Might Not Need an Effect" - detect unnecessary useEffect hooks
+  // @see https://react.dev/learn/you-might-not-need-an-effect
+  hasReact
+    ? {
+      files: [ "**/*.tsx", "**/*.jsx" ],
+      plugins: {
+        "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
+      },
+      rules: {
+        "react-you-might-not-need-an-effect/no-derived-state": WARN,
+        "react-you-might-not-need-an-effect/no-chain-state-updates": WARN,
+        "react-you-might-not-need-an-effect/no-event-handler": WARN,
+        "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": WARN,
+        "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": WARN,
+        "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": WARN,
+        "react-you-might-not-need-an-effect/no-pass-data-to-parent": WARN,
+        "react-you-might-not-need-an-effect/no-pass-ref-to-parent": WARN,
+        "react-you-might-not-need-an-effect/no-initialize-state": WARN,
+        "react-you-might-not-need-an-effect/no-empty-effect": WARN,
       },
     }
     : null,
