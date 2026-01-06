@@ -9,10 +9,6 @@ export default defineConfig({
     hookTimeout: 60000,
     setupFiles: [ "./setup.ts" ],
     pool: "forks", // Use forks for better isolation
-    poolOptions: {
-      forks: {
-        singleFork: true, // Run tests serially for Docker stability
-      },
-    },
+    fileParallelism: false, // Run tests serially for Docker stability (replaces poolOptions.forks.singleFork in Vitest 4)
   },
 });

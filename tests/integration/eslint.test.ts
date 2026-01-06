@@ -45,7 +45,7 @@ describe("ESLint Configuration", () => {
 
     assertPackageJsonScript(project, "lint");
     assertPackageJsonScript(project, "lint:fix");
-    assertPackageJsonScript(project, "lint:style");
+    assertPackageJsonScript(project, "lint:s");
   });
 
   it("lint passes on clean code", () => {

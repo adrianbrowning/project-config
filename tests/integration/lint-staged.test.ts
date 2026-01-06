@@ -32,37 +32,15 @@ describe("Lint-Staged Configuration", () => {
     expect(config).toContain("*.{js,ts,tsx}");
   });
 
-  it("uses style config for eslint", () => {
+  it("uses pnpm lint:fix command", () => {
     using project = new TestProject({ name: "lintstaged-eslint" });
     project.init();
 
     project.installTarball(TARBALL_PATH);
     project.runCli([ "--tool=lintStaged", "--yes" ]);
 
-    assertFileContains(project, ".lintstagedrc", "eslint");
-    assertFileContains(project, ".lintstagedrc", "eslint.config.style.ts");
-  });
-
-  it("includes --fix and --max-warnings=0 flags", () => {
-    using project = new TestProject({ name: "lintstaged-flags" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=lintStaged", "--yes" ]);
-
-    const config = project.readFile(".lintstagedrc");
-    expect(config).toContain("--fix");
-    expect(config).toContain("--max-warnings=0");
-  });
-
-  it("includes --cache flag", () => {
-    using project = new TestProject({ name: "lintstaged-cache" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=lintStaged", "--yes" ]);
-
-    assertFileContains(project, ".lintstagedrc", "--cache");
+    // Config delegates to lint:fix script which handles eslint with --fix, --cache, --max-warnings=0
+    assertFileContains(project, ".lintstagedrc", "pnpm lint:fix");
   });
 
   it("is valid JSON", () => {

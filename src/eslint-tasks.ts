@@ -95,7 +95,7 @@ function eslintConfigFile(fileName: string, importName: string) {
 
           const extendsStr = [
             `import type { Linter } from "eslint";`,
-            `import { config as defaultConfig } from '@gingacodemonkey/config/${importName}';`,
+            `import defaultConfig from '@gingacodemonkey/config/${importName}';`,
             ``,
             `const config: Linter.Config[] = [...defaultConfig];`,
             ``,

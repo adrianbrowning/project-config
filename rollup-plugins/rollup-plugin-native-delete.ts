@@ -2,7 +2,7 @@ import { glob } from "node:fs";
 import { rm } from "node:fs/promises";
 import type { Plugin } from "rollup";
 
-export interface NativeDeleteOptions {
+interface NativeDeleteOptions {
   targets: string | Array<string>;
   verbose?: boolean;
   runOnce?: boolean; // If true, only delete once during build (recommended)

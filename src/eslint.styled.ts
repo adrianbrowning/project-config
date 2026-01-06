@@ -8,12 +8,11 @@ import { has } from "./utils.ts";
 
 const hasTypeScript = has("typescript");
 
-export const config = [
+const config = [
   ...(await import("./eslint.ts")).default,
   {
     plugins: {
       "@stylistic": stylistic,
-      // "simple-import-sort": (await import('eslint-plugin-simple-import-sort')).default,
       "unused-imports": fixupPluginRules(unusedImports),
     },
 
@@ -110,6 +109,7 @@ export const config = [
         allowTemplateLiterals: "always",
       }],
       "@stylistic/semi": [ "error", "always" ],
+      "@stylistic/no-extra-semi": "error",
       "@stylistic/type-annotation-spacing": "error",
       // "simple-import-sort/imports": "error",
     },

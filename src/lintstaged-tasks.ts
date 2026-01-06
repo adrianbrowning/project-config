@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
@@ -51,5 +52,30 @@ export const lintstagedTasks: Array<ListrTask<TaskContext>> = [
   {
     title: `Adding ${configFile.path} file`,
     task: writeConfigFile(configFile.path, JSON.stringify(configFile.content, null, 2)),
+  },
+  {
+    title: "Configuring pre-commit hook for lint-staged",
+    task: async () => {
+      const hookPath = ".husky/pre-commit";
+      const lintStagedCommand = "pnpm exec lint-staged";
+
+      // Create .husky directory if it doesn't exist
+      if (!fs.existsSync(".husky")) {
+        fs.mkdirSync(".husky", { recursive: true });
+      }
+
+      // Check if pre-commit exists and if lint-staged is already configured
+      if (fs.existsSync(hookPath)) {
+        const content = fs.readFileSync(hookPath, "utf-8");
+        if (!content.includes("lint-staged")) {
+          // Append lint-staged to existing hook
+          fs.appendFileSync(hookPath, `\n${lintStagedCommand}\n`);
+        }
+      }
+      else {
+        // Create new pre-commit hook
+        fs.writeFileSync(hookPath, lintStagedCommand);
+      }
+    },
   },
 ];

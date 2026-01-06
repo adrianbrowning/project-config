@@ -10,6 +10,7 @@
   "include": [
     "./src/**/*.ts",
     "./scripts/**/*.ts",
+    "./tests/**/*.ts",
     "rollup.config.ts",
     "eslint-plugin.d.ts",
     "eslint.config.style.ts",
@@ -18,6 +19,7 @@
     "reset.d.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./tests/fixtures/**/*"
   ]
 }

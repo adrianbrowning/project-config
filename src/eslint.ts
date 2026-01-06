@@ -188,7 +188,7 @@ export const nodeRules = [
 
 const eslPlugProm = (await import("eslint-plugin-promise")).default;
 
-export const config = [
+const config = [
   {
     ignores: [
       "**/.cache/**",

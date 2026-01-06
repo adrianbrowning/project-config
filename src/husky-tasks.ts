@@ -68,16 +68,11 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
         title: "Husky init",
         task: async () => {
           execSync(`pnpm exec husky init`);
+          // husky init creates .husky/pre-commit with "{pkg_manager} test" by default
+          // Replace with no-op since lint-staged will configure it properly if selected
+          fs.writeFileSync(".husky/pre-commit", "# pre-commit hook - configure via lint-staged or manually\n");
         },
       }];
-      if (!fs.existsSync(".husky/pre-commit")) {
-        taskList.push({
-          title: "Adding Pre-Commit Hook",
-          task: async () => {
-            fs.writeFileSync(".husky/pre-commit", "pnpm exec lint-staged");
-          },
-        });
-      }
       if (!fs.existsSync(".husky/commit-msg")) {
         taskList.push({
           title: "Adding Commit-Msg Hook",
