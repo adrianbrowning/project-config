@@ -223,11 +223,11 @@ export function addClass(el: HTMLElement, className: string): void {
   });
 
   describe("package.json type: module", () => {
-    beforeEach(function removeTypeFromPackageJson(){
-      const p = project.readJson<{ type?: string; }>("package.json");
-      project.writeJson("package.json", { ...p, type: undefined });
-    })
     it("adds type: module when --ts-type-module flag is passed", () => {
+      using project = new TestProject({ name: "ts-type-module-with-flag" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -243,6 +243,10 @@ export function addClass(el: HTMLElement, className: string): void {
     });
 
     it("does NOT add type: module when --ts-type-module flag is not passed", () => {
+      using project = new TestProject({ name: "ts-type-module-without-flag" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -257,7 +261,11 @@ export function addClass(el: HTMLElement, className: string): void {
     });
 
     it("does NOT add type: module when --no-ts-type-module flag is passed", () => {
-       project.runCli([
+      using project = new TestProject({ name: "ts-type-module-explicit-no" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
+      project.runCli([
         "--tool=ts",
         "--yes",
         "--ts-mode=tsc",
@@ -271,4 +279,53 @@ export function addClass(el: HTMLElement, className: string): void {
       expect(pkg.type).toBeUndefined();
     });
   });
+    describe("package.json type: module", () => {
+        beforeEach(function removeTypeFromPackageJson(){
+            const p = project.readJson<{ type?: string; }>("package.json");
+            project.writeJson("package.json", { ...p, type: undefined });
+        })
+        it("adds type: module when --ts-type-module flag is passed", () => {
+            project.runCli([
+                "--tool=ts",
+                "--yes",
+                "--ts-mode=tsc",
+                "--ts-no-dom",
+                "--ts-type=library",
+                "--ts-type-module",
+            ]);
+
+            // Verify package.json has type: module
+            const pkg = project.readJson<{ type?: string; }>("package.json");
+            expect(pkg.type).toBe("module");
+        });
+
+        it("does NOT add type: module when --ts-type-module flag is not passed", () => {
+            project.runCli([
+                "--tool=ts",
+                "--yes",
+                "--ts-mode=tsc",
+                "--ts-no-dom",
+                "--ts-type=library",
+            ]);
+
+            // Verify package.json does NOT have type: module
+            const pkg = project.readJson<{ type?: string; }>("package.json");
+            expect(pkg.type).toBeUndefined();
+        });
+
+        it("does NOT add type: module when --no-ts-type-module flag is passed", () => {
+            project.runCli([
+                "--tool=ts",
+                "--yes",
+                "--ts-mode=tsc",
+                "--ts-no-dom",
+                "--ts-type=library",
+                "--no-ts-type-module",
+            ]);
+
+            // Verify package.json does NOT have type: module
+            const pkg = project.readJson<{ type?: string; }>("package.json");
+            expect(pkg.type).toBeUndefined();
+        });
+    });
 });
