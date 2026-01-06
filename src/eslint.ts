@@ -49,7 +49,7 @@ const getTsconfigRootDir = () => {
   return path.resolve(dir, "..");
 };
 
-const typescriptRules = hasTypeScript ? [{
+const typescriptRules = {
   languageOptions: {
     parser: tseslint.parser,
     parserOptions: {
@@ -157,7 +157,7 @@ const typescriptRules = hasTypeScript ? [{
     // - @typescript-eslint/no-unsafe-return
     // - @typescript-eslint/no-unsafe-assignment
   },
-}] : [];
+};
 
 export const nodeRules = [
   ...compat.extends(
@@ -200,7 +200,7 @@ export const config = [
       "**/dist/**",
     ],
   },
-
+  //Region all
   {
     plugins: {
       "unicorn" : (await import("eslint-plugin-unicorn")).default,
@@ -275,153 +275,123 @@ export const config = [
     },
   },
 
-  // JSX/TSX files - @eslint-react (main rules)
-  hasReact
-    ? {
-      files: [ "**/*.tsx", "**/*.jsx" ],
-      ...eslintReact.configs["recommended-typescript"],
-      languageOptions: {
-        parser: tseslint.parser,
-        parserOptions: {
-          jsx: true,
-          projectService: true,
+  // Region React
+
+  ...(hasReact
+    ? [
+      // JSX/TSX files - @eslint-react (main rules)
+      {
+        files: [ "**/*.tsx", "**/*.jsx" ],
+        ...eslintReact.configs["recommended-typescript"],
+        languageOptions: {
+          parser: tseslint.parser,
+          parserOptions: {
+            jsx: true,
+            projectService: true,
+          },
+        },
+        rules: {
+          "no-undef": "off",
+          "no-unused-vars": "off",
+          "@eslint-react/no-nested-component-definitions": "error",
+          "@eslint-react/no-unstable-context-value": "error",
+          "@eslint-react/dom/no-script-url": "error",
+          "@eslint-react/dom/no-unsafe-target-blank": "error",
+          "@eslint-react/no-array-index-key": "error",
+          "@eslint-react/dom/no-dangerously-set-innerhtml": "error",
+          "@eslint-react/dom/no-dangerously-set-innerhtml-with-children": "error",
+          "@eslint-react/dom/no-unknown-property": "error",
+          "@eslint-react/no-missing-key": "error",
+          "@eslint-react/dom/no-missing-button-type": "error",
+          "@eslint-react/prefer-destructuring-assignment": "error",
+          "@eslint-react/no-missing-component-display-name": "error",
         },
       },
-      rules: {
-        "no-undef": "off",
-        "no-unused-vars": "off",
-        "@eslint-react/no-nested-component-definitions": "error",
-        "@eslint-react/no-unstable-context-value": "error",
-        "@eslint-react/dom/no-script-url": "error",
-        "@eslint-react/dom/no-unsafe-target-blank": "error",
-        "@eslint-react/no-array-index-key": "error",
-        "@eslint-react/dom/no-dangerously-set-innerhtml": "error",
-        "@eslint-react/dom/no-dangerously-set-innerhtml-with-children": "error",
-        "@eslint-react/dom/no-unknown-property": "error",
-        "@eslint-react/no-missing-key": "error",
-        "@eslint-react/dom/no-missing-button-type": "error",
-        "@eslint-react/prefer-destructuring-assignment": "error",
-        "@eslint-react/no-missing-component-display-name": "error",
+      // JSX/TSX files - eslint-plugin-react (stylistic rules without @eslint-react equivalents)
+      {
+        files: [ "**/*.tsx", "**/*.jsx" ],
+        plugins: {
+          react: reactPlugin,
+        },
+        rules: {
+          "react/jsx-props-no-spreading": "error",
+          "react/jsx-no-bind": "error",
+        },
       },
-    }
-    : null,
-
-  // JSX/TSX files - eslint-plugin-react (stylistic rules without @eslint-react equivalents)
-  hasReact
-    ? {
-      files: [ "**/*.tsx", "**/*.jsx" ],
-      plugins: {
-        react: reactPlugin,
+      {
+        files: [ "**/*.ts?(x)", "**/*.js?(x)" ],
+        plugins: {
+          "react-hooks": reactHooksPlugin,
+          // 'react-hooks': fixupPluginRules(
+          // 	await import('eslint-plugin-react-hooks'),
+          // ),
+        },
+        rules: {
+          ...reactHooksPlugin?.configs.recommended.rules,
+          "react-hooks/exhaustive-deps": [ "error" ],
+          "react-hooks/rules-of-hooks": [ "error" ],
+          // React Compiler silent failure detection
+          // @see https://acusti.ca/blog/2025/12/16/react-compiler-silent-failures-and-how-to-fix-them
+          "react-hooks/todo": "error",
+          "react-hooks/capitalized-calls": "error",
+          "react-hooks/hooks": "error",
+          "react-hooks/rule-suppression": "error",
+          "react-hooks/syntax": "error",
+          "react-hooks/unsupported-syntax": "error",
+        },
       },
-      rules: {
-        "react/jsx-props-no-spreading": "error",
-        "react/jsx-no-bind": "error",
+      {
+        files: [ "**/*.ts?(x)", "**/*.js?(x)" ],
+        plugins: {
+          "react-compiler": reactCompilerPlugin,
+        },
+        rules: {
+          "react-compiler/react-compiler": [ "error" ],
+        },
       },
-    }
-    : null,
-
-  // react-hook rules are applicable in ts/js/tsx/jsx, but only with React as a
-  // dep
-
-  // hasReact ? {
-  //     plugins: {
-  //         'react-hooks': reactHooksPlugin,
-  //     },
-  //     rules: reactHooksPlugin?.configs.recommended.rules,
-  // } : null,
-  hasReact
-    ? {
-      files: [ "**/*.ts?(x)", "**/*.js?(x)" ],
-      plugins: {
-        "react-hooks": reactHooksPlugin,
-        // 'react-hooks': fixupPluginRules(
-        // 	await import('eslint-plugin-react-hooks'),
-        // ),
+      // React Refresh - Fast Refresh compatibility
+      {
+        files: [ "**/*.tsx", "**/*.jsx" ],
+        plugins: {
+          "react-refresh": (await import("eslint-plugin-react-refresh")).default,
+        },
+        rules: {
+          "react-refresh/only-export-components": [ WARN, { allowConstantExport: true }],
+        },
       },
-      rules: {
-        ...reactHooksPlugin?.configs.recommended.rules,
-        "react-hooks/exhaustive-deps": [ "error" ],
-        "react-hooks/rules-of-hooks": [ "error" ],
-        // React Compiler silent failure detection
-        // @see https://acusti.ca/blog/2025/12/16/react-compiler-silent-failures-and-how-to-fix-them
-        "react-hooks/todo": "error",
-        "react-hooks/capitalized-calls": "error",
-        "react-hooks/hooks": "error",
-        "react-hooks/rule-suppression": "error",
-        "react-hooks/syntax": "error",
-        "react-hooks/unsupported-syntax": "error",
+      // React "You Might Not Need an Effect" - detect unnecessary useEffect hooks
+      // @see https://react.dev/learn/you-might-not-need-an-effect
+      {
+        files: [ "**/*.tsx", "**/*.jsx" ],
+        plugins: {
+          "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
+        },
+        rules: {
+          "react-you-might-not-need-an-effect/no-derived-state": WARN,
+          "react-you-might-not-need-an-effect/no-chain-state-updates": WARN,
+          "react-you-might-not-need-an-effect/no-event-handler": WARN,
+          "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": WARN,
+          "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": WARN,
+          "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": WARN,
+          "react-you-might-not-need-an-effect/no-pass-data-to-parent": WARN,
+          "react-you-might-not-need-an-effect/no-pass-ref-to-parent": WARN,
+          "react-you-might-not-need-an-effect/no-initialize-state": WARN,
+          "react-you-might-not-need-an-effect/no-empty-effect": WARN,
+        },
       },
-    }
-    : null,
-
-  // react-hook rules are applicable in ts/js/tsx/jsx, but only with React as a
-  // dep
-
-  // hasReact ? compat.extends("plugin:react-hooks/recommended")[0] : null,
-  hasReact
-    ? {
-      files: [ "**/*.ts?(x)", "**/*.js?(x)" ],
-      plugins: {
-        "react-compiler": reactCompilerPlugin,
+      // JSX A11y - Accessibility rules for JSX
+      {
+        files: [ "**/*.tsx", "**/*.jsx" ],
+        ...(await import("eslint-plugin-jsx-a11y")).default.flatConfigs.recommended,
+        rules: {
+          // Override specific rules if needed
+          "jsx-a11y/anchor-is-valid": ERROR,
+          "jsx-a11y/click-events-have-key-events": ERROR,
+          "jsx-a11y/no-static-element-interactions": ERROR,
+        },
       },
-      rules: {
-        "react-compiler/react-compiler": [ "error" ],
-      },
-    }
-    : null,
-
-  // React Refresh - Fast Refresh compatibility
-  hasReact
-    ? {
-      files: [ "**/*.tsx", "**/*.jsx" ],
-      plugins: {
-        "react-refresh": (await import("eslint-plugin-react-refresh")).default,
-      },
-      rules: {
-        "react-refresh/only-export-components": [ WARN, { allowConstantExport: true }],
-      },
-    }
-    : null,
-
-  // React "You Might Not Need an Effect" - detect unnecessary useEffect hooks
-  // @see https://react.dev/learn/you-might-not-need-an-effect
-  hasReact
-    ? {
-      files: [ "**/*.tsx", "**/*.jsx" ],
-      plugins: {
-        "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-      },
-      rules: {
-        "react-you-might-not-need-an-effect/no-derived-state": WARN,
-        "react-you-might-not-need-an-effect/no-chain-state-updates": WARN,
-        "react-you-might-not-need-an-effect/no-event-handler": WARN,
-        "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change": WARN,
-        "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": WARN,
-        "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": WARN,
-        "react-you-might-not-need-an-effect/no-pass-data-to-parent": WARN,
-        "react-you-might-not-need-an-effect/no-pass-ref-to-parent": WARN,
-        "react-you-might-not-need-an-effect/no-initialize-state": WARN,
-        "react-you-might-not-need-an-effect/no-empty-effect": WARN,
-      },
-    }
-    : null,
-
-  // JSX A11y - Accessibility rules for JSX
-  hasReact
-    ? {
-      files: [ "**/*.tsx", "**/*.jsx" ],
-      ...(await import("eslint-plugin-jsx-a11y")).default.flatConfigs.recommended,
-      rules: {
-        // Override specific rules if needed
-        "jsx-a11y/anchor-is-valid": ERROR,
-        "jsx-a11y/click-events-have-key-events": ERROR,
-        "jsx-a11y/no-static-element-interactions": ERROR,
-      },
-    }
-    : null,
-
-  // TS and TSX files
-  ...typescriptRules,
+    ]
+    : []),
 
   // This assumes test files are those which are in the test directory or have
   // *.test.* in the filename. If a file doesn't match this assumption, then it
@@ -493,13 +463,16 @@ export const config = [
     : null,
 
   // JS and JSX files
-  hasTypeScript ? {
-    files: [ "**/*.{j,t}s?(x)" ],
-    rules: {
-      "no-unused-vars": "off",
-      "no-undef": "off",
-    },
-  } : {
+  ...(hasTypeScript ? [
+    // TS and TSX files
+    typescriptRules,
+    {
+      files: [ "**/*.{j,t}s?(x)" ],
+      rules: {
+        "no-unused-vars": "off",
+        "no-undef": "off",
+      },
+    }] : [{
     files: [ "**/*.js?(x)" ],
     rules: {
       // most of these rules are useful for JS but not TS because TS handles these better
@@ -516,7 +489,7 @@ export const config = [
         },
       ],
     },
-  },
+  }]),
 ].filter(Boolean) as unknown as Array<YES_ANY_IS_OK_HERE>;
 
 // this is for backward compatibility
