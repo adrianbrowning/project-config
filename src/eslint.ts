@@ -341,6 +341,14 @@ export const config = [
         ...reactHooksPlugin?.configs.recommended.rules,
         "react-hooks/exhaustive-deps": [ "error" ],
         "react-hooks/rules-of-hooks": [ "error" ],
+        // React Compiler silent failure detection
+        // @see https://acusti.ca/blog/2025/12/16/react-compiler-silent-failures-and-how-to-fix-them
+        "react-hooks/todo": "error",
+        "react-hooks/capitalized-calls": "error",
+        "react-hooks/hooks": "error",
+        "react-hooks/rule-suppression": "error",
+        "react-hooks/syntax": "error",
+        "react-hooks/unsupported-syntax": "error",
       },
     }
     : null,
