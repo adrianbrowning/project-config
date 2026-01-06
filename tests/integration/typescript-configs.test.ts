@@ -250,4 +250,62 @@ export function addClass(el: HTMLElement, className: string): void {
       expect(result.exitCode).toBe(0);
     });
   });
+
+  describe("package.json type: module", () => {
+    it("adds type: module when --ts-type-module flag is passed", () => {
+      using project = new TestProject({ name: "ts-type-module-with-flag" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
+      project.runCli([
+        "--tool=ts",
+        "--yes",
+        "--ts-mode=tsc",
+        "--ts-no-dom",
+        "--ts-type=library",
+        "--ts-type-module",
+      ]);
+
+      // Verify package.json has type: module
+      const pkg = project.readJson<{ type?: string; }>("package.json");
+      expect(pkg.type).toBe("module");
+    });
+
+    it("does NOT add type: module when --ts-type-module flag is not passed", () => {
+      using project = new TestProject({ name: "ts-type-module-without-flag" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
+      project.runCli([
+        "--tool=ts",
+        "--yes",
+        "--ts-mode=tsc",
+        "--ts-no-dom",
+        "--ts-type=library",
+      ]);
+
+      // Verify package.json does NOT have type: module
+      const pkg = project.readJson<{ type?: string; }>("package.json");
+      expect(pkg.type).toBeUndefined();
+    });
+
+    it("does NOT add type: module when --no-ts-type-module flag is passed", () => {
+      using project = new TestProject({ name: "ts-type-module-explicit-no" });
+      project.init();
+
+      project.installTarball(TARBALL_PATH);
+      project.runCli([
+        "--tool=ts",
+        "--yes",
+        "--ts-mode=tsc",
+        "--ts-no-dom",
+        "--ts-type=library",
+        "--no-ts-type-module",
+      ]);
+
+      // Verify package.json does NOT have type: module
+      const pkg = project.readJson<{ type?: string; }>("package.json");
+      expect(pkg.type).toBeUndefined();
+    });
+  });
 });
