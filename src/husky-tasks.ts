@@ -23,7 +23,7 @@ fi
 # Strip leading '['
 TICKET="\${TICKET#[}"
 # Strip trailing ']'
-TICKET="\${TICKET %]}"
+TICKET="\${TICKET%]}"
 echo $"$TICKET\\n\\n$MESSAGE" > $FILE`;
 
 export const huskyTasks: Array<ListrTask<TaskContext>> = [
