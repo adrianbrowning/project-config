@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-export type ProjectOptions = {
+type ProjectOptions = {
   name: string;
   baseDir?: string;
 };
@@ -86,7 +86,7 @@ export class TestProject implements Disposable {
    * Read and parse a JSON file from the project
    */
   readJson<T = unknown>(filePath: string): T {
-    return JSON.parse(this.readFile(filePath));
+    return JSON.parse(this.readFile(filePath)) as T;
   }
 
   /**
@@ -170,9 +170,3 @@ export class TestProject implements Disposable {
   }
 }
 
-/**
- * Create a test project with automatic cleanup using `using`
- */
-export function createTestProject(name: string): TestProject {
-  return new TestProject({ name });
-}

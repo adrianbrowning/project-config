@@ -266,6 +266,12 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
           }
           createTsReset(str.join("\n"));
         }
+
+        // Add type: module to package.json if flag is set
+        if (cliArgs.tsTypeModule) {
+          const { updatePkgJson } = await import("./utils.ts");
+          updatePkgJson("type", "module");
+        }
       },
     },
     {

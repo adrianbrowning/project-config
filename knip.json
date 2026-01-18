@@ -1,10 +1,24 @@
 {
-  "entry": [
-    "src/**/*.{js,ts}"
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/**/*.{js,ts}",
+        "scripts/combine.ts",
+        "commitlint.config.js"
+      ],
+      "ignore": []
+    },
+    "tests": {
+      "entry": [
+        "**/*.{ts,tsx}"
+      ],
+      "ignore": [
+        "fixtures/**/*"
+      ]
+    }
+  },
+  "ignoreBinaries": [
+    "docker-compose"
   ],
-  "project": [
-    "**/*.{js,ts}"
-  ],
-  "ignoreBinaries": [],
   "ignoreDependencies": []
 }

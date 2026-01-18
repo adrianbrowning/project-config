@@ -31,7 +31,11 @@
       "Bash(pnpm lint:esl:*)",
       "Bash(pnpm lint:ts:*)",
       "WebFetch(domain:www.eslint-react.xyz)",
-      "WebFetch(domain:eslint.style)"
+      "WebFetch(domain:eslint.style)",
+      "Bash(pnpm lint:s:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm knip:*)",
+      "Bash(pnpm lint:fix:*)"
     ],
     "deny": [],
     "ask": []
