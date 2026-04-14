@@ -5,7 +5,7 @@ description: Comprehensive TypeScript/React PR review with structured format, se
 
 # PR Review (single-agent, CI-safe)
 
-Review a PR across 6 domains sequentially, then synthesize into one comment.
+Review a PR across 7 domains sequentially, then synthesize into one comment.
 
 *If no PR number provided, diff against `origin/main` instead.*
 
@@ -14,7 +14,7 @@ Review a PR across 6 domains sequentially, then synthesize into one comment.
 - PR number given → `gh pr diff <N>`
 - No PR number → `git diff origin/main`
 
-## Step 2 — Run 6 domain reviews sequentially
+## Step 2 — Run 7 domain reviews sequentially
 
 For each domain, read the reference file then analyze the diff against its checklist. Note findings before moving to the next.
 
@@ -24,6 +24,7 @@ For each domain, read the reference file then analyze the diff against its check
 4. **Testing**          — `Read .claude/skills/cc-pr-review-ci/references/testing.md`
 5. **DevOps/CI**        — `Read .claude/skills/cc-pr-review-ci/references/devops.md`
 6. **Holistic**         — `Read .claude/skills/cc-pr-review-ci/references/holistic.md`
+7. **Duplication**      — `Read .claude/skills/cc-pr-review-ci/references/duplication.md`
 
 ## Step 3 — Synthesize and post
 

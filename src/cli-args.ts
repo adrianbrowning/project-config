@@ -23,7 +23,7 @@ export type CliArgs = {
   help: boolean;
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd" ] as const;
 
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
@@ -154,7 +154,7 @@ Options:
   --no-release           Exclude semantic-release when using --all
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
-                                 semanticReleaseNotes, knip
+                                 semanticReleaseNotes, knip, jscpd
 
 TypeScript Options (used with --yes):
   --ts-mode=<mode>       bundler | tsc (default: bundler)

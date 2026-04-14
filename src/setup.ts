@@ -6,6 +6,7 @@ import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
 import { createGithubActionsTasks } from "./github-actions-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
+import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
@@ -53,6 +54,7 @@ const tools: Array<MultiSelectChoice> = [
   { name: "Lint-Staged", value: "lintStaged" },
   { name: "Semantic Release Notes", value: "semanticReleaseNotes" },
   { name: "Knip", value: "knip" },
+  { name: "jscpd", value: "jscpd" },
 ];
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
 const prompt = new MultiSelect({
@@ -144,6 +146,10 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
   if (answer.includes("knip")) tasks.add({
     title: "Knip",
     task: async (_ctx, task) => task.newListr(knipTasks, { concurrent: false }),
+  });
+  if (answer.includes("jscpd")) tasks.add({
+    title: "jscpd",
+    task: async (_ctx, task) => task.newListr(jscpdTasks, { concurrent: false }),
   });
 
   // Always add GitHub Actions workflows (cache and ci_test are always included)
