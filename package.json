@@ -60,6 +60,7 @@
     "@eslint/compat": "^2.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.1",
+    "@eslint/json": "^1.2.0",
     "@listr2/prompt-adapter-enquirer": "^3.0.5",
     "@stylistic/eslint-plugin": "^5.6.1",
     "@total-typescript/ts-reset": "^0.6.1",
@@ -104,7 +105,7 @@
     "react": "^19.2.0",
     "rollup": "^4.53.3",
     "rollup-plugin-esbuild": "^6.2.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "zod": "^4.1.12"
   },
   "peerDependencies": {
@@ -115,7 +116,7 @@
     "knip": "5.70.1",
     "lint-staged": "15.2.10",
     "semantic-release-unsquash": "^0.4.0",
-    "typescript": ">= 5.7.3"
+    "typescript": ">= 6.0.0"
   },
   "files": [
     "dist",

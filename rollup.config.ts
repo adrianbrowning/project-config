@@ -53,7 +53,7 @@ export default {
       "__knip_version__": pkgJSON.peerDependencies.knip,
       "__lintstaged_version__": pkgJSON.peerDependencies["lint-staged"],
       "__semanticrelease_version__": pkgJSON.peerDependencies["semantic-release-unsquash"],
-      "__ts_version__": "",
+      "__ts_version__": pkgJSON.peerDependencies.typescript,
       preventAssignment: true,
     }),
     resolve({ preferBuiltins: true }),

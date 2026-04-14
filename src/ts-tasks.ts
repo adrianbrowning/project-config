@@ -10,6 +10,7 @@ type TsConfigObject = {
   compilerOptions: {
     jsx?: string;
     outDir?: string;
+    rootDir?: string;
   };
   include: Array<string>;
   exclude: Array<string>;
@@ -153,7 +154,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
             "extends": extendsStr,
             compilerOptions: {
               ...(jsx ? { jsx:"react" } : {}),
-              ...(outDir ? { outDir } : {}),
+              ...(outDir ? { outDir, rootDir: `./${srcDir}` } : {}),
             },
             include: [ `./${srcDir}/**.ts` ],
             exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
@@ -257,7 +258,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
           "extends": extendsStr,
           compilerOptions: {
             ...(jsx ? { jsx } : {}),
-            ...(outDir ? { outDir } : {}),
+            ...(outDir ? { outDir, rootDir: "./src" } : {}),
           },
           include: [ "./src/**.ts" ],
           exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
