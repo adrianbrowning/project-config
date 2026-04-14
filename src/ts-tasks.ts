@@ -136,6 +136,18 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
 
           let extendsStr = `@gingacodemonkey/config/${bundler ? "tsc" : "bundler"}/${dom ? "dom" : "no-dom"}/${type.toLowerCase()}`;
 
+          // Determine src directory
+          let srcDir = "src";
+          if (!fs.existsSync(srcDir)) {
+            srcDir = await task.prompt(ListrEnquirerPromptAdapter).run({
+              type: "input",
+              name: "srcDir",
+              message: "Source directory doesn't exist. Enter the root source directory name:",
+              initial: "src",
+            });
+            fs.mkdirSync(srcDir, { recursive: true });
+          }
+
           // Create tsconfig based on user input
           const tsConfig = {
             "extends": extendsStr,
@@ -143,7 +155,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
               ...(jsx ? { jsx:"react" } : {}),
               ...(outDir ? { outDir } : {}),
             },
-            include: [ "./src/**.ts" ],
+            include: [ `./${srcDir}/**.ts` ],
             exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
           };
 
@@ -152,13 +164,12 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
           if (type === "App") {
             const str = [ "import \"@total-typescript/ts-reset\";" ];
             // create reset.d.ts
-            // add
             if(dom) {
               str.push("import \"@total-typescript/ts-reset/dom\";");
               str.push(`declare module 'react' {\n\t// support css variables\n\tinterface CSSProperties {\n\t\t[key: \`--\${string}\`]: string | number;\n\t}\n}`);
 
             }
-            createTsReset(str.join("\n"));
+            createTsReset(str.join("\n"), srcDir);
           }
         },
       },
@@ -197,8 +208,8 @@ function createTsConfig(config: TsConfigObject): void {
   fs.writeFileSync("tsconfig.json", JSON.stringify(config, null, 2));
 }
 
-function createTsReset(config: string): void {
-  fs.writeFileSync("src/reset.d.ts", config);
+function createTsReset(config: string, srcDir = "src"): void {
+  fs.writeFileSync(`${srcDir}/reset.d.ts`, config);
 }
 
 /**
