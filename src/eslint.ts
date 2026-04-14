@@ -3,9 +3,10 @@ import { fileURLToPath } from "node:url";
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 
+import json from "@eslint/json";
 import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
-import depend from "eslint-plugin-depend";
+import depend, { configs as dependConfigs } from "eslint-plugin-depend";
 import noBarrelFiles from "eslint-plugin-no-barrel-files";
 // eslint-disable-next-line depend/ban-dependencies
 import reactPlugin from "eslint-plugin-react"; // We are still using- jsx-props-no-spreading, jsx-no-bind
@@ -220,9 +221,14 @@ const config = [
     },
   },
 
-  // Depend - detect dependency bloat and redundant polyfills
+  // Depend - detect dependency bloat and redundant polyfills (JS/TS)
+  dependConfigs["flat/recommended"],
+
+  // Depend - ban-dependencies against package.json
   {
-    plugins: { depend },
+    files: [ "**/package.json" ],
+    language: "json/json",
+    plugins: { json, depend },
     rules: {
       "depend/ban-dependencies": ERROR,
     },
