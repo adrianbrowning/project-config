@@ -35,7 +35,8 @@
       "Bash(pnpm lint:s:*)",
       "Bash(grep:*)",
       "Bash(pnpm knip:*)",
-      "Bash(pnpm lint:fix:*)"
+      "Bash(pnpm lint:fix:*)",
+      "Bash(gh pr diff:*)"
     ],
     "deny": [],
     "ask": []

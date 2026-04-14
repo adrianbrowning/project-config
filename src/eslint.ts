@@ -10,7 +10,6 @@ import noBarrelFiles from "eslint-plugin-no-barrel-files";
 // eslint-disable-next-line depend/ban-dependencies
 import reactPlugin from "eslint-plugin-react"; // We are still using- jsx-props-no-spreading, jsx-no-bind
 import reactCompilerPlugin from "eslint-plugin-react-compiler";
-import reactYouMightNotNeedAnEffect from "eslint-plugin-react-you-might-not-need-an-effect";
 import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -364,7 +363,7 @@ const config = [
       {
         files: [ "**/*.tsx", "**/*.jsx" ],
         plugins: {
-          "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
+          "react-you-might-not-need-an-effect": (await import("eslint-plugin-react-you-might-not-need-an-effect")).default,
         },
         rules: {
           "react-you-might-not-need-an-effect/no-derived-state": WARN,

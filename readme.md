@@ -142,7 +142,7 @@ Create a `eslint.config.style.ts` file in your project root with the following c
 
 ```ts
 import type { Linter } from "eslint";
-import { config as defaultConfig } from '@gingacodemonkey/config/styled'
+import defaultConfig from '@gingacodemonkey/config/styled'
 
 const config: Linter.Config[] = [...defaultConfig]
 

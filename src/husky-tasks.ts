@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
@@ -67,10 +67,13 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
       const taskList: Array<ListrTask<TaskContext>> = [{
         title: "Husky init",
         task: async () => {
-          execSync(`pnpm exec husky init`);
+          // eslint-disable-next-line sonarjs/no-os-command-from-path
+          execFileSync("pnpm", [ "exec", "husky", "init" ]);
           // husky init creates .husky/pre-commit with "{pkg_manager} test" by default
-          // Replace with no-op since lint-staged will configure it properly if selected
-          fs.writeFileSync(".husky/pre-commit", "# pre-commit hook - configure via lint-staged or manually\n");
+          // Only replace if it wasn't already customised — avoids overwriting on re-runs
+          if (!fs.existsSync(".husky/pre-commit")) {
+            fs.writeFileSync(".husky/pre-commit", "# pre-commit hook - configure via lint-staged or manually\n");
+          }
         },
       }];
       if (!fs.existsSync(".husky/commit-msg")) {
