@@ -10,7 +10,7 @@ const pkgName = "lint-staged";
 const configFile = {
   path: ".lintstagedrc",
   content: {
-    "*.{js,ts,tsx}": [ "pnpm lint:fix" ],
+    "*.{js,ts,jsx,tsx}": [ "eslint --config eslint.config.style.ts --fix --cache" ],
   },
 };
 
