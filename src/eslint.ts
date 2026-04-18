@@ -218,6 +218,9 @@ const config = [
     rules: {
       "sonarjs/no-redundant-jump": "off",
       "sonarjs/void-use": "off",
+      "sonarjs/pseudo-random": WARN,
+      "sonarjs/redundant-type-aliases": "off",
+      "sonarjs/todo-tag": WARN,
     },
   },
 
@@ -277,6 +280,14 @@ const config = [
         "error",
       ],
       "no-await-in-loop": [ "warn" ], //optional
+    },
+  },
+
+  {
+    files: [ "src/**/*.{ts,tsx,js,jsx}" ],
+    ignores: testFiles,
+    rules: {
+      "no-console": WARN,
     },
   },
 
@@ -419,6 +430,14 @@ const config = [
     },
   },
 
+  {
+    files: testFiles,
+    rules: {
+      "sonarjs/no-nested-functions": "off", // tests naturally nest describe/it
+      "no-await-in-loop": "off",
+    },
+  },
+
   hasTestingLibrary
     ? {
       files: testFiles,
@@ -480,6 +499,9 @@ const config = [
     }] : [{
     files: [ "**/*.js?(x)" ],
     rules: {
+      // Only add these when there is no TS
+      "sonarjs/deprecation": WARN,
+      "sonarjs/no-unused-vars": WARN,
       // most of these rules are useful for JS but not TS because TS handles these better
       // if it weren't for https://github.com/import-js/eslint-plugin-import/issues/2132
       // we could enable this :(
@@ -497,5 +519,5 @@ const config = [
   }]),
 ].filter(Boolean) as unknown as Array<YES_ANY_IS_OK_HERE>;
 
-// this is for backward compatibility
+export { config };
 export default config;
