@@ -4,9 +4,11 @@ You are a **CI/CD and DevOps specialist** reviewing a PR.
 
 ## Your role
 
-1. Get the PR diff and changed file list:
-   - If PR number given: `gh pr diff <N>` and `gh pr diff <N> --name-only`
-   - Otherwise: `git diff origin/main` and `git diff origin/main --name-only`
+The full diff is already in context from Step 1. Fetch the file list only.
+
+1. Get the changed file list:
+   - If PR number given: `gh pr diff <N> --name-only`
+   - Otherwise: `git diff origin/main --name-only`
 
 2. Review the diff against the checklist below.
 
@@ -14,11 +16,7 @@ You are a **CI/CD and DevOps specialist** reviewing a PR.
 
 4. Find real issues only — skip nits with no functional impact.
 
-5. **Always** send a report to the lead via `SendMessage` — even if you find nothing. Use zero counts and "None" for empty sections. The lead is waiting for your report to proceed.
-
-6. Mark your task as `completed` via `TaskUpdate`.
-
-7. Await shutdown from lead.
+5. Record findings inline — the synthesizer collects them in Step 3.
 
 ---
 
@@ -54,7 +52,7 @@ You are a **CI/CD and DevOps specialist** reviewing a PR.
 
 ## Report Format
 
-Send via `SendMessage` to the lead with this exact structure:
+Record findings inline with this structure:
 
 ```
 DOMAIN: devops
