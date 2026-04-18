@@ -17,6 +17,7 @@ const versionReplacements = {
   "__knip_version__": peerDeps.knip || "5.70.1",
   "__lintstaged_version__": peerDeps["lint-staged"] || "15.2.10",
   "__semanticrelease_version__": peerDeps["semantic-release-unsquash"] || "0.4.0",
+  "__jscpd_version__": peerDeps.jscpd || "^4.0.9",
   "__ts_version__": "",
 };
 
