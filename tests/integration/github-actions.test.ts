@@ -129,4 +129,38 @@ describe("GitHub Actions Workflows", () => {
     const lintYml = project.readFile(".github/workflows/lint.yml");
     expect(lintYml).toContain("actions/checkout");
   });
+
+  it("generates release.yml when semantic-release is selected", () => {
+    using project = new TestProject({ name: "ga-release" });
+    project.init();
+
+    project.installTarball(TARBALL_PATH);
+    project.runCli([ "--tool=semanticReleaseNotes", "--tool=githubActions", "--yes" ]);
+
+    assertFileExists(project, ".github/workflows/release.yml");
+  });
+
+  it("generates claude-pr-review.yml when githubActions is selected with --yes", () => {
+    using project = new TestProject({ name: "ga-claude-pr-review" });
+    project.init();
+
+    project.installTarball(TARBALL_PATH);
+    project.runCli([ "--tool=githubActions", "--yes" ]);
+
+    assertFileExists(project, ".github/workflows/claude-pr-review.yml");
+  });
+
+  it("generates all cc-pr-review-ci skill reference files", () => {
+    using project = new TestProject({ name: "ga-claude-skill-refs" });
+    project.init();
+
+    project.installTarball(TARBALL_PATH);
+    project.runCli([ "--tool=githubActions", "--yes" ]);
+
+    const refs = [ "devops", "duplication", "format", "holistic", "performance", "react-ts", "security", "testing" ];
+    for (const ref of refs) {
+      assertFileExists(project, `.claude/skills/cc-pr-review-ci/references/${ref}.md`);
+    }
+    assertFileExists(project, ".claude/skills/cc-pr-review-ci/SKILL.md");
+  });
 });
