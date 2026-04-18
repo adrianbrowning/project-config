@@ -142,6 +142,7 @@ export function isInteractiveMode(args: CliArgs): boolean {
 }
 
 export function printHelp(): void {
+  // eslint-disable-next-line no-console
   console.log(`
 @gingacodemonkey/config - CLI Setup Tool
 

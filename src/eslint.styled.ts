@@ -139,4 +139,5 @@ const config = [
     } : null,
 ].filter(Boolean) as unknown as Array<YES_ANY_IS_OK_HERE>;
 
+export { config };
 export default config;

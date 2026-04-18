@@ -91,6 +91,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
         title: "Setting up tsconfig.json",
         enabled:  ctx => ctx.overwrite === true,
         task: async (_ctx, task) => {
+          // eslint-disable-next-line no-console
           console.clear();
           const { dom, bundler, type, jsx, outDir } = await task.prompt(ListrEnquirerPromptAdapter).run([
             {
