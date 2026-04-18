@@ -15,7 +15,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
       if (!eslintInstalled) {
         task.title = "ESLint not installed. Installing...";
         // ctx.packages.add(`@eslint/js@${Supported_Version}`);
-        ctx.packages.add("eslint");
+        ctx.packages.add(`eslint@${Supported_Version}`);
         // ctx.packages.add("typescript-eslint");
         return;
       }
@@ -34,7 +34,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
             title: "Upgrading ESLint to the supported version...",
             task: async ctx => {
               // ctx.packages.add(`@eslint/js@${Supported_Version}`);
-              ctx.packages.add("eslint");
+              ctx.packages.add(`eslint@${Supported_Version}`);
               // ctx.packages.add("typescript-eslint");
             },
           }],
@@ -93,13 +93,32 @@ function eslintConfigFile(fileName: string, importName: string) {
         enabled: ctx => ctx.overwrite === true,
         task: async () => {
 
-          const extendsStr = [
-            `import type { Linter } from "eslint";`,
-            `import defaultConfig from '@gingacodemonkey/config/${importName}';`,
-            ``,
-            `const config: Linter.Config[] = [...defaultConfig];`,
-            ``,
-            `export default config;` ].join("\n");
+          const extendsStr = importName === "eslint"
+            ? [
+              `import type { Linter } from "eslint";`,
+              `import { config as defaultConfig } from '@gingacodemonkey/config/eslint';`,
+              ``,
+              `export const extraRules: Array<Linter.Config> = [];`,
+              ``,
+              `const config: Array<Linter.Config> = [`,
+              `  ...defaultConfig,`,
+              `  ...extraRules,`,
+              `];`,
+              ``,
+              `export default config;`,
+            ].join("\n")
+            : [
+              `import type { Linter } from "eslint";`,
+              `import { config as defaultConfig } from '@gingacodemonkey/config/styled';`,
+              `import { extraRules } from './eslint.config';`,
+              ``,
+              `const config: Array<Linter.Config> = [`,
+              `  ...defaultConfig,`,
+              `  ...extraRules,`,
+              `];`,
+              ``,
+              `export default config;`,
+            ].join("\n");
 
           fs.writeFileSync(fileName, extendsStr);
         },
