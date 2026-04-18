@@ -62,6 +62,17 @@ const eslintBuild = esbuild.build({
   minifyIdentifiers: false,
 });
 
+// Map github_actions_examples/*.yml filenames to their placeholder names
+const ghaWorkflows: Record<string, string> = {
+  "cache.yml": "CACHE_WORKFLOW",
+  "ci_test.yml": "CI_TEST_WORKFLOW",
+  "lint.yml": "LINT_WORKFLOW",
+  "knip.yml": "KNIP_WORKFLOW",
+  "ts-check.yml": "TS_CHECK_WORKFLOW",
+  "claude-pr-review.yml": "CLAUDE_PR_REVIEW_WORKFLOW",
+  "release.yml": "RELEASE_WORKFLOW",
+};
+
 Promise.all([ setupBuild, eslintBuild ]).then(() => {
   // Replace version placeholders in the bundled output
   let setupContent = fs.readFileSync("dist/setup.cjs", "utf8");
@@ -71,6 +82,16 @@ Promise.all([ setupBuild, eslintBuild ]).then(() => {
       replacement
     );
   }
+
+  // Replace GHA workflow placeholders with file contents from github_actions_examples/
+  const examplesDir = path.resolve("github_actions_examples");
+  for (const [ filename, constName ] of Object.entries(ghaWorkflows)) {
+    const ymlPath = path.join(examplesDir, filename);
+    if (!fs.existsSync(ymlPath)) continue;
+    const ymlContent = fs.readFileSync(ymlPath, "utf-8");
+    setupContent = setupContent.replace(`"__${constName}__"`, () => JSON.stringify(ymlContent));
+  }
+
   fs.writeFileSync("dist/setup.cjs", setupContent);
 
   // Generate type declaration files for ESLint configs
