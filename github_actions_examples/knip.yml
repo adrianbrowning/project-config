@@ -1,4 +1,4 @@
-name: Knip Check
+name: Knip
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - 'release-*'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,7 +31,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-#          persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.head_ref }}
 
@@ -59,8 +59,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-#          cache: 'pnpm'
-#          cache-dependency-path: '**/pnpm-lock.yaml'
 
       # 4. Install dependencies using pnpm
       - name: Install dependencies
@@ -68,4 +66,55 @@ jobs:
 
       # 5. Run Knip
       - name: Run knip
-        run: pnpm knip
+        id: knip-check
+        continue-on-error: true
+        run: |
+          # Disable immediate exit on error
+          set +e
+
+          # Enable pipefail to capture exit code from piped commands
+          set -o pipefail
+
+          pnpm knip 2>&1 | tee knip-output.txt
+          KNIP_EXIT_CODE=$?
+
+          # Save exit code for later steps
+          echo "exit_code=$KNIP_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          if [ $KNIP_EXIT_CODE -ne 0 ]; then
+            echo "Knip checks failed. KNIP_EXIT_CODE=$KNIP_EXIT_CODE"
+            exit 1
+          fi
+
+      # 6. Post knip results to PR on failure
+      - name: Comment knip results on PR
+        if: github.event_name == 'pull_request' && steps.knip-check.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('knip-output.txt', 'utf8');
+            const comment = `## 🔍 Knip Check Failed
+
+            <details>
+            <summary>Click to see knip errors</summary>
+
+            \`\`\`
+            ${output}
+            \`\`\`
+
+            </details>
+
+            [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      # 7. Fail the workflow if knip failed
+      - name: Fail if knip failed
+        if: steps.knip-check.outputs.exit_code != '0'
+        run: exit 1
