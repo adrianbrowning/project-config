@@ -1,3 +1,4 @@
+import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import * as enquirer from "enquirer";
 import { Listr } from "listr2";
 import { parseCliArgs, isInteractiveMode, printHelp, createPackageCollector } from "./cli-args.ts";
@@ -5,6 +6,7 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
 import { createGithubActionsTasks } from "./github-actions-tasks.ts";
+import type { GithubActionsOptions } from "./github-actions-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
@@ -55,6 +57,7 @@ const tools: Array<MultiSelectChoice> = [
   { name: "Semantic Release Notes", value: "semanticReleaseNotes" },
   { name: "Knip", value: "knip" },
   { name: "jscpd", value: "jscpd" },
+  { name: "GitHub Actions", value: "githubActions" },
 ];
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
 const prompt = new MultiSelect({
@@ -152,19 +155,54 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     task: async (_ctx, task) => task.newListr(jscpdTasks, { concurrent: false }),
   });
 
-  // Always add GitHub Actions workflows (cache and ci_test are always included)
-  const githubActionsTasks = createGithubActionsTasks({
-    includeCache: true,
-    includeCiTest: true,
-    includeLint: answer.includes("eslint"),
-    includeKnip: answer.includes("knip"),
-    includeTsCheck: answer.includes("ts"),
-  });
+  if (answer.includes("githubActions")) {
+    tasks.add({
+      title: "GitHub Actions",
+      task: async (_ctx, task) => {
+        let ghaOptions: GithubActionsOptions;
 
-  tasks.add({
-    title: "GitHub Actions",
-    task: async (_ctx, task) => task.newListr(githubActionsTasks, { concurrent: false }),
-  });
+        if (cliArgs.yes) {
+          ghaOptions = {
+            includeCache: true,
+            includeCiTest: true,
+            includeLint: answer.includes("eslint"),
+            includeKnip: answer.includes("knip"),
+            includeTsCheck: answer.includes("ts"),
+            includeClaudePrReview: true,
+            includeRelease: !cliArgs.noRelease && answer.includes("semanticReleaseNotes"),
+          };
+        }
+        else {
+          const selected: Array<string> = await task.prompt(ListrEnquirerPromptAdapter).run({
+            type: "multiselect",
+            name: "workflows",
+            message: "Select GitHub Actions workflows to install:",
+            choices: [
+              { name: "cache", message: "Cache", enabled: true },
+              { name: "ci_test", message: "CI Test", enabled: true },
+              { name: "lint", message: "ESLint", enabled: answer.includes("eslint") },
+              { name: "knip", message: "Knip", enabled: answer.includes("knip") },
+              { name: "ts_check", message: "TypeScript Check", enabled: answer.includes("ts") },
+              { name: "claude_pr_review", message: "Claude PR Review", enabled: true },
+              { name: "release", message: "Release", enabled: answer.includes("semanticReleaseNotes") },
+            ],
+          });
+
+          ghaOptions = {
+            includeCache: selected.includes("cache"),
+            includeCiTest: selected.includes("ci_test"),
+            includeLint: selected.includes("lint"),
+            includeKnip: selected.includes("knip"),
+            includeTsCheck: selected.includes("ts_check"),
+            includeClaudePrReview: selected.includes("claude_pr_review"),
+            includeRelease: selected.includes("release"),
+          };
+        }
+
+        return task.newListr(createGithubActionsTasks(ghaOptions), { concurrent: false });
+      },
+    });
+  }
 
   // Add combined lint script based on selected tools
   const hasTs = answer.includes("ts");
@@ -217,9 +255,11 @@ async function main() {
   if (!isInteractiveMode(cliArgs)) {
     // Non-interactive mode: use CLI args for tool selection
     const selectedTools = cliArgs.tools;
+    // eslint-disable-next-line no-console
     console.log(`Running in non-interactive mode with tools: ${selectedTools.join(", ")}`);
 
     if (selectedTools.length === 0) {
+      // eslint-disable-next-line no-console
       console.log("No tools selected. Use --all or --tool=<name> to select tools.");
       process.exit(1);
     }
@@ -231,9 +271,11 @@ async function main() {
     // Interactive mode: use enquirer prompts
     try {
       const answer = await prompt.run();
+      // eslint-disable-next-line no-console
       console.log(answer);
 
       if (answer.length === 0) {
+        // eslint-disable-next-line no-console
         console.log("Nothing to do.");
         return;
       }
@@ -242,9 +284,11 @@ async function main() {
       await tasks.run();
     }
     catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     }
   }
 }
 
+// eslint-disable-next-line no-console
 main().catch(console.error);

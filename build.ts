@@ -73,6 +73,19 @@ const ghaWorkflows: Record<string, string> = {
   "release.yml": "RELEASE_WORKFLOW",
 };
 
+// Map cc-pr-review-ci skill files to their placeholder names
+const ccPrReviewCiSkillFiles: Record<string, string> = {
+  "SKILL.md": "CC_PR_REVIEW_CI_SKILL_MD",
+  "references/devops.md": "CC_PR_REVIEW_CI_REF_DEVOPS",
+  "references/duplication.md": "CC_PR_REVIEW_CI_REF_DUPLICATION",
+  "references/format.md": "CC_PR_REVIEW_CI_REF_FORMAT",
+  "references/holistic.md": "CC_PR_REVIEW_CI_REF_HOLISTIC",
+  "references/performance.md": "CC_PR_REVIEW_CI_REF_PERFORMANCE",
+  "references/react-ts.md": "CC_PR_REVIEW_CI_REF_REACT_TS",
+  "references/security.md": "CC_PR_REVIEW_CI_REF_SECURITY",
+  "references/testing.md": "CC_PR_REVIEW_CI_REF_TESTING",
+};
+
 Promise.all([ setupBuild, eslintBuild ]).then(() => {
   // Replace version placeholders in the bundled output
   let setupContent = fs.readFileSync("dist/setup.cjs", "utf8");
@@ -90,6 +103,15 @@ Promise.all([ setupBuild, eslintBuild ]).then(() => {
     if (!fs.existsSync(ymlPath)) continue;
     const ymlContent = fs.readFileSync(ymlPath, "utf-8");
     setupContent = setupContent.replace(`"__${constName}__"`, () => JSON.stringify(ymlContent));
+  }
+
+  // Replace cc-pr-review-ci skill file placeholders
+  const skillDir = path.resolve(".claude/skills/cc-pr-review-ci");
+  for (const [ filename, constName ] of Object.entries(ccPrReviewCiSkillFiles)) {
+    const filePath = path.join(skillDir, filename);
+    if (!fs.existsSync(filePath)) continue;
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    setupContent = setupContent.replace(`"__${constName}__"`, () => JSON.stringify(fileContent));
   }
 
   fs.writeFileSync("dist/setup.cjs", setupContent);

@@ -23,7 +23,7 @@ export type CliArgs = {
   help: boolean;
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd", "githubActions" ] as const;
 
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
