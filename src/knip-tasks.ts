@@ -63,7 +63,7 @@ export const knipTasks: Array<ListrTask<TaskContext>> = [
     title: "Adding knip script to package.json",
     task: async () => {
       const { updatePkgJsonScript } = await import("./utils.ts");
-      updatePkgJsonScript("knip", "knip");
+      updatePkgJsonScript("lint:knip", "knip");
     },
   },
 ];
