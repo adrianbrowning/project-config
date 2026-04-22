@@ -1,4 +1,4 @@
-name: ESLint Auto-fix and Check
+name: ESLint Check
 
 on:
   pull_request:
@@ -9,9 +9,10 @@ on:
   push:
     branches:
       - 'release-*'
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -62,31 +63,90 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 5. Run ESLint with --fix and check for errors in one step
-      - name: Run ESLint --fix and Check for Errors
+      # 5. Run ESLint and check for errors
+      - name: Run ESLint Check for Errors
+        id: lint-check
+        continue-on-error: true
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Disable immediate exit on error
           set +e
 
-          # Run ESLint with --fix
+          # Enable pipefail to capture exit code from piped commands
+          set -o pipefail
 
-          pnpm run lint:fix
-          FIX_EXIT_CODE=$?
+          # Run ESLint
+          pnpm run lint:s 2>&1 | tee lint-output.txt
+          LINT_EXIT_CODE=$?
 
-          # Configure Git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Save exit code for later steps
+          echo "exit_code=$LINT_EXIT_CODE" >> $GITHUB_OUTPUT
 
-          # Commit and push fixes if any changes were made
-          if [[ `git status --porcelain` ]]; then
-            git add .
-            git commit -m "chore: Apply ESLint fixes [skip ci]" --no-verify
-            git push origin HEAD:${{ github.head_ref }}
+          # Check if output file exists and has content
+          if [ ! -s lint-output.txt ]; then
+            echo "No lint output generated"
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
-          if [ $FIX_EXIT_CODE -ne 0 ]; then
-            echo "ESLint checks failed. FIX_EXIT_CODE=$FIX_EXIT_CODE"
+          # Check if there are any warnings or errors in the output
+          if grep -qiE "(warning|error)" lint-output.txt; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Determine if output contains errors (not just warnings)
+
+          # Match only actual error lines (format: "  92:8  error"), not summary line
+          if grep -E "^\s+[0-9]+:[0-9]+\s+error\s" lint-output.txt; then
+
+            echo "has_errors=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 6a. Fail workflow only on errors
+      - name: Fail on ESLint errors
+        if: steps.lint-check.outputs.has_errors == 'true'
+        run: |
+          echo "ESLint found errors. Failing workflow."
             exit 1
-          fi
+
+      # 7. Post lint results to PR if there are any issues (warnings or errors)
+      - name: Comment lint results on PR
+        if: always() && github.event_name == 'pull_request' && steps.lint-check.outputs.has_issues == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('lint-output.txt', 'utf8');
+            const hasErrors = '${{ steps.lint-check.outputs.has_errors }}' === 'true';
+            const exitCode = '${{ steps.lint-check.outputs.exit_code }}';
+
+            const icon = hasErrors ? '❌' : '⚠️';
+            const status = hasErrors ? 'Failed' : 'Warnings';
+            const summary = hasErrors ? 'linting errors' : 'linting warnings';
+
+            const comment = `## ${icon} ESLint Check ${status}
+
+            <details>
+            <summary>Click to see ${summary}</summary>
+
+            \`\`\`
+            ${output}
+            \`\`\`
+
+            </details>
+
+            [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

@@ -25,6 +25,7 @@ const pkgJSON = z.object({
     "eslint": z.string(),
     "@commitlint/cli": z.string(),
     "husky": z.string(),
+    "jscpd": z.string(),
     "knip": z.string(),
     "lint-staged": z.string(),
     "semantic-release-unsquash": z.string(),
@@ -46,21 +47,26 @@ export default {
   },
   plugins: [
     nativeDelete({ targets: [ `dist${path.sep}*` ], runOnce: true }),
+    //@ts-expect-error non-callable
     replace({
       "__eslint_version__": pkgJSON.peerDependencies.eslint,
       "__commitlint_version__": pkgJSON.peerDependencies["@commitlint/cli"],
       "__husky_version__": pkgJSON.peerDependencies.husky,
+      "__jscpd_version__": pkgJSON.peerDependencies.jscpd,
       "__knip_version__": pkgJSON.peerDependencies.knip,
       "__lintstaged_version__": pkgJSON.peerDependencies["lint-staged"],
       "__semanticrelease_version__": pkgJSON.peerDependencies["semantic-release-unsquash"],
-      "__ts_version__": "",
+      "__ts_version__": pkgJSON.peerDependencies.typescript,
       preventAssignment: true,
     }),
+    //@ts-expect-error This expression is not callable.
     resolve({ preferBuiltins: true }),
+    //@ts-expect-error This expression is not callable.
     typescript(),
     esbuild({
       platform: "node", // Targets node environment
     }),
+    //@ts-expect-error This expression is not callable.
     commonjs(),
   ],
 } satisfies RollupOptions;

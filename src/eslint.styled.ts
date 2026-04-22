@@ -3,17 +3,16 @@
 import { fixupPluginRules } from "@eslint/compat";
 import stylistic from "@stylistic/eslint-plugin";
 import unusedImports from "eslint-plugin-unused-imports";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { has } from "./utils.ts";
 
 const hasTypeScript = has("typescript");
 
-export const config = [
+const config = [
   ...(await import("./eslint.ts")).default,
   {
     plugins: {
       "@stylistic": stylistic,
-      // "simple-import-sort": (await import('eslint-plugin-simple-import-sort')).default,
       "unused-imports": fixupPluginRules(unusedImports),
     },
 
@@ -110,6 +109,7 @@ export const config = [
         allowTemplateLiterals: "always",
       }],
       "@stylistic/semi": [ "error", "always" ],
+      "@stylistic/no-extra-semi": "error",
       "@stylistic/type-annotation-spacing": "error",
       // "simple-import-sort/imports": "error",
     },
@@ -139,4 +139,5 @@ export const config = [
     } : null,
 ].filter(Boolean) as unknown as Array<YES_ANY_IS_OK_HERE>;
 
+export { config };
 export default config;

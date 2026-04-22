@@ -1,0 +1,107 @@
+name: Claude Code - PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review-with-tracking:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Resolve PR number
+        id: pr
+        env:
+          PR_FROM_EVENT: ${{ github.event.pull_request.number }}
+          PR_FROM_INPUT: ${{ github.event.inputs.pr_number }}
+        run: |
+          PR="$PR_FROM_EVENT"
+          if [ -z "$PR" ]; then
+            PR="$PR_FROM_INPUT"
+          fi
+          echo "number=$PR" >> $GITHUB_OUTPUT
+
+      - name: Validate PR number
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::PR number could not be resolved"
+            exit 1
+          fi
+
+      - name: Run jscpd duplication check
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get changed files for this PR
+          gh pr diff "$PR_NUMBER" --name-only > /tmp/jscpd-changed-files.txt 2>/dev/null \
+            || git diff origin/main --name-only > /tmp/jscpd-changed-files.txt
+
+          # Full codebase scan — exits non-zero when clones found, so || true
+          npx --yes jscpd \
+            --min-tokens 50 \
+            --format "typescript,javascript" \
+            --ignore "**/*.test.ts,**/*.test.tsx,**/*.test.js,**/*.test.jsx,**/*.spec.ts,**/*.spec.tsx,**/*.spec.js,**/*.spec.jsx,**/__tests__/**,node_modules/**,dist/**,coverage/**" \
+            --reporters json \
+            --output /tmp \
+            . || true
+
+          # Filter to pairs where at least one file is in the PR's changed list
+          node -e "
+            const fs = require('fs');
+            const changed = new Set(
+              fs.readFileSync('/tmp/jscpd-changed-files.txt', 'utf8').split('\n').filter(Boolean)
+            );
+            const path = '/tmp/jscpd-report.json';
+            if (!fs.existsSync(path)) {
+              fs.writeFileSync(path, JSON.stringify({ duplicates: [], statistics: {} }, null, 2));
+              process.exit(0);
+            }
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const filtered = {
+              ...report,
+              duplicates: (report.duplicates || []).filter(d =>
+                changed.has(d.firstFile && d.firstFile.name) ||
+                changed.has(d.secondFile && d.secondFile.name)
+              )
+            };
+            fs.writeFileSync(path, JSON.stringify(filtered, null, 2));
+            console.log('jscpd: ' + filtered.duplicates.length + ' duplicate(s) affecting changed files');
+          "
+
+      - name: PR Review with Progress Tracking
+        uses: anthropics/claude-code-action@v1
+        timeout-minutes: 30
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ steps.pr.outputs.number }}
+            PR URL: ${{ github.event.pull_request.html_url || format('https://github.com/{0}/pull/{1}', github.repository, steps.pr.outputs.number) }}
+
+            /cc-pr-review-ci ${{ steps.pr.outputs.number }}
+
+          claude_args: |
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git fetch:*),Bash(git log:*),Bash(git diff:*),Read,Glob"
+            --max-turns 50
+            --model claude-sonnet-4-6          

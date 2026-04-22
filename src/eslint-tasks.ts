@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask, ListrTaskWrapper } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__eslint_version__";
@@ -15,7 +15,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
       if (!eslintInstalled) {
         task.title = "ESLint not installed. Installing...";
         // ctx.packages.add(`@eslint/js@${Supported_Version}`);
-        ctx.packages.add("eslint");
+        ctx.packages.add(`eslint@${Supported_Version}`);
         // ctx.packages.add("typescript-eslint");
         return;
       }
@@ -24,7 +24,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
       task.title = `ESLint version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your ESLint version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -34,7 +34,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
             title: "Upgrading ESLint to the supported version...",
             task: async ctx => {
               // ctx.packages.add(`@eslint/js@${Supported_Version}`);
-              ctx.packages.add("eslint");
+              ctx.packages.add(`eslint@${Supported_Version}`);
               // ctx.packages.add("typescript-eslint");
             },
           }],
@@ -66,7 +66,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
 ];
 
 function eslintConfigFile(fileName: string, importName: string) {
-  return async function (_: unknown, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
+  return async function (parentCtx: TaskContext, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
 
     return task.newListr([
       {
@@ -75,11 +75,16 @@ function eslintConfigFile(fileName: string, importName: string) {
           const lintConfigExists = getLintConfig(fileName);
           ctx.overwrite = true;
           if (lintConfigExists) {
-            ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
-              type: "confirm",
-              name: "overwrite",
-              message: `${fileName} already exists. Would you like to overwrite it?`,
-            });
+            if (parentCtx.cliArgs.yes) {
+              ctx.overwrite = true;
+            }
+            else {
+              ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
+                type: "confirm",
+                name: "overwrite",
+                message: `${fileName} already exists. Would you like to overwrite it?`,
+              });
+            }
             if (!ctx.overwrite) {
               task.skip(`User chose not to overwrite ${fileName}. Task aborted.`);
               // throw new Error('Task aborted due to existing tsconfig.json');
@@ -93,13 +98,32 @@ function eslintConfigFile(fileName: string, importName: string) {
         enabled: ctx => ctx.overwrite === true,
         task: async () => {
 
-          const extendsStr = [
-            `import type { Linter } from "eslint";`,
-            `import { config as defaultConfig } from '@gingacodemonkey/config/${importName}';`,
-            ``,
-            `const config: Linter.Config[] = [...defaultConfig];`,
-            ``,
-            `export default config;` ].join("\n");
+          const extendsStr = importName === "eslint"
+            ? [
+              `import type { Linter } from "eslint";`,
+              `import { config as defaultConfig } from '@gingacodemonkey/config/eslint';`,
+              ``,
+              `export const extraRules: Array<Linter.Config> = [];`,
+              ``,
+              `const config: Array<Linter.Config> = [`,
+              `  ...defaultConfig,`,
+              `  ...extraRules,`,
+              `];`,
+              ``,
+              `export default config;`,
+            ].join("\n")
+            : [
+              `import type { Linter } from "eslint";`,
+              `import { config as defaultConfig } from '@gingacodemonkey/config/styled';`,
+              `import { extraRules } from './eslint.config';`,
+              ``,
+              `const config: Array<Linter.Config> = [`,
+              `  ...defaultConfig,`,
+              `  ...extraRules,`,
+              `];`,
+              ``,
+              `export default config;`,
+            ].join("\n");
 
           fs.writeFileSync(fileName, extendsStr);
         },

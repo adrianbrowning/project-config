@@ -3,9 +3,8 @@
  * Tests the complete CLI workflow: setup, lint, lint:ts, commit
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { TARBALL_PATH } from "../setup.ts";
-import { runCommand, gitCommit } from "../utils/command-runner.ts";
+import {describe, it, expect, beforeAll, afterAll} from "vitest";
+import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
   assertFileNotExists,
@@ -20,7 +19,14 @@ describe("Complete CLI workflow", () => {
 
   beforeAll(() => {
     project = new TestProject({ name: "full-workflow" });
-    project.init();
+    project.runCli([
+      "--all",
+      "--yes",
+      "--no-release",
+      "--ts-mode=bundler",
+      "--ts-dom",
+      "--ts-type=app",
+    ])
   });
 
   afterAll(() => {
@@ -28,9 +34,6 @@ describe("Complete CLI workflow", () => {
   });
 
   it("sets up all tools with --all --yes --no-release flags", async () => {
-    // Install tarball
-    project.installTarball(TARBALL_PATH);
-
     // Run CLI with all tools selected (except release)
     const result = project.runCli([
       "--all",
@@ -85,12 +88,12 @@ describe("Complete CLI workflow", () => {
 
   it("generates Lint-Staged configuration", () => {
     assertFileExists(project, ".lintstagedrc");
-    assertFileContains(project, ".lintstagedrc", "eslint");
+    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache");
   });
 
   it("generates Knip configuration", () => {
     assertFileExists(project, "knip.json");
-    assertPackageJsonScript(project, "knip", "knip");
+    assertPackageJsonScript(project, "lint:knip", "knip");
   });
 
   it("generates GitHub Actions workflows (excluding release)", () => {
@@ -115,6 +118,7 @@ describe("Complete CLI workflow", () => {
     expect(pkg.engines?.pnpm).toMatch(/^>=\d+/);
   });
 
+  // eslint-disable-next-line sonarjs/assertions-in-tests
   it("installs dependencies successfully", () => {
     project.install();
     // Should complete without errors
@@ -140,7 +144,7 @@ export function greet(name: string): string {
   });
 
   it("accepts valid conventional commit", () => {
-    const result = gitCommit(project, "feat: initial project setup");
+    const result = project.gitCommit("feat: initial project setup");
     expect(result.exitCode).toBe(0);
 
     // Verify commit was created
@@ -152,7 +156,7 @@ export function greet(name: string): string {
     // Make a small change
     project.writeFile("src/another.ts", "export const x = 1;");
 
-    const result = gitCommit(project, "invalid commit message", { expectFailure: true });
+    const result = project.gitCommit("invalid commit message", { expectFailure: true });
     expect(result.exitCode).not.toBe(0);
   });
 });

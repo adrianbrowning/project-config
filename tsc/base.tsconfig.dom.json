@@ -3,6 +3,7 @@
   "extends": "./base.tsconfig.json",
   "compilerOptions": {
     /* If your code runs in the DOM: */
-    "lib": ["es2022", "dom", "dom.iterable"]
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "types": []
   }
 }

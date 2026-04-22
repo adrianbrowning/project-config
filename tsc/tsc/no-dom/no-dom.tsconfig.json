@@ -3,6 +3,7 @@
   "extends": "../../base.tsconfig.no-dom.json",
   "compilerOptions": {
     "module": "NodeNext",
-    "sourceMap": true
+    "sourceMap": true,
+    "types": ["node"]
   }
 }

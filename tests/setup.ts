@@ -36,3 +36,7 @@ export function findTarball(): string {
 
 // Export tarball path for use in tests
 export const TARBALL_PATH = findTarball();
+
+// Pre-installed template dir created by globalSetup — clone this instead of reinstalling
+export const TEMPLATE_DIR = process.env.TEMPLATE_DIR
+    ?? (() => { throw new Error("TEMPLATE_DIR not set — globalSetup may not have run"); })();

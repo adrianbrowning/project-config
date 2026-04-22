@@ -27,13 +27,6 @@ export function assertFileContains(project: TestProject, filePath: string, conte
   expect(fileContent).toContain(content);
 }
 
-/**
- * Assert that a file matches a regex pattern
- */
-export function assertFileMatches(project: TestProject, filePath: string, pattern: RegExp): void {
-  const fileContent = project.readFile(filePath);
-  expect(fileContent).toMatch(pattern);
-}
 
 /**
  * Assert that a JSON file has a property at a given path
@@ -75,27 +68,4 @@ export function assertPackageJsonScript(
   }
 }
 
-/**
- * Assert that package.json has a dependency (dev or regular)
- */
-export function assertPackageJsonDependency(
-  project: TestProject,
-  pkgName: string,
-  type: "dependencies" | "devDependencies" = "devDependencies"
-): void {
-  const pkg = project.readJson<Record<string, Record<string, string>>>("package.json");
-  expect(pkg[type], `Expected package.json to have ${type}`).toBeDefined();
-  expect(pkg[type][pkgName], `Expected ${pkgName} to be in ${type}`).toBeDefined();
-}
 
-/**
- * Assert that a JSON file equals expected value
- */
-export function assertJsonEquals<T>(
-  project: TestProject,
-  filePath: string,
-  expected: T
-): void {
-  const actual = project.readJson(filePath);
-  expect(actual).toEqual(expected);
-}

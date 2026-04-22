@@ -17,12 +17,13 @@ export type CliArgs = {
   tsType: "app" | "library" | "library-monorepo";
   tsJsx: "react" | "react-jsx" | "preserve" | null;
   tsOutdir: string;
+  tsTypeModule: boolean;
 
   // Help
   help: boolean;
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd", "githubActions" ] as const;
 
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
@@ -31,6 +32,8 @@ function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--help" || arg === "-h") return true;
   if (arg === "--ts-dom") return true;
   if (arg === "--ts-no-dom") return false;
+  if (arg === "--ts-type-module") return true;
+  if (arg === "--no-ts-type-module") return false;
   return undefined;
 }
 
@@ -100,6 +103,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tsType: "app",
     tsJsx: null,
     tsOutdir: "dist",
+    tsTypeModule: false,
     help: false,
   };
 
@@ -112,6 +116,8 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
       else if (arg === "--help" || arg === "-h") args.help = true;
       else if (arg === "--ts-dom") args.tsDom = true;
       else if (arg === "--ts-no-dom") args.tsDom = false;
+      else if (arg === "--ts-type-module") args.tsTypeModule = true;
+      else if (arg === "--no-ts-type-module") args.tsTypeModule = false;
       continue;
     }
 
@@ -136,6 +142,7 @@ export function isInteractiveMode(args: CliArgs): boolean {
 }
 
 export function printHelp(): void {
+  // eslint-disable-next-line no-console
   console.log(`
 @gingacodemonkey/config - CLI Setup Tool
 
@@ -148,7 +155,7 @@ Options:
   --no-release           Exclude semantic-release when using --all
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
-                                 semanticReleaseNotes, knip
+                                 semanticReleaseNotes, knip, jscpd
 
 TypeScript Options (used with --yes):
   --ts-mode=<mode>       bundler | tsc (default: bundler)
@@ -157,6 +164,8 @@ TypeScript Options (used with --yes):
   --ts-type=<type>       app | library | library-monorepo (default: app)
   --ts-jsx=<jsx>         react | react-jsx | preserve | none (default: none)
   --ts-outdir=<dir>      Output directory (default: dist)
+  --ts-type-module       Add "type": "module" to package.json
+  --no-ts-type-module    Do not add "type": "module" (default)
 
 Examples:
   # Interactive mode (default)

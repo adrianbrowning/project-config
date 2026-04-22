@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
@@ -9,7 +10,7 @@ const pkgName = "lint-staged";
 const configFile = {
   path: ".lintstagedrc",
   content: {
-    "*.{js,ts,tsx}": [ "pnpm lint:fix" ],
+    "*.{js,ts,jsx,tsx}": [ "eslint --config eslint.config.style.ts --fix --cache" ],
   },
 };
 
@@ -28,7 +29,7 @@ export const lintstagedTasks: Array<ListrTask<TaskContext>> = [
       task.title = `LintStaged version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your LintStaged version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -51,5 +52,34 @@ export const lintstagedTasks: Array<ListrTask<TaskContext>> = [
   {
     title: `Adding ${configFile.path} file`,
     task: writeConfigFile(configFile.path, JSON.stringify(configFile.content, null, 2)),
+  },
+  {
+    title: "Configuring pre-commit hook for lint-staged",
+    task: async () => {
+      const hookPath = ".husky/pre-commit";
+      const lintStagedCommand = "pnpm exec lint-staged";
+
+      // Create .husky directory if it doesn't exist
+      if (!fs.existsSync(".husky")) {
+        fs.mkdirSync(".husky", { recursive: true });
+      }
+
+      // Check if pre-commit exists and if lint-staged is already configured
+      if (!fs.existsSync(hookPath)) {
+        fs.writeFileSync(hookPath, lintStagedCommand);
+        return;
+      }
+      const content = fs.readFileSync(hookPath, "utf-8").trim();
+      if (content === "# pre-commit hook - configure via lint-staged or manually") {
+        fs.writeFileSync(hookPath, lintStagedCommand);
+        return;
+      }
+      if (!content.includes("lint-staged")) {
+        // Append lint-staged to existing hook
+        fs.appendFileSync(hookPath, `\n${lintStagedCommand}\n`);
+        return;
+      }
+
+    },
   },
 ];

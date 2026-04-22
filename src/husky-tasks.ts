@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
@@ -23,7 +23,7 @@ fi
 # Strip leading '['
 TICKET="\${TICKET#[}"
 # Strip trailing ']'
-TICKET="\${TICKET %]}"
+TICKET="\${TICKET%]}"
 echo $"$TICKET\\n\\n$MESSAGE" > $FILE`;
 
 export const huskyTasks: Array<ListrTask<TaskContext>> = [
@@ -41,7 +41,7 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
       task.title = `Husky version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your Husky version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -67,17 +67,18 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
       const taskList: Array<ListrTask<TaskContext>> = [{
         title: "Husky init",
         task: async () => {
-          execSync(`pnpm exec husky init`);
+          // eslint-disable-next-line sonarjs/no-os-command-from-path
+          execFileSync("pnpm", [ "exec", "husky", "init" ]);
+          // husky init always creates .husky/pre-commit with "{pkg_manager} test"
+          // Replace it with a placeholder so lint-staged (or user) can configure it
+          const defaultTestCmds = [ "npm test", "pnpm test", "yarn test", "bun test" ];
+          const hookPath = ".husky/pre-commit";
+          const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8").trim() : "";
+          if (!existing || defaultTestCmds.some(cmd => existing.includes(cmd))) {
+            fs.writeFileSync(hookPath, "# pre-commit hook - configure via lint-staged or manually\n");
+          }
         },
       }];
-      if (!fs.existsSync(".husky/pre-commit")) {
-        taskList.push({
-          title: "Adding Pre-Commit Hook",
-          task: async () => {
-            fs.writeFileSync(".husky/pre-commit", "pnpm exec lint-staged");
-          },
-        });
-      }
       if (!fs.existsSync(".husky/commit-msg")) {
         taskList.push({
           title: "Adding Commit-Msg Hook",

@@ -2,8 +2,7 @@
  * ESLint integration tests
  */
 
-import { describe, it, expect } from "vitest";
-import { TARBALL_PATH } from "../setup.ts";
+import {describe, it, expect, beforeAll} from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -13,12 +12,13 @@ import {
 import { TestProject } from "../utils/test-project.ts";
 
 describe("ESLint Configuration", () => {
-  it("generates eslint.config.ts with correct import", () => {
-    using project = new TestProject({ name: "eslint-config" });
-    project.init();
+    let project: TestProject;
+    beforeAll(() => {
+        project = new TestProject({name: "commit-lint-config"});
+        project.runCli([ "--tool=eslint", "--yes" ]);
+    });
 
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=eslint", "--yes" ]);
+  it("generates eslint.config.ts with correct import", () => {
 
     assertFileExists(project, "eslint.config.ts");
     assertFileContains(project, "eslint.config.ts", "@gingacodemonkey/config/eslint");
@@ -26,33 +26,18 @@ describe("ESLint Configuration", () => {
   });
 
   it("generates eslint.config.style.ts with styled import", () => {
-    using project = new TestProject({ name: "eslint-styled" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=eslint", "--yes" ]);
 
     assertFileExists(project, "eslint.config.style.ts");
     assertFileContains(project, "eslint.config.style.ts", "@gingacodemonkey/config/styled");
   });
 
   it("adds lint scripts to package.json", () => {
-    using project = new TestProject({ name: "eslint-scripts" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=eslint", "--yes" ]);
-
     assertPackageJsonScript(project, "lint");
     assertPackageJsonScript(project, "lint:fix");
-    assertPackageJsonScript(project, "lint:style");
+    assertPackageJsonScript(project, "lint:s");
   });
 
   it("lint passes on clean code", () => {
-    using project = new TestProject({ name: "eslint-clean" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create clean TypeScript file
@@ -69,11 +54,7 @@ export function greet(name: string): string {
   });
 
   it("lint:fix modifies files with fixable issues", () => {
-    using project = new TestProject({ name: "eslint-fix" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+    const project = new TestProject({ name: "eslint-fix" });    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create file with fixable issues (extra semicolons, spacing)
     const badCode = `

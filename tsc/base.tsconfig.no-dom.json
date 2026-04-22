@@ -3,6 +3,6 @@
   "extends": "./base.tsconfig.json",
   "compilerOptions": {
     /* If your code runs in the DOM: */
-    "lib": ["es2022"]
+    "lib": ["esnext"]
   }
 }

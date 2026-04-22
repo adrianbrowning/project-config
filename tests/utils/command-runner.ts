@@ -5,7 +5,7 @@
 import { execSync } from "node:child_process";
 import type { TestProject } from "./test-project.ts";
 
-export type CommandResult = {
+type CommandResult = {
   exitCode: number;
   stdout: string;
   stderr: string;
@@ -41,40 +41,6 @@ export function runCommand(
   }
 }
 
-/**
- * Run lint command
- */
-export function runLint(project: TestProject): CommandResult {
-  return runCommand(project, "pnpm lint", { expectFailure: true });
-}
-
-/**
- * Run lint:fix command
- */
-export function runLintFix(project: TestProject): CommandResult {
-  return runCommand(project, "pnpm lint:fix", { expectFailure: true });
-}
-
-/**
- * Run lint:ts command
- */
-export function runTypeCheck(project: TestProject): CommandResult {
-  return runCommand(project, "pnpm lint:ts", { expectFailure: true });
-}
-
-/**
- * Run knip command
- */
-export function runKnip(project: TestProject): CommandResult {
-  return runCommand(project, "pnpm knip", { expectFailure: true });
-}
-
-/**
- * Run commitlint on a message
- */
-export function runCommitLint(project: TestProject, message: string): CommandResult {
-  return runCommand(project, `echo "${message}" | pnpm exec commitlint`, { expectFailure: true });
-}
 
 /**
  * Make a git commit

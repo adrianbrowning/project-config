@@ -23,7 +23,7 @@ export const commitLintTasks: Array<ListrTask<TaskContext>> = [
       task.title = `CommitLint version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your CommitLint version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -59,7 +59,7 @@ export const commitLintTasks: Array<ListrTask<TaskContext>> = [
       task.title = `CommitLint/config-conventional version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your CommitLint/config-conventional version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,

@@ -10,6 +10,7 @@ type TsConfigObject = {
   compilerOptions: {
     jsx?: string;
     outDir?: string;
+    rootDir?: string;
   };
   include: Array<string>;
   exclude: Array<string>;
@@ -42,7 +43,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
       task.title = `TypeScript version ${tsVersion} detected`;
 
       if (compareVersions(tsVersion, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your TypeScript version is below ${Supported_Version}. Would you like to upgrade to the latest?`,
@@ -65,17 +66,22 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
   },
   {
     title: "tsconfig.json",
-    task: async (_ctx, task) => task.newListr([
+    task: async (parentCtx, task) => task.newListr([
       {
         title: "Checking if tsconfig.json exists",
         task: async (ctx, task) => {
           const tsConfigExists = getTsConfig();
           if (tsConfigExists) {
-            ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
-              type: "confirm",
-              name: "overwrite",
-              message: "tsconfig.json already exists. Would you like to overwrite it?",
-            });
+            if (parentCtx.cliArgs.yes) {
+              ctx.overwrite = true;
+            }
+            else {
+              ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
+                type: "confirm",
+                name: "overwrite",
+                message: "tsconfig.json already exists. Would you like to overwrite it?",
+              });
+            }
             if (!ctx.overwrite) {
               task.skip("User chose not to overwrite tsconfig.json. Skipping task.");
               // throw new Error('Task aborted due to existing tsconfig.json');
@@ -90,6 +96,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
         title: "Setting up tsconfig.json",
         enabled:  ctx => ctx.overwrite === true,
         task: async (_ctx, task) => {
+          // eslint-disable-next-line no-console
           console.clear();
           const { dom, bundler, type, jsx, outDir } = await task.prompt(ListrEnquirerPromptAdapter).run([
             {
@@ -136,14 +143,30 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
 
           let extendsStr = `@gingacodemonkey/config/${bundler ? "tsc" : "bundler"}/${dom ? "dom" : "no-dom"}/${type.toLowerCase()}`;
 
+          // Determine src directory
+          let srcDir = "src";
+          if (!fs.existsSync(srcDir)) {
+            srcDir = await task.prompt(ListrEnquirerPromptAdapter).run({
+              type: "input",
+              name: "srcDir",
+              message: "Source directory doesn't exist. Enter the root source directory name:",
+              initial: "src",
+            });
+            fs.mkdirSync(srcDir, { recursive: true });
+          }
+
           // Create tsconfig based on user input
+          const hasEslint = parentCtx.cliArgs.tools.includes("eslint");
           const tsConfig = {
             "extends": extendsStr,
             compilerOptions: {
               ...(jsx ? { jsx:"react" } : {}),
-              ...(outDir ? { outDir } : {}),
+              ...(outDir ? { outDir, rootDir: hasEslint ? "." : `./${srcDir}` } : {}),
             },
-            include: [ "./src/**.ts" ],
+            include: [
+              ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
+              `./${srcDir}/**.ts`,
+            ],
             exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
           };
 
@@ -152,13 +175,12 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
           if (type === "App") {
             const str = [ "import \"@total-typescript/ts-reset\";" ];
             // create reset.d.ts
-            // add
             if(dom) {
               str.push("import \"@total-typescript/ts-reset/dom\";");
               str.push(`declare module 'react' {\n\t// support css variables\n\tinterface CSSProperties {\n\t\t[key: \`--\${string}\`]: string | number;\n\t}\n}`);
 
             }
-            createTsReset(str.join("\n"));
+            createTsReset(str.join("\n"), srcDir);
           }
         },
       },
@@ -197,8 +219,8 @@ function createTsConfig(config: TsConfigObject): void {
   fs.writeFileSync("tsconfig.json", JSON.stringify(config, null, 2));
 }
 
-function createTsReset(config: string): void {
-  fs.writeFileSync("src/reset.d.ts", config);
+function createTsReset(config: string, srcDir = "src"): void {
+  fs.writeFileSync(`${srcDir}/reset.d.ts`, config);
 }
 
 /**
@@ -242,13 +264,17 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         const extendsStr = `@gingacodemonkey/config/${bundler ? "tsc" : "bundler"}/${dom ? "dom" : "no-dom"}/${typeStr}`;
 
         // Create tsconfig based on CLI args
+        const hasEslint = cliArgs.tools.includes("eslint");
         const tsConfig = {
           "extends": extendsStr,
           compilerOptions: {
             ...(jsx ? { jsx } : {}),
-            ...(outDir ? { outDir } : {}),
+            ...(outDir ? { outDir, rootDir: hasEslint ? "." : "./src" } : {}),
           },
-          include: [ "./src/**.ts" ],
+          include: [
+            ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
+            "./src/**.ts",
+          ],
           exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
         };
 
@@ -265,6 +291,12 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
             fs.mkdirSync("src", { recursive: true });
           }
           createTsReset(str.join("\n"));
+        }
+
+        // Add type: module to package.json if flag is set
+        if (cliArgs.tsTypeModule) {
+          const { updatePkgJson } = await import("./utils.ts");
+          updatePkgJson("type", "module");
         }
       },
     },
