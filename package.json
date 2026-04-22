@@ -17,7 +17,7 @@
     "lint:s": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:fix": "pnpm lint:s --fix",
     "knip": "knip",
-    "lint": "pnpm lint:ts; pnpm lint:fix; pnpm dlx @e18e/cli analyze"
+    "lint": "pnpm lint:ts; pnpm lint:fix;"
   },
   "pnpm": {
     "minimumReleaseAge": 4320
