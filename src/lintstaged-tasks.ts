@@ -65,17 +65,21 @@ export const lintstagedTasks: Array<ListrTask<TaskContext>> = [
       }
 
       // Check if pre-commit exists and if lint-staged is already configured
-      if (fs.existsSync(hookPath)) {
-        const content = fs.readFileSync(hookPath, "utf-8");
-        if (!content.includes("lint-staged")) {
-          // Append lint-staged to existing hook
-          fs.appendFileSync(hookPath, `\n${lintStagedCommand}\n`);
-        }
-      }
-      else {
-        // Create new pre-commit hook
+      if (!fs.existsSync(hookPath)) {
         fs.writeFileSync(hookPath, lintStagedCommand);
+        return;
       }
+      const content = fs.readFileSync(hookPath, "utf-8").trim();
+      if (content === "# pre-commit hook - configure via lint-staged or manually") {
+        fs.writeFileSync(hookPath, lintStagedCommand);
+        return;
+      }
+      if (!content.includes("lint-staged")) {
+        // Append lint-staged to existing hook
+        fs.appendFileSync(hookPath, `\n${lintStagedCommand}\n`);
+        return;
+      }
+
     },
   },
 ];

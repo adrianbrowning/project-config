@@ -232,7 +232,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
         const parts: Array<string> = [];
         if (hasTs) parts.push("pnpm lint:ts");
         if (hasEslint) parts.push("pnpm lint:fix");
-        parts.push("pnpm dlx @e18e/cli analyze");
         updatePkgJsonScript("lint", parts.join("; "));
         updatePkgJsonScript("lint:e18e", "pnpm dlx @e18e/cli analyze");
       },

@@ -88,7 +88,7 @@ describe("Complete CLI workflow", () => {
 
   it("generates Lint-Staged configuration", () => {
     assertFileExists(project, ".lintstagedrc");
-    assertFileContains(project, ".lintstagedrc", "pnpm lint:fix");
+    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache");
   });
 
   it("generates Knip configuration", () => {
