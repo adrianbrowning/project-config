@@ -39,6 +39,10 @@ The full diff is already in context from Step 1. Fetch the file list only.
 - Are similar files treated differently with no apparent reason?
 - Are naming conventions, patterns, or structures applied inconsistently across the changed files?
 
+**Control flow structure**
+- Are `if` checks pushed to the highest possible call site, or do functions defensively re-check conditions the caller already validated?
+- Are loops/iterations operating on collections as a unit, or is per-item branching leaking into the loop body where it could be lifted out?
+
 **Completeness**
 - Does the change feel half-done? (e.g. new feature added but old feature not removed, new config key referenced but not documented)
 - Are there TODO/FIXME comments introduced that indicate unfinished work?
