@@ -288,7 +288,8 @@ async function main() {
   else {
     // Interactive mode: use enquirer prompts
     try {
-      const prompt = createPrompt(cliArgs.update);
+      // const prompt = createPrompt(cliArgs.update);
+      const prompt = createPrompt(false);
       const answer = await prompt.run();
       // eslint-disable-next-line no-console
       console.log(answer);
