@@ -113,10 +113,10 @@
     "@commitlint/config-conventional": "20.0.0",
     "eslint": "^9.8.0",
     "husky": "9.0.6",
+    "jscpd": "^4.0.9",
     "knip": "5.70.1",
     "lint-staged": "15.2.10",
     "semantic-release-unsquash": "^0.4.0",
-    "jscpd": "^4.0.9",
     "typescript": ">= 6.0.0"
   },
   "files": [
