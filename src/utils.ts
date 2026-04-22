@@ -98,7 +98,7 @@ type ConfigContext = {
 
 export function writeConfigFile(fileName: string, content: string) {
 
-  return async function (_: unknown, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
+  return async function (parentCtx: TaskContext, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
 
     return task.newListr([
       {
@@ -108,16 +108,19 @@ export function writeConfigFile(fileName: string, content: string) {
           const lintConfigExists = getLintConfig(fileName);
           ctx.overwrite = true;
           if (lintConfigExists) {
-            ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
-              type: "confirm",
-              name: "overwrite",
-              message: `${fileName} already exists. Would you like to overwrite it?`,
-            });
-            if (!ctx.overwrite) {
-              task.skip(`User chose not to overwrite ${fileName}. Task aborted.`);
-              // throw new Error('Task aborted due to existing tsconfig.json');
+            if (parentCtx.cliArgs.yes) {
+              ctx.overwrite = true;
             }
-
+            else {
+              ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
+                type: "confirm",
+                name: "overwrite",
+                message: `${fileName} already exists. Would you like to overwrite it?`,
+              });
+              if (!ctx.overwrite) {
+                task.skip(`User chose not to overwrite ${fileName}. Task aborted.`);
+              }
+            }
           }
         },
       },

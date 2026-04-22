@@ -41,7 +41,7 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
       task.title = `Husky version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your Husky version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -69,10 +69,13 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
         task: async () => {
           // eslint-disable-next-line sonarjs/no-os-command-from-path
           execFileSync("pnpm", [ "exec", "husky", "init" ]);
-          // husky init creates .husky/pre-commit with "{pkg_manager} test" by default
-          // Only replace if it wasn't already customised — avoids overwriting on re-runs
-          if (!fs.existsSync(".husky/pre-commit")) {
-            fs.writeFileSync(".husky/pre-commit", "# pre-commit hook - configure via lint-staged or manually\n");
+          // husky init always creates .husky/pre-commit with "{pkg_manager} test"
+          // Replace it with a placeholder so lint-staged (or user) can configure it
+          const defaultTestCmds = [ "npm test", "pnpm test", "yarn test", "bun test" ];
+          const hookPath = ".husky/pre-commit";
+          const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8").trim() : "";
+          if (!existing || defaultTestCmds.some(cmd => existing.includes(cmd))) {
+            fs.writeFileSync(hookPath, "# pre-commit hook - configure via lint-staged or manually\n");
           }
         },
       }];

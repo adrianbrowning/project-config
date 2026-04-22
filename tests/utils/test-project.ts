@@ -1,16 +1,15 @@
 /**
  * Test project management utility
- * Creates and manages isolated test project directories
+ * Reuses the single pre-installed template dir created by globalSetup.
  */
 
-import { execSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import {runCommand} from "./command-runner.ts";
 
 type ProjectOptions = {
   name: string;
-  baseDir?: string;
 };
 
 export class TestProject implements Disposable {
@@ -18,20 +17,12 @@ export class TestProject implements Disposable {
   private _cleaned = false;
 
   constructor(options: ProjectOptions) {
-    const baseDir = options.baseDir ?? os.tmpdir();
-    this.dir = path.join(baseDir, `test-${options.name}-${Date.now()}-${Math.random().toString(36)
-      .slice(2, 8)}`);
-    fs.mkdirSync(this.dir, { recursive: true });
-  }
-
-  /**
-   * Initialize as a new npm/pnpm project with git
-   */
-  init(): void {
-    this.exec("pnpm init");
-    this.exec("git init");
-    // Add .gitignore to prevent staging node_modules
-    this.writeFile(".gitignore", "node_modules\ndist\n.cache\n");
+    console.log("Initializing test project:", options.name);
+    const templateDir = process.env.TEMPLATE_DIR;
+    if (!templateDir) throw new Error("TEMPLATE_DIR not set — globalSetup may not have run");
+    this.dir = templateDir;
+    execFileSync("git", [ "init" ], { cwd: this.dir, stdio: "pipe" });
+    console.log("Test project initialized:", this.dir);
   }
 
   /**
@@ -129,9 +120,9 @@ export class TestProject implements Disposable {
   /**
    * Commit with a message
    */
-  gitCommit(message: string, options?: { expectFailure?: boolean; }): string {
+  gitCommit(message: string, options?: { expectFailure?: boolean; }) {
     this.gitAdd();
-    return this.exec(`git commit -m "${message}"`, options);
+    return runCommand(this, `git commit -m "${message}"`, options)
   }
 
   /**
@@ -149,13 +140,15 @@ export class TestProject implements Disposable {
   }
 
   /**
-   * Clean up the project directory
+   * Reset the shared dir for the next test (removes all non-node_modules files).
    */
   cleanup(): void {
-    if (this._cleaned) return;
-    this._cleaned = true;
     try {
-      fs.rmSync(this.dir, { recursive: true, force: true });
+      for (const entry of fs.readdirSync(this.dir)) {
+        if (!["node_modules", "package.json", "pnpm-lock.yaml"].includes(entry)) {
+          fs.rmSync(path.join(this.dir, entry), {recursive: true, force: true});
+        }
+      }
     }
     catch {
       // Ignore cleanup errors
@@ -167,6 +160,10 @@ export class TestProject implements Disposable {
    */
   [Symbol.dispose](): void {
     this.cleanup();
+  }
+
+  rmDir(dir: string) {
+    fs.rmSync(path.join(this.dir, dir), { recursive: true, force: true });
   }
 }
 

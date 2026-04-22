@@ -12,6 +12,7 @@ import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
+import { detectTools } from "./tool-detection.ts";
 import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript } from "./utils.ts";
 import { installPkg } from "./utils.ts";
@@ -48,7 +49,8 @@ type MultiSelectPrompt = {
 
 const { MultiSelect } = enquirer.default as unknown as { MultiSelect: new (options: MultiSelectOptions) => MultiSelectPrompt; };
 
-const tools: Array<MultiSelectChoice> = [
+type ToolDef = { name: string; value: string; };
+const TOOL_DEFS: Array<ToolDef> = [
   { name: "TS", value: "ts" },
   { name: "ESLint", value: "eslint" },
   { name: "Husky", value: "husky" },
@@ -59,32 +61,48 @@ const tools: Array<MultiSelectChoice> = [
   { name: "jscpd", value: "jscpd" },
   { name: "GitHub Actions", value: "githubActions" },
 ];
+
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
-const prompt = new MultiSelect({
-  name: "tool",
-  message: "Please select what to install",
-  hint: "(Use <space> to select, <return> to submit)",
-  choices: [
-    {
-      name: "All",
-      value: "all",
-      onChoice(state, choice, i) {
-        if (state.index === i && choice.enabled) {
-          enable(state.choices, ch => ch.name !== "none");
-        }
+
+function createPrompt(updateMode: boolean): MultiSelectPrompt {
+  const detected = updateMode ? detectTools() : null;
+
+  const tools: Array<MultiSelectChoice> = TOOL_DEFS.map(({ name, value }) => {
+    const installed = detected?.[value as keyof typeof detected]?.installed ?? false;
+    const label = detected
+    // eslint-disable-next-line sonarjs/no-nested-conditional
+      ? installed
+        ? `${name} (installed)` : `${name} (NEW)`
+      : name;
+    return { name: label, value, enabled: installed };
+  });
+
+  return new MultiSelect({
+    name: "tool",
+    message: updateMode ? "Select tools to update" : "Please select what to install",
+    hint: "(Use <space> to select, <return> to submit)",
+    choices: [
+      {
+        name: "All",
+        value: "all",
+        onChoice(state, choice, i) {
+          if (state.index === i && choice.enabled) {
+            enable(state.choices, ch => ch.name !== "none");
+          }
+        },
       },
+      ...tools,
+    ],
+    result(names) {
+      return Object.values(this.map(names));
     },
-    ...tools,
-  ],
-  result(names) {
-    return Object.values(this.map(names));
-  },
-  onSubmit() {
-    if (this.selected.length === 0) {
-      this.enable(this.focused);
-    }
-  },
-});
+    onSubmit() {
+      if (this.selected.length === 0) {
+        this.enable(this.focused);
+      }
+    },
+  });
+}
 
 // Parse CLI arguments
 const cliArgs = parseCliArgs();
@@ -214,8 +232,8 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
         const parts: Array<string> = [];
         if (hasTs) parts.push("pnpm lint:ts");
         if (hasEslint) parts.push("pnpm lint:fix");
-        parts.push("pnpm dlx @e18e/cli analyze");
         updatePkgJsonScript("lint", parts.join("; "));
+        updatePkgJsonScript("lint:e18e", "pnpm dlx @e18e/cli analyze");
       },
     });
   }
@@ -270,6 +288,7 @@ async function main() {
   else {
     // Interactive mode: use enquirer prompts
     try {
+      const prompt = createPrompt(cliArgs.update);
       const answer = await prompt.run();
       // eslint-disable-next-line no-console
       console.log(answer);
@@ -280,6 +299,7 @@ async function main() {
         return;
       }
 
+      cliArgs.tools = answer;
       addToolTasks(tasks, answer, cliArgs);
       await tasks.run();
     }

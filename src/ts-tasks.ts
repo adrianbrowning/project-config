@@ -43,7 +43,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
       task.title = `TypeScript version ${tsVersion} detected`;
 
       if (compareVersions(tsVersion, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your TypeScript version is below ${Supported_Version}. Would you like to upgrade to the latest?`,
@@ -66,17 +66,22 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
   },
   {
     title: "tsconfig.json",
-    task: async (_ctx, task) => task.newListr([
+    task: async (parentCtx, task) => task.newListr([
       {
         title: "Checking if tsconfig.json exists",
         task: async (ctx, task) => {
           const tsConfigExists = getTsConfig();
           if (tsConfigExists) {
-            ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
-              type: "confirm",
-              name: "overwrite",
-              message: "tsconfig.json already exists. Would you like to overwrite it?",
-            });
+            if (parentCtx.cliArgs.yes) {
+              ctx.overwrite = true;
+            }
+            else {
+              ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
+                type: "confirm",
+                name: "overwrite",
+                message: "tsconfig.json already exists. Would you like to overwrite it?",
+              });
+            }
             if (!ctx.overwrite) {
               task.skip("User chose not to overwrite tsconfig.json. Skipping task.");
               // throw new Error('Task aborted due to existing tsconfig.json');
@@ -151,13 +156,17 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
           }
 
           // Create tsconfig based on user input
+          const hasEslint = parentCtx.cliArgs.tools.includes("eslint");
           const tsConfig = {
             "extends": extendsStr,
             compilerOptions: {
               ...(jsx ? { jsx:"react" } : {}),
-              ...(outDir ? { outDir, rootDir: `./${srcDir}` } : {}),
+              ...(outDir ? { outDir, rootDir: hasEslint ? "." : `./${srcDir}` } : {}),
             },
-            include: [ `./${srcDir}/**.ts` ],
+            include: [
+              ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
+              `./${srcDir}/**.ts`,
+            ],
             exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
           };
 
@@ -255,13 +264,17 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         const extendsStr = `@gingacodemonkey/config/${bundler ? "tsc" : "bundler"}/${dom ? "dom" : "no-dom"}/${typeStr}`;
 
         // Create tsconfig based on CLI args
+        const hasEslint = cliArgs.tools.includes("eslint");
         const tsConfig = {
           "extends": extendsStr,
           compilerOptions: {
             ...(jsx ? { jsx } : {}),
-            ...(outDir ? { outDir, rootDir: "./src" } : {}),
+            ...(outDir ? { outDir, rootDir: hasEslint ? "." : "./src" } : {}),
           },
-          include: [ "./src/**.ts" ],
+          include: [
+            ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
+            "./src/**.ts",
+          ],
           exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
         };
 

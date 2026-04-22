@@ -2,8 +2,7 @@
  * Husky and Git hooks integration tests
  */
 
-import { describe, it, expect } from "vitest";
-import { TARBALL_PATH } from "../setup.ts";
+import {describe, it, expect, beforeAll} from "vitest";
 import { gitCommit } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -12,34 +11,25 @@ import {
 import { TestProject } from "../utils/test-project.ts";
 
 describe("Husky Git Hooks", () => {
-  it("generates .husky/pre-commit with lint-staged command", () => {
-    using project = new TestProject({ name: "husky-precommit" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "husky-precommit" });
     project.runCli([ "--tool=husky", "--yes" ]);
+  });
+
+  it("generates .husky/pre-commit with lint-staged command", () => {
 
     assertFileExists(project, ".husky/pre-commit");
     assertFileContains(project, ".husky/pre-commit", "lint-staged");
   });
 
   it("generates .husky/commit-msg with commitlint", () => {
-    using project = new TestProject({ name: "husky-commitmsg" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=husky", "--yes" ]);
 
     assertFileExists(project, ".husky/commit-msg");
     assertFileContains(project, ".husky/commit-msg", "commitlint");
   });
 
   it("commit-msg hook has ticket prepend logic", () => {
-    using project = new TestProject({ name: "husky-ticket" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
-    project.runCli([ "--tool=husky", "--yes" ]);
 
     const commitMsg = project.readFile(".husky/commit-msg");
     expect(commitMsg).toContain("TICKET");
@@ -47,11 +37,6 @@ describe("Husky Git Hooks", () => {
   });
 
   it("pre-commit hook runs lint-staged on commit", { timeout: 180000 }, () => {
-    using project = new TestProject({ name: "husky-lint-staged" });
-    project.init();
-
-    // Install all required tools for the hook to work
-    project.installTarball(TARBALL_PATH);
     project.runCli([
       "--tool=ts",
       "--tool=eslint",
@@ -83,10 +68,6 @@ export const hello = 'world';
   });
 
   it("ticket extraction works from feature branch", () => {
-    using project = new TestProject({ name: "husky-feature-branch" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
     project.runCli([
       "--tool=husky",
       "--tool=commitLint",
@@ -105,10 +86,6 @@ export const hello = 'world';
   });
 
   it("creates .husky/pre-push hook with lint command", () => {
-    using project = new TestProject({ name: "husky-prepush" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
     project.runCli([ "--tool=husky", "--yes" ]);
 
     assertFileExists(project, ".husky/pre-push");

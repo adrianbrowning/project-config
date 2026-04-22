@@ -5,8 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it, expect } from "vitest";
-import { TARBALL_PATH } from "../setup.ts";
+import {describe, it, expect, beforeAll, afterEach, beforeEach} from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -24,24 +23,25 @@ function getFixtureContent(fixturePath: string): string {
 }
 
 describe("TypeScript Configurations", () => {
+
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "ts-lint-ts-script" });
+
+  });
+  afterEach(() => {
+    project.cleanup();
+  });
+
   it("adds lint:ts script to package.json", () => {
-    using project = new TestProject({ name: "ts-lint-ts-script" });
-    project.init();
-
-    project.installTarball(TARBALL_PATH);
     project.runCli([ "--tool=ts", "--yes", "--ts-no-dom", "--ts-type=library" ]);
-
     const pkg = project.readJson<{ scripts?: { "lint:ts"?: string; }; }>("package.json");
     expect(pkg.scripts?.["lint:ts"]).toBe("tsc --noEmit");
   });
 
   describe("bundler/dom/app (Vite/React web app)", () => {
     it("generates correct tsconfig and passes lint:ts", () => {
-      using project = new TestProject({ name: "ts-bundler-dom-app" });
-      project.init();
-
-      // Install and run CLI
-      project.installTarball(TARBALL_PATH);
+      const project = new TestProject({ name: "ts-bundler-dom-app" });
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -64,10 +64,6 @@ describe("TypeScript Configurations", () => {
       // Add React fixture
       project.writeFile("src/App.tsx", getFixtureContent("react-app/App.tsx"));
 
-      // Install dependencies (need React types)
-      project.exec("pnpm add -D @types/react @types/react-dom");
-      project.install();
-
       // Type-check should pass
       assertPackageJsonScript(project, "lint:ts");
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
@@ -77,10 +73,6 @@ describe("TypeScript Configurations", () => {
 
   describe("bundler/dom/library (DOM library)", () => {
     it("generates correct tsconfig without reset.d.ts", () => {
-      using project = new TestProject({ name: "ts-bundler-dom-library" });
-      project.init();
-
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -107,8 +99,6 @@ export function addClass(el: HTMLElement, className: string): void {
 }
 `);
 
-      project.install();
-
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
     });
@@ -116,14 +106,10 @@ export function addClass(el: HTMLElement, className: string): void {
 
   describe("tsc/no-dom/app (Node.js app)", () => {
     it("generates correct tsconfig for Node.js app", () => {
-      using project = new TestProject({ name: "ts-tsc-nodom-app" });
-      project.init();
-
       // tsc mode with NodeNext requires ESM - set type: module
       const pkg = project.readJson<{ type?: string; }>("package.json");
       project.writeJson("package.json", { ...pkg, type: "module" });
 
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -147,7 +133,6 @@ export function addClass(el: HTMLElement, className: string): void {
 
       // Add Node.js fixture
       project.writeFile("src/index.ts", getFixtureContent("node-library/index.ts"));
-      project.install();
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
@@ -156,14 +141,10 @@ export function addClass(el: HTMLElement, className: string): void {
 
   describe("tsc/no-dom/library (Node.js library)", () => {
     it("generates correct tsconfig for Node.js library", () => {
-      using project = new TestProject({ name: "ts-tsc-nodom-library" });
-      project.init();
-
       // tsc mode with NodeNext requires ESM - set type: module
       const pkg = project.readJson<{ type?: string; }>("package.json");
       project.writeJson("package.json", { ...pkg, type: "module" });
 
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -181,7 +162,6 @@ export function addClass(el: HTMLElement, className: string): void {
 
       // Add library code
       project.writeFile("src/index.ts", getFixtureContent("node-library/index.ts"));
-      project.install();
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
@@ -190,10 +170,6 @@ export function addClass(el: HTMLElement, className: string): void {
 
   describe("bundler/no-dom/app (Bundled Node.js app)", () => {
     it("generates correct tsconfig for bundled Node app", () => {
-      using project = new TestProject({ name: "ts-bundler-nodom-app" });
-      project.init();
-
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -211,7 +187,6 @@ export function addClass(el: HTMLElement, className: string): void {
 
       // Add Node.js code
       project.writeFile("src/index.ts", getFixtureContent("node-library/index.ts"));
-      project.install();
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
@@ -220,14 +195,11 @@ export function addClass(el: HTMLElement, className: string): void {
 
   describe("tsc/no-dom/library-monorepo", () => {
     it("generates correct tsconfig for monorepo library", () => {
-      using project = new TestProject({ name: "ts-tsc-nodom-monorepo" });
-      project.init();
-
+      const project = new TestProject({ name: "ts-tsc-nodom-monorepo" });
       // tsc mode with NodeNext requires ESM - set type: module
       const pkg = project.readJson<{ type?: string; }>("package.json");
       project.writeJson("package.json", { ...pkg, type: "module" });
 
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -244,7 +216,6 @@ export function addClass(el: HTMLElement, className: string): void {
       expect(project.fileExists("src/reset.d.ts")).toBe(false);
 
       project.writeFile("src/index.ts", getFixtureContent("node-library/index.ts"));
-      project.install();
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
@@ -252,11 +223,11 @@ export function addClass(el: HTMLElement, className: string): void {
   });
 
   describe("package.json type: module", () => {
+    beforeEach(function removeTypeFromPackageJson(){
+      const p = project.readJson<{ type?: string; }>("package.json");
+      project.writeJson("package.json", { ...p, type: undefined });
+    })
     it("adds type: module when --ts-type-module flag is passed", () => {
-      using project = new TestProject({ name: "ts-type-module-with-flag" });
-      project.init();
-
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -272,10 +243,6 @@ export function addClass(el: HTMLElement, className: string): void {
     });
 
     it("does NOT add type: module when --ts-type-module flag is not passed", () => {
-      using project = new TestProject({ name: "ts-type-module-without-flag" });
-      project.init();
-
-      project.installTarball(TARBALL_PATH);
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -290,11 +257,7 @@ export function addClass(el: HTMLElement, className: string): void {
     });
 
     it("does NOT add type: module when --no-ts-type-module flag is passed", () => {
-      using project = new TestProject({ name: "ts-type-module-explicit-no" });
-      project.init();
-
-      project.installTarball(TARBALL_PATH);
-      project.runCli([
+       project.runCli([
         "--tool=ts",
         "--yes",
         "--ts-mode=tsc",

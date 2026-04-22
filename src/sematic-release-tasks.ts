@@ -6,12 +6,13 @@ import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 
 const Supported_Version = "__semanticrelease_version__";
 const pkgName = "semantic-release-unsquash";
+const DEFAULT_BRANCH = "main";
 
 const configFile = {
   path: ".releaserc.json",
   content: {
     "branches": [
-      "main",
+      `${DEFAULT_BRANCH}`,
     ],
     "plugins": [
       [
@@ -195,7 +196,7 @@ export const semanticReleaseNotesTasks: Array<ListrTask<TaskContext>> = [
 
       ctx.actionName = "release";
 
-      if (fs.existsSync(`.github/workflows/${ctx.actionName}.yml`)) {
+      if (fs.existsSync(`.github/workflows/${ctx.actionName}.yml`) && !ctx.cliArgs.yes) {
         ctx.actionName = await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "input",
           name: "actionName",
@@ -210,10 +211,10 @@ export const semanticReleaseNotesTasks: Array<ListrTask<TaskContext>> = [
     title: "Adding github action",
     task: async (ctx: TaskContext & { actionName?: string; }, task) => {
 
-      const branchName = await task.prompt(ListrEnquirerPromptAdapter).run({
+      const branchName = ctx.cliArgs.yes ? DEFAULT_BRANCH : await task.prompt(ListrEnquirerPromptAdapter).run({
         type: "input",
         name: "branchName",
-        initial: "main",
+        initial: DEFAULT_BRANCH,
         message: `What is the name of the branch you want to release from?`,
       });
 

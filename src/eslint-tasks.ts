@@ -24,7 +24,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
       task.title = `ESLint version ${eslintInstalled} detected`;
 
       if (compareVersions(eslintInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your ESLint version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
@@ -66,7 +66,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
 ];
 
 function eslintConfigFile(fileName: string, importName: string) {
-  return async function (_: unknown, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
+  return async function (parentCtx: TaskContext, task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>) {
 
     return task.newListr([
       {
@@ -75,11 +75,16 @@ function eslintConfigFile(fileName: string, importName: string) {
           const lintConfigExists = getLintConfig(fileName);
           ctx.overwrite = true;
           if (lintConfigExists) {
-            ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
-              type: "confirm",
-              name: "overwrite",
-              message: `${fileName} already exists. Would you like to overwrite it?`,
-            });
+            if (parentCtx.cliArgs.yes) {
+              ctx.overwrite = true;
+            }
+            else {
+              ctx.overwrite = await task.prompt(ListrEnquirerPromptAdapter).run({
+                type: "confirm",
+                name: "overwrite",
+                message: `${fileName} already exists. Would you like to overwrite it?`,
+              });
+            }
             if (!ctx.overwrite) {
               task.skip(`User chose not to overwrite ${fileName}. Task aborted.`);
               // throw new Error('Task aborted due to existing tsconfig.json');

@@ -35,7 +35,7 @@ export const knipTasks: Array<ListrTask<TaskContext>> = [
       task.title = `Knip version ${knipInstalled} detected`;
 
       if (compareVersions(knipInstalled, Supported_Version) < 0) {
-        const upgrade = await task.prompt(ListrEnquirerPromptAdapter).run({
+        const upgrade = ctx.cliArgs.yes || await task.prompt(ListrEnquirerPromptAdapter).run({
           type: "confirm",
           name: "upgrade",
           message: `Your Knip version is below ${Supported_Version}. Would you like to upgrade to the supported version?`,
