@@ -14,7 +14,6 @@ type ProjectOptions = {
 
 export class TestProject implements Disposable {
   readonly dir: string;
-  private _cleaned = false;
 
   constructor(options: ProjectOptions) {
     console.log("Initializing test project:", options.name);

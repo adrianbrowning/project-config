@@ -3,7 +3,7 @@
 import { fixupPluginRules } from "@eslint/compat";
 import stylistic from "@stylistic/eslint-plugin";
 import unusedImports from "eslint-plugin-unused-imports";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { has } from "./utils.ts";
 
 const hasTypeScript = has("typescript");

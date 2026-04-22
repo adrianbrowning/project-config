@@ -47,6 +47,7 @@ export default {
   },
   plugins: [
     nativeDelete({ targets: [ `dist${path.sep}*` ], runOnce: true }),
+    //@ts-expect-error non-callable
     replace({
       "__eslint_version__": pkgJSON.peerDependencies.eslint,
       "__commitlint_version__": pkgJSON.peerDependencies["@commitlint/cli"],
@@ -58,11 +59,14 @@ export default {
       "__ts_version__": pkgJSON.peerDependencies.typescript,
       preventAssignment: true,
     }),
+    //@ts-expect-error This expression is not callable.
     resolve({ preferBuiltins: true }),
+    //@ts-expect-error This expression is not callable.
     typescript(),
     esbuild({
       platform: "node", // Targets node environment
     }),
+    //@ts-expect-error This expression is not callable.
     commonjs(),
   ],
 } satisfies RollupOptions;

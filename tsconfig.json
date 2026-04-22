@@ -4,8 +4,8 @@
 //    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
-    "moduleResolution": "node",
-    "jsx": "react-jsx"
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
   },
   "include": [
     "./src/**/*.ts",

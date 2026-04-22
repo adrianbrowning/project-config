@@ -14,7 +14,7 @@ import reactCompilerPlugin from "eslint-plugin-react-compiler";
 import sonarjs from "eslint-plugin-sonarjs";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { has } from "./utils.ts";
 
 const __filename = fileURLToPath(import.meta.url);

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask, ListrTaskWrapper } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__eslint_version__";

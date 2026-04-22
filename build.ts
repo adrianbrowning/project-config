@@ -2,8 +2,8 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import esbuild from "esbuild";
-import type { PackageJson } from "knip/dist/types/package-json";
-import type { YES_ANY_IS_OK_HERE } from "./src/types";
+import type { PackageJson } from "knip/dist/types/package-json.js";
+import type { YES_ANY_IS_OK_HERE } from "./src/types.ts";
 
 // Read package.json to extract versions from peerDependencies
 const packageJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf-8")) as PackageJson;

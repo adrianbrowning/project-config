@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTaskWrapper } from "listr2";
-import type { TaskContext } from "./cli-args";
-import type { YES_ANY_IS_OK_HERE } from "./types";
+import type { TaskContext } from "./cli-args.ts";
+import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 
 interface PackageJson {
   scripts?: Record<string, string>;
