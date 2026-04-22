@@ -12,7 +12,7 @@ import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
-import { detectTools } from "./tool-detection.ts";
+// import { detectTools } from "./tool-detection.ts";
 import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript } from "./utils.ts";
 import { installPkg } from "./utils.ts";
@@ -65,15 +65,15 @@ const TOOL_DEFS: Array<ToolDef> = [
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
 
 function createPrompt(updateMode: boolean): MultiSelectPrompt {
-  const detected = updateMode ? detectTools() : null;
+  // const detected = updateMode ? detectTools() : null;
 
   const tools: Array<MultiSelectChoice> = TOOL_DEFS.map(({ name, value }) => {
-    const installed = detected?.[value as keyof typeof detected]?.installed ?? false;
-    const label = detected
+    const installed = false; //detected?.[value as keyof typeof detected]?.installed ?? false;
+    const label = name;/* detected
     // eslint-disable-next-line sonarjs/no-nested-conditional
       ? installed
         ? `${name} (installed)` : `${name} (NEW)`
-      : name;
+      : name;*/
     return { name: label, value, enabled: installed };
   });
 
