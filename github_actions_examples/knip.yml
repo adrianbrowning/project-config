@@ -4,15 +4,11 @@ on:
   pull_request:
     branches:
       - main
-      - 'release-*'
     types: [ opened, synchronize, reopened ]
-  push:
-    branches:
-      - 'release-*'
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,11 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # 0. Stop infinite loop
-      - name: Check if commit is made by bot
-        if: github.actor == 'github-actions[bot]'
-        run: echo "Commit made by bot. Exiting workflow." && exit 0
 
       # 1. Checkout the repository with credentials persisted for push
       - name: Checkout repository
@@ -43,7 +34,6 @@ jobs:
       - name: Get pnpm store
         id: pnpm-cache-store
         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store

@@ -4,11 +4,7 @@ on:
   pull_request:
     branches:
       - main
-      - 'release-*'
     types: [ opened, synchronize, reopened ]
-  push:
-    branches:
-      - 'release-*'
   workflow_dispatch:
 
 concurrency:
@@ -43,7 +39,6 @@ jobs:
       - name: Get pnpm store
         id: pnpm-cache-store
         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
 
       # 2.2. Cache pnpm store
       - name: Cache pnpm store
