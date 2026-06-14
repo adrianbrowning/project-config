@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-os-command-from-path, sonarjs/os-command */
 /**
  * Test project management utility
  * Reuses the single pre-installed template dir created by globalSetup.
@@ -6,7 +7,7 @@
 import { execSync, execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import {runCommand} from "./command-runner.ts";
+import { runCommand } from "./command-runner.ts";
 
 type ProjectOptions = {
   name: string;
@@ -121,7 +122,7 @@ export class TestProject implements Disposable {
    */
   gitCommit(message: string, options?: { expectFailure?: boolean; }) {
     this.gitAdd();
-    return runCommand(this, `git commit -m "${message}"`, options)
+    return runCommand(this, `git commit -m "${message}"`, options);
   }
 
   /**
@@ -144,8 +145,8 @@ export class TestProject implements Disposable {
   cleanup(): void {
     try {
       for (const entry of fs.readdirSync(this.dir)) {
-        if (!["node_modules", "package.json", "pnpm-lock.yaml"].includes(entry)) {
-          fs.rmSync(path.join(this.dir, entry), {recursive: true, force: true});
+        if (![ "node_modules", "package.json", "pnpm-lock.yaml" ].includes(entry)) {
+          fs.rmSync(path.join(this.dir, entry), { recursive: true, force: true });
         }
       }
     }

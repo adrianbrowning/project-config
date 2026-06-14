@@ -1,3 +1,4 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Knip integration tests
  */

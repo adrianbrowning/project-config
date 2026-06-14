@@ -27,7 +27,6 @@ export function assertFileContains(project: TestProject, filePath: string, conte
   expect(fileContent).toContain(content);
 }
 
-
 /**
  * Assert that a JSON file has a property at a given path
  */
@@ -67,5 +66,4 @@ export function assertPackageJsonScript(
     expect(pkg.scripts![scriptName]).toBe(scriptValue);
   }
 }
-
 

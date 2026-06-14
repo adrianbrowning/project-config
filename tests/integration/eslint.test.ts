@@ -1,8 +1,9 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * ESLint integration tests
  */
 
-import {describe, it, expect, beforeAll} from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -12,11 +13,11 @@ import {
 import { TestProject } from "../utils/test-project.ts";
 
 describe("ESLint Configuration", () => {
-    let project: TestProject;
-    beforeAll(() => {
-        project = new TestProject({name: "commit-lint-config"});
-        project.runCli([ "--tool=eslint", "--yes" ]);
-    });
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "commit-lint-config" });
+    project.runCli([ "--tool=eslint", "--yes" ]);
+  });
 
   it("generates eslint.config.ts with correct import", () => {
 
@@ -54,7 +55,7 @@ export function greet(name: string): string {
   });
 
   it("lint:fix modifies files with fixable issues", () => {
-    const project = new TestProject({ name: "eslint-fix" });    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+    const project = new TestProject({ name: "eslint-fix" }); project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create file with fixable issues (extra semicolons, spacing)
     const badCode = `

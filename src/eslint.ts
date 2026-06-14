@@ -393,7 +393,7 @@ const config = [
       {
         files: [ "**/*.tsx", "**/*.jsx" ],
         plugins: {
-          "react-you-might-not-need-an-effect": (await import("eslint-plugin-react-you-might-not-need-an-effect")).default.configs.recommended,
+          "react-you-might-not-need-an-effect": (await import("eslint-plugin-react-you-might-not-need-an-effect")).default,
         },
         rules: {
           "react-you-might-not-need-an-effect/no-derived-state": WARN,
@@ -403,9 +403,7 @@ const config = [
           "react-you-might-not-need-an-effect/no-reset-all-state-on-prop-change": WARN,
           "react-you-might-not-need-an-effect/no-pass-live-state-to-parent": WARN,
           "react-you-might-not-need-an-effect/no-pass-data-to-parent": WARN,
-          "react-you-might-not-need-an-effect/no-pass-ref-to-parent": WARN,
           "react-you-might-not-need-an-effect/no-initialize-state": WARN,
-          "react-you-might-not-need-an-effect/no-empty-effect": WARN,
           "no-restricted-syntax": [
             "warn",
             {

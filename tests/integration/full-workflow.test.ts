@@ -1,16 +1,16 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Full workflow integration test
  * Tests the complete CLI workflow: setup, lint, lint:ts, commit
  */
 
-import {describe, it, expect, beforeAll, afterAll} from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
   assertFileNotExists,
   assertFileContains,
-  assertPackageJsonScript,
-  assertJsonHasProperty
+  assertPackageJsonScript
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 
@@ -26,7 +26,7 @@ describe("Complete CLI workflow", () => {
       "--ts-mode=bundler",
       "--ts-dom",
       "--ts-type=app",
-    ])
+    ]);
   });
 
   afterAll(() => {

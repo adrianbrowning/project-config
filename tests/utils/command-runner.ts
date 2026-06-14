@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/os-command */
 /**
  * Command execution utilities for tests
  */
@@ -40,7 +41,6 @@ export function runCommand(
     throw error;
   }
 }
-
 
 /**
  * Make a git commit

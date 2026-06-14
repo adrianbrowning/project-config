@@ -1,8 +1,9 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * GitHub Actions integration tests
  */
 
-import {describe, it, expect, beforeAll, beforeEach} from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import {
   assertFileExists,
   assertFileNotExists,
@@ -17,7 +18,7 @@ describe("GitHub Actions Workflows", () => {
   });
   beforeEach(() => {
     project.rmDir(".github/workflows");
-  })
+  });
   it("creates .github/workflows directory", () => {
     project.runCli([ "--all", "--yes", "--no-release" ]);
 

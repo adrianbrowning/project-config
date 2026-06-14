@@ -1,3 +1,4 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Lint-Staged integration tests
  */
@@ -17,13 +18,10 @@ describe("Lint-Staged Configuration", () => {
   });
   it("generates .lintstagedrc", () => {
 
-
-
     assertFileExists(project, ".lintstagedrc");
   });
 
   it("config targets JS/TS/TSX files", () => {
-
 
     const config = project.readFile(".lintstagedrc");
     expect(config).toContain("*.{js,ts,jsx,tsx}");
@@ -31,10 +29,9 @@ describe("Lint-Staged Configuration", () => {
 
   it("uses pnpm lint:fix command", () => {
 
-
     // Config delegates to lint:fix script which handles eslint with --fix, --cache, --max-warnings=0
     assertFileContains(project, ".lintstagedrc",
-        `{
+      `{
   "*.{js,ts,jsx,tsx}": [
     "eslint --config eslint.config.style.ts --fix --cache"
   ]
@@ -42,7 +39,6 @@ describe("Lint-Staged Configuration", () => {
   });
 
   it("is valid JSON", () => {
-
 
     // Should not throw when parsing as JSON
     const config = project.readJson(".lintstagedrc");

@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-os-command-from-path */
 /**
  * Global test setup — runs once for the entire suite.
  * Creates a pre-installed template project so each test can clone it
@@ -34,7 +35,7 @@ function createTemplate(tarball: string): string {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, "package.json"),
-    JSON.stringify({ name: "test-template", version: "1.0.0", private: true, "type": "module" }, null, 2),
+    JSON.stringify({ name: "test-template", version: "1.0.0", private: true, "type": "module" }, null, 2)
   );
   execFileSync("pnpm", [
     "add", "-D",

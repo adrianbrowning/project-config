@@ -13,14 +13,11 @@
     "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
     "test:docker": "docker-compose up --build --abort-on-container-exit",
     "lint:ts": "tsc --noEmit",
-    "lint:esl": "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
-    "lint:s": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+    "lint:esl": "eslint --config eslint.config.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+    "lint:s": "eslint --config eslint.config.style.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:fix": "pnpm lint:s --fix",
     "knip": "knip",
     "lint": "pnpm lint:ts; pnpm lint:fix;"
-  },
-  "pnpm": {
-    "minimumReleaseAge": 4320
   },
   "main": "dist/setup.cjs",
   "bin": {
@@ -88,7 +85,7 @@
     "globals": "^16.5.0",
     "listr2": "^9.0.5",
     "tslib": "^2.8.1",
-    "typescript-eslint": "^8.47.0"
+    "typescript-eslint": "^8.61.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^29.0.0",
