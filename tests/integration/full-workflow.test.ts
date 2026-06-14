@@ -107,8 +107,19 @@ describe("Complete CLI workflow", () => {
     assertFileNotExists(project, ".github/workflows/release.yml");
   });
 
-  it("adds pnpm.minimumReleaseAge to package.json", () => {
-    assertJsonHasProperty(project, "package.json", "pnpm.minimumReleaseAge", 4320);
+  it("adds pnpm settings to pnpm-workspace.yaml", () => {
+    assertFileExists(project, "pnpm-workspace.yaml");
+    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAge: 4320");
+    assertFileContains(project, "pnpm-workspace.yaml", "blockExoticSubdeps: true");
+    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicy: no-downgrade");
+    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicyIgnoreAfter: 43200");
+    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAgeExclude:");
+    assertFileContains(project, "pnpm-workspace.yaml", "- '@gingacodemonkey/config'");
+    assertFileContains(project, "pnpm-workspace.yaml", "strictDepBuilds: true");
+  });
+
+  it("enforces pnpm as package manager", () => {
+    assertPackageJsonScript(project, "preinstall", "only-allow pnpm");
   });
 
   it("adds engines field to package.json", () => {

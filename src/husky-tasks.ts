@@ -71,10 +71,10 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
           execFileSync("pnpm", [ "exec", "husky", "init" ]);
           // husky init always creates .husky/pre-commit with "{pkg_manager} test"
           // Replace it with a placeholder so lint-staged (or user) can configure it
-          const defaultTestCmds = [ "npm test", "pnpm test", "yarn test", "bun test" ];
+          const defaultTestRe = /\b(?:npm|pnpm|yarn|bun) test\b/;
           const hookPath = ".husky/pre-commit";
           const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8").trim() : "";
-          if (!existing || defaultTestCmds.some(cmd => existing.includes(cmd))) {
+          if (!existing || defaultTestRe.test(existing)) {
             fs.writeFileSync(hookPath, "# pre-commit hook - configure via lint-staged or manually\n");
           }
         },

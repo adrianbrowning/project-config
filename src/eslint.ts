@@ -6,6 +6,7 @@ import js from "@eslint/js";
 import json from "@eslint/json";
 import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
+import bigO from "eslint-plugin-big-o";
 import depend, { configs as dependConfigs } from "eslint-plugin-depend";
 import noBarrelFiles from "eslint-plugin-no-barrel-files";
 // eslint-disable-next-line depend/ban-dependencies
@@ -209,6 +210,15 @@ const config = [
       "unicorn/prefer-node-protocol" : "error",
     },
   },
+  {
+    plugins: {
+      "de-morgan": (await import("eslint-plugin-de-morgan")).default,
+    },
+    rules: {
+      "de-morgan/no-negated-conjunction": ERROR,
+      "de-morgan/no-negated-disjunction": ERROR,
+    },
+  },
 
   js.configs.recommended,
 
@@ -223,6 +233,9 @@ const config = [
       "sonarjs/todo-tag": WARN,
     },
   },
+
+  // Big-O - algorithmic complexity detection
+  bigO.configs.recommended,
 
   // Depend - detect dependency bloat and redundant polyfills (JS/TS)
   dependConfigs["flat/recommended"],
@@ -380,7 +393,7 @@ const config = [
       {
         files: [ "**/*.tsx", "**/*.jsx" ],
         plugins: {
-          "react-you-might-not-need-an-effect": (await import("eslint-plugin-react-you-might-not-need-an-effect")).default,
+          "react-you-might-not-need-an-effect": (await import("eslint-plugin-react-you-might-not-need-an-effect")).default.configs.recommended,
         },
         rules: {
           "react-you-might-not-need-an-effect/no-derived-state": WARN,
@@ -393,6 +406,15 @@ const config = [
           "react-you-might-not-need-an-effect/no-pass-ref-to-parent": WARN,
           "react-you-might-not-need-an-effect/no-initialize-state": WARN,
           "react-you-might-not-need-an-effect/no-empty-effect": WARN,
+          "no-restricted-syntax": [
+            "warn",
+            {
+              selector:
+                  "CallExpression[callee.name='useEffect'] > ArrowFunctionExpression",
+              message:
+                  "Name your useEffect callback. Use a named function expression instead of an arrow function.",
+            },
+          ],
         },
       },
       // JSX A11y - Accessibility rules for JSX

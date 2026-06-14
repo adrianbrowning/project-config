@@ -73,4 +73,53 @@ export function greet(name: string): string {
     const fixedCode = project.readFile("src/index.ts");
     expect(fixedCode).not.toContain(";;");
   });
+
+  it("de-morgan: flags negated conjunction", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-conjunction" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a && b);
+}
+`);
+    project.install();
+
+    const result = runCommand(project, "pnpm lint", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("de-morgan/no-negated-conjunction");
+  });
+
+  it("de-morgan: flags negated disjunction", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-disjunction" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a || b);
+}
+`);
+    project.install();
+
+    const result = runCommand(project, "pnpm lint", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("de-morgan/no-negated-disjunction");
+  });
+
+  it("de-morgan: auto-fixes negated boolean expressions", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-fix" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a && b);
+}
+`);
+    project.install();
+    runCommand(project, "pnpm lint:fix", { expectFailure: true });
+
+    const fixed = project.readFile("src/index.ts");
+    expect(fixed).not.toContain("!(a && b)");
+    expect(fixed).toContain("!a || !b");
+  });
 });
