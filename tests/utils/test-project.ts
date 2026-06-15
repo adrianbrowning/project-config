@@ -1,12 +1,14 @@
+/* eslint-disable sonarjs/no-os-command-from-path, sonarjs/os-command */
 /**
  * Test project management utility
- * Reuses the single pre-installed template dir created by globalSetup.
+ * Clones the pre-installed template dir (via fs.cpSync) so each instance is isolated.
  */
 
 import { execSync, execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import {runCommand} from "./command-runner.ts";
+import { runCommand } from "./command-runner.ts";
 
 type ProjectOptions = {
   name: string;
@@ -16,12 +18,12 @@ export class TestProject implements Disposable {
   readonly dir: string;
 
   constructor(options: ProjectOptions) {
-    console.log("Initializing test project:", options.name);
     const templateDir = process.env.TEMPLATE_DIR;
     if (!templateDir) throw new Error("TEMPLATE_DIR not set — globalSetup may not have run");
-    this.dir = templateDir;
+    this.dir = path.join(os.tmpdir(), `gcm-test-${options.name}-${Date.now()}`);
+    // ponytail: cpSync with hardlinks — fast clone without re-running pnpm install
+    fs.cpSync(templateDir, this.dir, { recursive: true });
     execFileSync("git", [ "init" ], { cwd: this.dir, stdio: "pipe" });
-    console.log("Test project initialized:", this.dir);
   }
 
   /**
@@ -34,6 +36,7 @@ export class TestProject implements Disposable {
         stdio: options?.stdio ?? "pipe",
         encoding: "utf-8",
         env: { ...process.env, CI: "true" },
+        maxBuffer: 10 * 1024 * 1024,
       });
     }
     catch (error) {
@@ -121,7 +124,7 @@ export class TestProject implements Disposable {
    */
   gitCommit(message: string, options?: { expectFailure?: boolean; }) {
     this.gitAdd();
-    return runCommand(this, `git commit -m "${message}"`, options)
+    return runCommand(this, `git commit -m "${message}"`, options);
   }
 
   /**
@@ -135,28 +138,13 @@ export class TestProject implements Disposable {
    * Get latest commit message
    */
   getLastCommitMessage(): string {
-    return this.exec("git log -1 --format=%s").trim();
+    return this.exec("git log -1 --format=%B").trim();
   }
 
-  /**
-   * Reset the shared dir for the next test (removes all non-node_modules files).
-   */
   cleanup(): void {
-    try {
-      for (const entry of fs.readdirSync(this.dir)) {
-        if (!["node_modules", "package.json", "pnpm-lock.yaml"].includes(entry)) {
-          fs.rmSync(path.join(this.dir, entry), {recursive: true, force: true});
-        }
-      }
-    }
-    catch {
-      // Ignore cleanup errors
-    }
+    fs.rmSync(this.dir, { recursive: true, force: true });
   }
 
-  /**
-   * Disposable interface for `using` keyword
-   */
   [Symbol.dispose](): void {
     this.cleanup();
   }

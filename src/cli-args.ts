@@ -10,6 +10,7 @@ export type CliArgs = {
 
   // Interactive mode control
   yes: boolean; // Accept all defaults/overwrites
+  update: boolean; // Update existing configs
 
   // TypeScript options
   tsMode: "bundler" | "tsc";
@@ -28,6 +29,7 @@ const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "sema
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
   if (arg === "--yes" || arg === "-y") return true;
+  if (arg === "--update" || arg === "-u") return true;
   if (arg === "--no-release") return true;
   if (arg === "--help" || arg === "-h") return true;
   if (arg === "--ts-dom") return true;
@@ -98,6 +100,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tools: [],
     noRelease: false,
     yes: false,
+    update: false,
     tsMode: "bundler",
     tsDom: true,
     tsType: "app",
@@ -112,6 +115,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     if (boolFlag !== undefined) {
       if (arg === "--all" || arg === "-a") args.all = true;
       else if (arg === "--yes" || arg === "-y") args.yes = true;
+      else if (arg === "--update" || arg === "-u") args.update = true;
       else if (arg === "--no-release") args.noRelease = true;
       else if (arg === "--help" || arg === "-h") args.help = true;
       else if (arg === "--ts-dom") args.tsDom = true;

@@ -59,6 +59,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
     task: async () => {
       const { updatePkgJsonScript } = await import("./utils.ts");
       updatePkgJsonScript("lint:esl", "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
+      updatePkgJsonScript("lint:esl:fix", "pnpm lint:esl --fix");
       updatePkgJsonScript("lint:s", "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
       updatePkgJsonScript("lint:fix", "pnpm lint:s --fix");
     },
@@ -101,7 +102,7 @@ function eslintConfigFile(fileName: string, importName: string) {
           const extendsStr = importName === "eslint"
             ? [
               `import type { Linter } from "eslint";`,
-              `import { config as defaultConfig } from '@gingacodemonkey/config/eslint';`,
+              `import defaultConfig from '@gingacodemonkey/config/eslint';`,
               ``,
               `export const extraRules: Array<Linter.Config> = [];`,
               ``,

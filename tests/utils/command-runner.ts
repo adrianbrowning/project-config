@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/os-command */
 /**
  * Command execution utilities for tests
  */
@@ -25,6 +26,7 @@ export function runCommand(
       encoding: "utf-8",
       stdio: [ "pipe", "pipe", "pipe" ],
       env: { ...process.env, CI: "true" },
+      maxBuffer: 10 * 1024 * 1024,
     });
     return { exitCode: 0, stdout, stderr: "" };
   }
@@ -40,7 +42,6 @@ export function runCommand(
     throw error;
   }
 }
-
 
 /**
  * Make a git commit

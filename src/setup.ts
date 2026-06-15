@@ -14,7 +14,7 @@ import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
 // import { detectTools } from "./tool-detection.ts";
 import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
-import { detectPackageManager, updatePkgJson, updatePkgJsonScript } from "./utils.ts";
+import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
 
 // Type definitions for enquirer MultiSelect
@@ -231,8 +231,9 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
       task: async () => {
         const parts: Array<string> = [];
         if (hasTs) parts.push("pnpm lint:ts");
+        if (hasEslint) parts.push("pnpm lint:esl");
         if (hasEslint) parts.push("pnpm lint:fix");
-        updatePkgJsonScript("lint", parts.join("; "));
+        updatePkgJsonScript("lint", parts.join(" && "));
         updatePkgJsonScript("lint:e18e", "pnpm dlx @e18e/cli analyze");
       },
     });
@@ -241,8 +242,10 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
   // Add pnpm.minimumReleaseAge to package.json
   tasks.add({
     title: "Configuring pnpm settings",
-    task: async () => {
-      updatePkgJson("pnpm", { minimumReleaseAge: 4320 });
+    task: async ctx => {
+      updateWorkspaceYaml("pnpm", { minimumReleaseAge: 4320, blockExoticSubdeps: true, trustPolicy: "no-downgrade", trustPolicyIgnoreAfter: 43200, minimumReleaseAgeExclude: [ "@gingacodemonkey/config" ], strictDepBuilds: true });
+      updatePkgJsonScript("preinstall", "only-allow pnpm");
+      ctx.packages.add("only-allow");
     },
   });
 

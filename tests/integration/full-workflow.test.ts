@@ -1,41 +1,26 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Full workflow integration test
  * Tests the complete CLI workflow: setup, lint, lint:ts, commit
  */
 
-import {describe, it, expect, beforeAll, afterAll} from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
   assertFileNotExists,
   assertFileContains,
-  assertPackageJsonScript,
-  assertJsonHasProperty
+  assertPackageJsonScript
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 
 describe("Complete CLI workflow", () => {
   let project: TestProject;
+  let cliOutput: string;
 
   beforeAll(() => {
     project = new TestProject({ name: "full-workflow" });
-    project.runCli([
-      "--all",
-      "--yes",
-      "--no-release",
-      "--ts-mode=bundler",
-      "--ts-dom",
-      "--ts-type=app",
-    ])
-  });
-
-  afterAll(() => {
-    project.cleanup();
-  });
-
-  it("sets up all tools with --all --yes --no-release flags", async () => {
-    // Run CLI with all tools selected (except release)
-    const result = project.runCli([
+    cliOutput = project.runCli([
       "--all",
       "--yes",
       "--no-release",
@@ -43,8 +28,14 @@ describe("Complete CLI workflow", () => {
       "--ts-dom",
       "--ts-type=app",
     ]);
+  });
 
-    expect(result).toContain("Running in non-interactive mode");
+  afterAll(() => {
+    project.cleanup();
+  });
+
+  it("sets up all tools with --all --yes --no-release flags", () => {
+    expect(cliOutput).toContain("Running in non-interactive mode");
   });
 
   it("generates TypeScript configuration", () => {
@@ -88,7 +79,7 @@ describe("Complete CLI workflow", () => {
 
   it("generates Lint-Staged configuration", () => {
     assertFileExists(project, ".lintstagedrc");
-    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache");
+    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache --no-warn-ignored");
   });
 
   it("generates Knip configuration", () => {
@@ -107,8 +98,19 @@ describe("Complete CLI workflow", () => {
     assertFileNotExists(project, ".github/workflows/release.yml");
   });
 
-  it("adds pnpm.minimumReleaseAge to package.json", () => {
-    assertJsonHasProperty(project, "package.json", "pnpm.minimumReleaseAge", 4320);
+  it("adds pnpm settings to pnpm-workspace.yaml", () => {
+    assertFileExists(project, "pnpm-workspace.yaml");
+    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAge: 4320");
+    assertFileContains(project, "pnpm-workspace.yaml", "blockExoticSubdeps: true");
+    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicy: no-downgrade");
+    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicyIgnoreAfter: 43200");
+    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAgeExclude:");
+    assertFileContains(project, "pnpm-workspace.yaml", "- '@gingacodemonkey/config'");
+    assertFileContains(project, "pnpm-workspace.yaml", "strictDepBuilds: true");
+  });
+
+  it("enforces pnpm as package manager", () => {
+    assertPackageJsonScript(project, "preinstall", "only-allow pnpm");
   });
 
   it("adds engines field to package.json", () => {

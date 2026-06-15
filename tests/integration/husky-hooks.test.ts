@@ -1,8 +1,9 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Husky and Git hooks integration tests
  */
 
-import {describe, it, expect, beforeAll} from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { gitCommit } from "../utils/command-runner.ts";
 import {
   assertFileExists,

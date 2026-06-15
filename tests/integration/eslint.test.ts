@@ -1,8 +1,9 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * ESLint integration tests
  */
 
-import {describe, it, expect, beforeAll} from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -12,11 +13,11 @@ import {
 import { TestProject } from "../utils/test-project.ts";
 
 describe("ESLint Configuration", () => {
-    let project: TestProject;
-    beforeAll(() => {
-        project = new TestProject({name: "commit-lint-config"});
-        project.runCli([ "--tool=eslint", "--yes" ]);
-    });
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "commit-lint-config" });
+    project.runCli([ "--tool=eslint", "--yes" ]);
+  });
 
   it("generates eslint.config.ts with correct import", () => {
 
@@ -54,7 +55,7 @@ export function greet(name: string): string {
   });
 
   it("lint:fix modifies files with fixable issues", () => {
-    const project = new TestProject({ name: "eslint-fix" });    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+    const project = new TestProject({ name: "eslint-fix" }); project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create file with fixable issues (extra semicolons, spacing)
     const badCode = `
@@ -72,5 +73,54 @@ export function greet(name: string): string {
     // File should be modified (double semicolon should be fixed)
     const fixedCode = project.readFile("src/index.ts");
     expect(fixedCode).not.toContain(";;");
+  });
+
+  it("de-morgan: flags negated conjunction", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-conjunction" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a && b);
+}
+`);
+    project.install();
+
+    const result = runCommand(project, "pnpm lint", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("de-morgan/no-negated-conjunction");
+  });
+
+  it("de-morgan: flags negated disjunction", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-disjunction" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a || b);
+}
+`);
+    project.install();
+
+    const result = runCommand(project, "pnpm lint", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("de-morgan/no-negated-disjunction");
+  });
+
+  it("de-morgan: auto-fixes negated boolean expressions", () => {
+    const project = new TestProject({ name: "eslint-de-morgan-fix" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    project.writeFile("src/index.ts", `
+export function check(a: boolean, b: boolean): boolean {
+  return !(a && b);
+}
+`);
+    project.install();
+    runCommand(project, "pnpm lint:esl:fix", { expectFailure: true });
+
+    const fixed = project.readFile("src/index.ts");
+    expect(fixed).not.toContain("!(a && b)");
+    expect(fixed).toContain("!a || !b");
   });
 });

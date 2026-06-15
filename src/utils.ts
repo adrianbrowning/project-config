@@ -163,3 +163,46 @@ export function updatePkgJson(key: string, value: unknown): void {
   }
   fs.writeFileSync("package.json", JSON.stringify(pkgJ, null, 2));
 }
+
+function yamlSectionPrefix(content: string): string {
+  const trimmed = content.trimEnd();
+  return trimmed.length > 0 ? trimmed + "\n" : "";
+}
+
+function upsertYamlArray(content: string, sectionHeader: string, key: string, val: Array<unknown>): string {
+  const entry = "  " + key + ":\n" + val.map(item => "    - '" + String(item) + "'").join("\n") + "\n";
+  const existingArrayRe = new RegExp("  " + key + ":\\n(?:    - .+\\n)+");
+  if (existingArrayRe.test(content)) {
+    return content.replace(existingArrayRe, entry);
+  }
+  if (content.includes(sectionHeader + "\n")) {
+    return content.replace(sectionHeader + "\n", sectionHeader + "\n" + entry);
+  }
+  return yamlSectionPrefix(content) + sectionHeader + "\n" + entry;
+}
+
+function upsertYamlScalar(content: string, sectionHeader: string, key: string, val: unknown): string {
+  const entry = "  " + key + ": " + String(val);
+  const existingKeyRe = new RegExp("(  " + key + ": ).+");
+  if (existingKeyRe.test(content)) {
+    return content.replace(existingKeyRe, "$1" + String(val));
+  }
+  if (content.includes(sectionHeader + "\n")) {
+    return content.replace(sectionHeader + "\n", sectionHeader + "\n" + entry + "\n");
+  }
+  return yamlSectionPrefix(content) + sectionHeader + "\n" + entry + "\n";
+}
+
+export function updateWorkspaceYaml(section: string, values: Record<string, unknown>): void {
+  const filePath = "pnpm-workspace.yaml";
+  let content = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+  const sectionHeader = section + ":";
+
+  for (const [ key, val ] of Object.entries(values)) {
+    content = Array.isArray(val)
+      ? upsertYamlArray(content, sectionHeader, key, val)
+      : upsertYamlScalar(content, sectionHeader, key, val);
+  }
+
+  fs.writeFileSync(filePath, content);
+}

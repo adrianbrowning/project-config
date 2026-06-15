@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-os-command-from-path */
 /**
  * Global test setup — runs once for the entire suite.
  * Creates a pre-installed template project so each test can clone it
@@ -10,18 +11,20 @@ import os from "node:os";
 import path from "node:path";
 
 function findTarball(): string {
+  const isFile = (p: string) => fs.statSync(p).isFile();
+
   const envPath = process.env.TARBALL_PATH;
-  if (envPath && fs.existsSync(envPath)) return envPath;
+  if (envPath && fs.existsSync(envPath) && isFile(envPath)) return envPath;
 
   const pkgDir = "/pkg";
   if (fs.existsSync(pkgDir)) {
-    const tarball = fs.readdirSync(pkgDir).find(f => f.endsWith(".tgz"));
+    const tarball = fs.readdirSync(pkgDir).find(f => f.endsWith(".tgz") && isFile(path.join(pkgDir, f)));
     if (tarball) return path.join(pkgDir, tarball);
   }
 
   const projectRoot = path.resolve(import.meta.dirname, "..");
   const tarball = fs.readdirSync(projectRoot)
-    .find(f => f.startsWith("gingacodemonkey-config-") && f.endsWith(".tgz"));
+    .find(f => f.startsWith("gingacodemonkey-config-") && f.endsWith(".tgz") && isFile(path.join(projectRoot, f)));
   if (tarball) return path.join(projectRoot, tarball);
 
   throw new Error("No tarball found. Run `pnpm build` first.");
@@ -34,7 +37,7 @@ function createTemplate(tarball: string): string {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, "package.json"),
-    JSON.stringify({ name: "test-template", version: "1.0.0", private: true, "type": "module" }, null, 2),
+    JSON.stringify({ name: "test-template", version: "1.0.0", private: true, "type": "module" }, null, 2)
   );
   execFileSync("pnpm", [
     "add", "-D",
@@ -54,5 +57,5 @@ export async function setup() {
 }
 
 export async function teardown() {
-  // if (templateDir) fs.rmSync(templateDir, { recursive: true, force: true });
+  if (templateDir) fs.rmSync(templateDir, { recursive: true, force: true });
 }

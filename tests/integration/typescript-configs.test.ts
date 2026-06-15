@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {describe, it, expect, beforeAll, afterEach, beforeEach} from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -25,9 +25,8 @@ function getFixtureContent(fixturePath: string): string {
 describe("TypeScript Configurations", () => {
 
   let project: TestProject;
-  beforeAll(() => {
+  beforeEach(() => {
     project = new TestProject({ name: "ts-lint-ts-script" });
-
   });
   afterEach(() => {
     project.cleanup();
@@ -226,7 +225,7 @@ export function addClass(el: HTMLElement, className: string): void {
     beforeEach(function removeTypeFromPackageJson(){
       const p = project.readJson<{ type?: string; }>("package.json");
       project.writeJson("package.json", { ...p, type: undefined });
-    })
+    });
     it("adds type: module when --ts-type-module flag is passed", () => {
       project.runCli([
         "--tool=ts",
@@ -257,7 +256,7 @@ export function addClass(el: HTMLElement, className: string): void {
     });
 
     it("does NOT add type: module when --no-ts-type-module flag is passed", () => {
-       project.runCli([
+      project.runCli([
         "--tool=ts",
         "--yes",
         "--ts-mode=tsc",

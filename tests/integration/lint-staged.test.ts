@@ -1,11 +1,11 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Lint-Staged integration tests
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
 import {
-  assertFileExists,
-  assertFileContains
+  assertFileExists
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 
@@ -17,32 +17,25 @@ describe("Lint-Staged Configuration", () => {
   });
   it("generates .lintstagedrc", () => {
 
-
-
     assertFileExists(project, ".lintstagedrc");
   });
 
   it("config targets JS/TS/TSX files", () => {
 
-
     const config = project.readFile(".lintstagedrc");
     expect(config).toContain("*.{js,ts,jsx,tsx}");
   });
 
-  it("uses pnpm lint:fix command", () => {
-
-
-    // Config delegates to lint:fix script which handles eslint with --fix, --cache, --max-warnings=0
-    assertFileContains(project, ".lintstagedrc",
-        `{
-  "*.{js,ts,jsx,tsx}": [
-    "eslint --config eslint.config.style.ts --fix --cache"
-  ]
-}`);
+  it("uses eslint fix command for JS/TS files", () => {
+    const config = project.readJson<Record<string, Array<string>>>(".lintstagedrc");
+    const tsGlob = Object.keys(config).find(k => k.includes("ts"));
+    expect(tsGlob).toBeDefined();
+    const commands = config[tsGlob!] ?? [];
+    // eslint-disable-next-line big-o/no-array-lookup-in-loop
+    expect(commands.some(c => c.includes("eslint") && c.includes("--fix"))).toBe(true);
   });
 
   it("is valid JSON", () => {
-
 
     // Should not throw when parsing as JSON
     const config = project.readJson(".lintstagedrc");

@@ -1,3 +1,4 @@
+/* eslint-disable vitest/expect-expect */
 /**
  * Knip integration tests
  */
@@ -41,19 +42,15 @@ describe("Knip Configuration", () => {
   });
 
   it("knip runs successfully on clean project", () => {
-    project.runCli([ "--tool=ts", "--tool=knip", "--yes", "--ts-no-dom", "--ts-type=library" ]);
-
-    // Create a used export
-    project.writeFile("src/index.ts", `
+    using isolated = new TestProject({ name: "knip-run" });
+    isolated.runCli([ "--tool=ts", "--tool=knip", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+    isolated.writeFile("src/index.ts", `
 export function main(): void {
   console.log('Hello');
 }
 `);
-
-    project.install();
-
-    const result = runCommand(project, "pnpm knip", { expectFailure: true });
-    // Knip may report issues but should run
+    isolated.install();
+    const result = runCommand(isolated, "pnpm knip", { expectFailure: true });
     expect(result.stdout + result.stderr).not.toContain("command not found");
   });
 
