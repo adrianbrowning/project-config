@@ -55,5 +55,5 @@ export async function setup() {
 }
 
 export async function teardown() {
-  // if (templateDir) fs.rmSync(templateDir, { recursive: true, force: true });
+  if (templateDir) fs.rmSync(templateDir, { recursive: true, force: true });
 }

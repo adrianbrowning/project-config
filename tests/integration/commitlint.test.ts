@@ -3,7 +3,7 @@
  * CommitLint integration tests
  */
 
-import { describe, it, expect, beforeAll, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   assertFileExists,
   assertFileContains
@@ -11,12 +11,8 @@ import {
 import { TestProject } from "../utils/test-project.ts";
 
 describe("CommitLint Configuration", () => {
-  let project: TestProject;
-  beforeAll(() => {
-    project = new TestProject({ name: "commit-lint-config" });
-  });
-
   it("generates commitlint.config.js with conventional config", () => {
+    using project = new TestProject({ name: "commitlint-config" });
     project.runCli([ "--tool=commitLint", "--yes" ]);
 
     assertFileExists(project, "commitlint.config.js");
@@ -24,6 +20,7 @@ describe("CommitLint Configuration", () => {
   });
 
   it("has subject-case rule configured", () => {
+    using project = new TestProject({ name: "commitlint-rules" });
     project.runCli([ "--tool=commitLint", "--yes" ]);
 
     assertFileContains(project, "commitlint.config.js", "subject-case");
@@ -32,36 +29,40 @@ describe("CommitLint Configuration", () => {
   });
 
   describe("commit messages", () => {
-    let counter = 1;
-    beforeAll(() => {
-      project.rmDir(".husky");
-      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
-    });
-    beforeEach(() => {
-      project.writeFile("src/index.ts", `export const x = ${counter++};`);
-    });
     it("rejects non-conventional commit message", () => {
-      // Invalid commit message should be rejected
+      using project = new TestProject({ name: "commitlint-reject" });
+      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+      project.writeFile("src/index.ts", "export const x = 1;");
 
       const result = project.gitCommit("bad commit message", { expectFailure: true });
       expect(result.exitCode).not.toBe(0);
     });
 
     it("accepts feat: conventional commit", () => {
-      // Valid commit should succeed
+      using project = new TestProject({ name: "commitlint-feat" });
+      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+      project.writeFile("src/index.ts", "export const x = 1;");
+
       const result = project.gitCommit("feat: add new feature");
       expect(result.exitCode).toBe(0);
     });
 
     it("accepts fix: conventional commit", () => {
+      using project = new TestProject({ name: "commitlint-fix" });
+      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+      project.writeFile("src/index.ts", "export const x = 1;");
+
       const result = project.gitCommit("fix: resolve bug");
       expect(result.exitCode).toBe(0);
     });
 
     it("accepts chore: conventional commit", () => {
-      const result = project.gitCommit( "chore: update dependencies");
+      using project = new TestProject({ name: "commitlint-chore" });
+      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+      project.writeFile("src/index.ts", "export const x = 1;");
+
+      const result = project.gitCommit("chore: update dependencies");
       expect(result.exitCode).toBe(0);
     });
   });
-
 });

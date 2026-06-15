@@ -26,6 +26,7 @@ export function runCommand(
       encoding: "utf-8",
       stdio: [ "pipe", "pipe", "pipe" ],
       env: { ...process.env, CI: "true" },
+      maxBuffer: 10 * 1024 * 1024,
     });
     return { exitCode: 0, stdout, stderr: "" };
   }

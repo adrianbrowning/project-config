@@ -59,6 +59,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
     task: async () => {
       const { updatePkgJsonScript } = await import("./utils.ts");
       updatePkgJsonScript("lint:esl", "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
+      updatePkgJsonScript("lint:esl:fix", "pnpm lint:esl --fix");
       updatePkgJsonScript("lint:s", "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
       updatePkgJsonScript("lint:fix", "pnpm lint:s --fix");
     },

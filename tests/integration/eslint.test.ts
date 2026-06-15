@@ -117,7 +117,7 @@ export function check(a: boolean, b: boolean): boolean {
 }
 `);
     project.install();
-    runCommand(project, "pnpm lint:fix", { expectFailure: true });
+    runCommand(project, "pnpm lint:esl:fix", { expectFailure: true });
 
     const fixed = project.readFile("src/index.ts");
     expect(fixed).not.toContain("!(a && b)");

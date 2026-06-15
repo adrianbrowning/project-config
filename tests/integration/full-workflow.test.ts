@@ -16,10 +16,11 @@ import { TestProject } from "../utils/test-project.ts";
 
 describe("Complete CLI workflow", () => {
   let project: TestProject;
+  let cliOutput: string;
 
   beforeAll(() => {
     project = new TestProject({ name: "full-workflow" });
-    project.runCli([
+    cliOutput = project.runCli([
       "--all",
       "--yes",
       "--no-release",
@@ -33,18 +34,8 @@ describe("Complete CLI workflow", () => {
     project.cleanup();
   });
 
-  it("sets up all tools with --all --yes --no-release flags", async () => {
-    // Run CLI with all tools selected (except release)
-    const result = project.runCli([
-      "--all",
-      "--yes",
-      "--no-release",
-      "--ts-mode=bundler",
-      "--ts-dom",
-      "--ts-type=app",
-    ]);
-
-    expect(result).toContain("Running in non-interactive mode");
+  it("sets up all tools with --all --yes --no-release flags", () => {
+    expect(cliOutput).toContain("Running in non-interactive mode");
   });
 
   it("generates TypeScript configuration", () => {
@@ -88,7 +79,7 @@ describe("Complete CLI workflow", () => {
 
   it("generates Lint-Staged configuration", () => {
     assertFileExists(project, ".lintstagedrc");
-    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache");
+    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache --no-warn-ignored");
   });
 
   it("generates Knip configuration", () => {
