@@ -11,18 +11,20 @@ import os from "node:os";
 import path from "node:path";
 
 function findTarball(): string {
+  const isFile = (p: string) => fs.statSync(p).isFile();
+
   const envPath = process.env.TARBALL_PATH;
-  if (envPath && fs.existsSync(envPath)) return envPath;
+  if (envPath && fs.existsSync(envPath) && isFile(envPath)) return envPath;
 
   const pkgDir = "/pkg";
   if (fs.existsSync(pkgDir)) {
-    const tarball = fs.readdirSync(pkgDir).find(f => f.endsWith(".tgz"));
+    const tarball = fs.readdirSync(pkgDir).find(f => f.endsWith(".tgz") && isFile(path.join(pkgDir, f)));
     if (tarball) return path.join(pkgDir, tarball);
   }
 
   const projectRoot = path.resolve(import.meta.dirname, "..");
   const tarball = fs.readdirSync(projectRoot)
-    .find(f => f.startsWith("gingacodemonkey-config-") && f.endsWith(".tgz"));
+    .find(f => f.startsWith("gingacodemonkey-config-") && f.endsWith(".tgz") && isFile(path.join(projectRoot, f)));
   if (tarball) return path.join(projectRoot, tarball);
 
   throw new Error("No tarball found. Run `pnpm build` first.");

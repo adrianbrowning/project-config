@@ -10,7 +10,7 @@ RUN git config --global user.email "test@test.com" && \
 
 WORKDIR /build
 
-COPY package.json pnpm-lock.yaml tsconfig.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY src/ src/
 COPY tsc/ tsc/
 COPY rollup-plugins/ rollup-plugins/
@@ -20,7 +20,7 @@ COPY build.ts rollup.config.ts reset.d.ts ./
 
 RUN pnpm install --frozen-lockfile && node build.ts && pnpm pack
 
-RUN mkdir -p /workspace /test-projects
+RUN mkdir -p /workspace /test-projects && cp -r /build/src /workspace/src
 
 WORKDIR /workspace
 
