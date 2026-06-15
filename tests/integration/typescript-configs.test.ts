@@ -5,7 +5,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it, expect, beforeAll, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -25,9 +25,8 @@ function getFixtureContent(fixturePath: string): string {
 describe("TypeScript Configurations", () => {
 
   let project: TestProject;
-  beforeAll(() => {
+  beforeEach(() => {
     project = new TestProject({ name: "ts-lint-ts-script" });
-
   });
   afterEach(() => {
     project.cleanup();

@@ -1,27 +1,27 @@
-# Docker image for testing @gingacodemonkey/config CLI
-# Provides Node.js 24 + pnpm + git in an isolated environment
-
 FROM node:24-alpine
 
-# Install git and bash (required for husky, git hooks, and shell scripts)
 RUN apk add --no-cache git bash
 
-# Enable corepack and install pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
-# Configure git for commits (required for testing husky/commitlint)
 RUN git config --global user.email "test@test.com" && \
     git config --global user.name "Test User" && \
     git config --global init.defaultBranch main
 
-# Create directories for package and test workspace
-RUN mkdir -p /pkg /workspace /test-projects
+WORKDIR /build
 
-# Set working directory
+COPY package.json pnpm-lock.yaml tsconfig.json ./
+COPY src/ src/
+COPY tsc/ tsc/
+COPY rollup-plugins/ rollup-plugins/
+COPY github_actions_examples/ github_actions_examples/
+COPY .claude/skills/cc-pr-review-ci/ .claude/skills/cc-pr-review-ci/
+COPY build.ts rollup.config.ts reset.d.ts ./
+
+RUN pnpm install --frozen-lockfile && node build.ts && pnpm pack
+
+RUN mkdir -p /workspace /test-projects
+
 WORKDIR /workspace
 
-# Copy package tarball (will be mounted or copied during build)
-# COPY *.tgz /pkg/
-
-# Default command
 ENTRYPOINT ["/bin/bash"]

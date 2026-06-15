@@ -11,7 +11,7 @@
     "prepare": "husky",
     "test": "pnpm --filter @gingacodemonkey/config-tests test",
     "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
-    "test:docker": "docker-compose up --build --abort-on-container-exit",
+    "test:docker": "docker compose up --build --abort-on-container-exit",
     "lint:ts": "tsc --noEmit",
     "lint:esl": "eslint --config eslint.config.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:s": "eslint --config eslint.config.style.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
