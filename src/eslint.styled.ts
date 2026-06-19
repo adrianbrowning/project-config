@@ -10,6 +10,7 @@ const hasTypeScript = has("typescript");
 const config = [
   ...(await import("./eslint.ts")).default,
   {
+    files: [ "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}" ],
     plugins: {
       "@stylistic": stylistic,
       "unused-imports": fixupPluginRules(unusedImports),

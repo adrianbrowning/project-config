@@ -29,6 +29,8 @@ const compat = new FlatCompat({
 const ERROR = "error" as const;
 const WARN = "warn" as const;
 
+const CODE_FILES = [ "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}" ];
+
 const hasTypeScript = has("typescript");
 const hasReact = has("react");
 const hasTestingLibrary = has("@testing-library/dom");
@@ -203,6 +205,7 @@ const config = [
   },
   //Region all
   {
+    files: CODE_FILES,
     plugins: {
       "unicorn" : (await import("eslint-plugin-unicorn")).default,
     },
@@ -211,6 +214,7 @@ const config = [
     },
   },
   {
+    files: CODE_FILES,
     plugins: {
       "de-morgan": (await import("eslint-plugin-de-morgan")).default,
     },
@@ -220,11 +224,12 @@ const config = [
     },
   },
 
-  js.configs.recommended,
+  { ...js.configs.recommended, files: CODE_FILES },
 
   // SonarJS - code smells and bug detection
-  sonarjs.configs.recommended,
+  { ...sonarjs.configs.recommended, files: CODE_FILES },
   {
+    files: CODE_FILES,
     rules: {
       "sonarjs/no-redundant-jump": "off",
       "sonarjs/void-use": "off",
@@ -235,10 +240,10 @@ const config = [
   },
 
   // Big-O - algorithmic complexity detection
-  bigO.configs.recommended,
+  { ...(bigO.configs.recommended as object), files: CODE_FILES },
 
   // Depend - detect dependency bloat and redundant polyfills (JS/TS)
-  dependConfigs["flat/recommended"],
+  { ...dependConfigs["flat/recommended"], files: CODE_FILES },
 
   // Depend - ban-dependencies against package.json
   {
@@ -251,10 +256,11 @@ const config = [
   },
 
   // Barrel files - avoid barrel file anti-patterns
-  noBarrelFiles.flat,
+  { ...noBarrelFiles.flat, files: CODE_FILES },
 
   // all files
   {
+    files: CODE_FILES,
     plugins: {
       import: (await import("eslint-plugin-import-x")).default,
       promise: eslPlugProm,
