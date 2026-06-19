@@ -116,7 +116,7 @@ function eslintConfigFile(fileName: string, importName: string) {
             : [
               `import type { Linter } from "eslint";`,
               `import { config as defaultConfig } from '@gingacodemonkey/config/styled';`,
-              `import { extraRules } from './eslint.config';`,
+              `import { extraRules } from './eslint.config.ts';`,
               ``,
               `const config: Array<Linter.Config> = [`,
               `  ...defaultConfig,`,
