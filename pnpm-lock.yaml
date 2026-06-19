@@ -51,8 +51,8 @@ importers:
         specifier: ^9.39.1
         version: 9.39.1(jiti@2.6.1)
       eslint-plugin-big-o:
-        specifier: ^1.0.0
-        version: 1.0.0(eslint@9.39.1(jiti@2.6.1))
+        specifier: ^1.1.0
+        version: 1.1.0(eslint@9.39.1(jiti@2.6.1))
       eslint-plugin-de-morgan:
         specifier: ^2.1.2
         version: 2.1.2(eslint@9.39.1(jiti@2.6.1))
@@ -2157,8 +2157,8 @@ packages:
   eslint-import-resolver-node@0.3.9:
     resolution: {integrity: sha512-WFj2isz22JahUv+B788TlO3N6zL3nNJGU8CcZbPZvVEkBPaJdCV4vy5wyghty5ROFbCRnm132v8BScu5/1BQ8g==}
 
-  eslint-plugin-big-o@1.0.0:
-    resolution: {integrity: sha512-QXQGBGp428LMIkoUas+Y7p6KLiJq3mexJ27jE56NuJ8yNnBmXQOxNaZizjxBrIPLsfY16w+pT043q++UB05uEw==}
+  eslint-plugin-big-o@1.1.0:
+    resolution: {integrity: sha512-i0Z0iY99urwRGaLWy7FA5VSc3s5Kyi7OaYNo+nmy63+ReW3nlL8wzPIxs/GPMyEoQpLT0N05bnUzr6NSwNSVCA==}
     engines: {node: '>=24.0.0', pnpm: '>=10.0.0'}
     peerDependencies:
       eslint: '>=9.0.0'
@@ -6745,7 +6745,7 @@ snapshots:
       - supports-color
     optional: true
 
-  eslint-plugin-big-o@1.0.0(eslint@9.39.1(jiti@2.6.1)):
+  eslint-plugin-big-o@1.1.0(eslint@9.39.1(jiti@2.6.1)):
     dependencies:
       eslint: 9.39.1(jiti@2.6.1)
 
