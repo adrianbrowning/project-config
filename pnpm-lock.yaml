@@ -43,7 +43,7 @@ importers:
         version: 0.6.1
       '@vitest/eslint-plugin':
         specifier: ^1.6.20
-        version: 1.6.20(@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
+        version: 1.6.20(@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))
       enquirer:
         specifier: ^2.4.1
         version: 2.4.1
@@ -93,8 +93,8 @@ importers:
         specifier: ^1.1.4
         version: 1.1.4
       eslint-plugin-sonarjs:
-        specifier: ^4.0.3
-        version: 4.0.3(eslint@9.39.1(jiti@2.6.1))
+        specifier: ^4.1.0
+        version: 4.1.0(eslint@9.39.1(jiti@2.6.1))
       eslint-plugin-testing-library:
         specifier: ^7.16.2
         version: 7.16.2(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)
@@ -182,13 +182,13 @@ importers:
         version: 22.19.1
       '@vitest/coverage-v8':
         specifier: ^4.0.16
-        version: 4.0.16(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
+        version: 4.0.16(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
       vitest:
         specifier: ^4.0.15
-        version: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1)
+        version: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0)
 
 packages:
 
@@ -2282,8 +2282,8 @@ packages:
     resolution: {integrity: sha512-8+agTMb2glNbP1zFhqo/Ixwtz16Hn0TvJW5KgpoHkAzGjDUhQf9iT+D6OgbhvZCMWRKMjc+5FbJ2Lh0UEUz7fQ==}
     engines: {node: '>=0.10.0'}
 
-  eslint-plugin-sonarjs@4.0.3:
-    resolution: {integrity: sha512-5drkJKLC9qQddIiaATV0e8+ygbUc7b0Ti6VB7M2d3jmKNh3X0RaiIJYTs3dr9xnlhlrxo+/s1FoO3Jgv6O/c7g==}
+  eslint-plugin-sonarjs@4.1.0:
+    resolution: {integrity: sha512-rh+FlVz0yfd2RNIb6WqSkuGh0addX/Qi5scwQ5FphXDFrM6fZKcxP1+attJ78yUKcyYfiu6MTaISPpAFPzqRJw==}
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0 || ^10.0.0
 
@@ -4573,6 +4573,11 @@ packages:
     engines: {node: '>= 14'}
     hasBin: true
 
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@20.2.9:
     resolution: {integrity: sha512-y11nGElTIV+CT3Zv9t7VKl+Q3hTQoT9a1Qzezhhl6Rp21gJ/IVTW7Z3y9EWXhuUBC2Shnf+DX0antecpAwSP8w==}
     engines: {node: '>=10'}
@@ -5899,7 +5904,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
-  '@vitest/coverage-v8@4.0.16(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
+  '@vitest/coverage-v8@4.0.16(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/utils': 4.0.16
@@ -5912,11 +5917,11 @@ snapshots:
       obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1)
+      vitest: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/eslint-plugin@1.6.20(@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
+  '@vitest/eslint-plugin@1.6.20(@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)(vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))':
     dependencies:
       '@typescript-eslint/scope-manager': 8.61.0
       '@typescript-eslint/utils': 8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)
@@ -5924,7 +5929,7 @@ snapshots:
     optionalDependencies:
       '@typescript-eslint/eslint-plugin': 8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3))(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3)
       typescript: 6.0.3
-      vitest: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1)
+      vitest: 4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -5937,13 +5942,13 @@ snapshots:
       chai: 6.2.1
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.15(vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))':
+  '@vitest/mocker@4.0.15(vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.0.15
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1)
+      vite: 7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0)
 
   '@vitest/pretty-format@4.0.15':
     dependencies:
@@ -6965,7 +6970,7 @@ snapshots:
 
   eslint-plugin-security-node@1.1.4: {}
 
-  eslint-plugin-sonarjs@4.0.3(eslint@9.39.1(jiti@2.6.1)):
+  eslint-plugin-sonarjs@4.1.0(eslint@9.39.1(jiti@2.6.1)):
     dependencies:
       '@eslint-community/regexpp': 4.12.2
       builtin-modules: 3.3.0
@@ -6980,6 +6985,7 @@ snapshots:
       semver: 7.8.4
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
+      yaml: 2.9.0
 
   eslint-plugin-testing-library@7.16.2(eslint@9.39.1(jiti@2.6.1))(typescript@6.0.3):
     dependencies:
@@ -9235,7 +9241,7 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1):
+  vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0):
     dependencies:
       esbuild: 0.27.0
       fdir: 6.5.0(picomatch@4.0.3)
@@ -9248,12 +9254,12 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       terser: 5.44.1
-      yaml: 2.5.1
+      yaml: 2.9.0
 
-  vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1):
+  vitest@4.0.15(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0):
     dependencies:
       '@vitest/expect': 4.0.15
-      '@vitest/mocker': 4.0.15(vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1))
+      '@vitest/mocker': 4.0.15(vite@7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0))
       '@vitest/pretty-format': 4.0.15
       '@vitest/runner': 4.0.15
       '@vitest/snapshot': 4.0.15
@@ -9270,7 +9276,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.5.1)
+      vite: 7.3.0(@types/node@22.19.1)(jiti@2.6.1)(terser@5.44.1)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.19.1
@@ -9383,6 +9389,8 @@ snapshots:
   yallist@4.0.0: {}
 
   yaml@2.5.1: {}
+
+  yaml@2.9.0: {}
 
   yargs-parser@20.2.9: {}
 
