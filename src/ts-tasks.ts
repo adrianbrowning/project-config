@@ -173,6 +173,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
           createTsConfig(tsConfig);
 
           if (type === "App") {
+            parentCtx.packages.add("@total-typescript/ts-reset@latest");
             const str = [ "import \"@total-typescript/ts-reset\";" ];
             // create reset.d.ts
             if(dom) {
@@ -252,7 +253,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
     },
     {
       title: "Setting up tsconfig.json",
-      task: async () => {
+      task: async (ctx: TaskContext) => {
         const dom = cliArgs.tsDom;
         const bundler = cliArgs.tsMode === "tsc"; // bundler: false means using external bundler
         const type = cliArgs.tsType;
@@ -281,6 +282,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         createTsConfig(tsConfig);
 
         if (type === "app") {
+          ctx.packages.add("@total-typescript/ts-reset@^0.6.1");
           const str = [ "import \"@total-typescript/ts-reset\";" ];
           if (dom) {
             str.push("import \"@total-typescript/ts-reset/dom\";");
