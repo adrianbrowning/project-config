@@ -47,7 +47,7 @@ export const commitLintTasks: Array<ListrTask<TaskContext>> = [
     title: "Checking if @commitlint/config-conventional is installed",
     task: async (ctx, task) => {
       pkgName = "@commitlint/config-conventional";
-      Supported_Version = "__commitlint_version__";
+      Supported_Version = "__commitlint_config_version__";
       const eslintInstalled = getPkgVersion(pkgName);
       if (!eslintInstalled) {
         task.title = "CommitLint/config-conventional not installed. Installing...";

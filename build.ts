@@ -2,17 +2,17 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import esbuild from "esbuild";
-import type { PackageJson } from "knip/dist/types/package-json.js";
 import type { YES_ANY_IS_OK_HERE } from "./src/types.ts";
 
 // Read package.json to extract versions from peerDependencies
-const packageJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf-8")) as PackageJson;
+const packageJson = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf-8")) as Record<string, YES_ANY_IS_OK_HERE>;
 const peerDeps = packageJson.peerDependencies || {};
 
 // Build version replacement map
 const versionReplacements = {
   "__eslint_version__": peerDeps.eslint || "^9.8.0",
   "__commitlint_version__": peerDeps["@commitlint/cli"] || "20.0.0",
+  "__commitlint_config_version__": peerDeps["@commitlint/config-conventional"] || "20.0.0",
   "__husky_version__": peerDeps.husky || "9.0.6",
   "__knip_version__": peerDeps.knip || "5.70.1",
   "__lintstaged_version__": peerDeps["lint-staged"] || "15.2.10",
