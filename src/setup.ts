@@ -233,10 +233,8 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
   // Add pnpm.minimumReleaseAge to package.json
   tasks.add({
     title: "Configuring pnpm settings",
-    task: async ctx => {
+    task: async () => {
       updateWorkspaceYaml("pnpm", { minimumReleaseAge: 4320, blockExoticSubdeps: true, trustPolicy: "no-downgrade", trustPolicyIgnoreAfter: 43200, minimumReleaseAgeExclude: [ "@gingacodemonkey/config" ], strictDepBuilds: true });
-      updatePkgJsonScript("preinstall", "only-allow pnpm");
-      ctx.packages.add("only-allow");
     },
   });
 
