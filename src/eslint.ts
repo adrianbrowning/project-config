@@ -235,12 +235,22 @@ const config = [
       "sonarjs/void-use": "off",
       "sonarjs/pseudo-random": WARN,
       "sonarjs/redundant-type-aliases": "off",
+      "sonarjs/no-nested-template-literals": "off",
       "sonarjs/todo-tag": WARN,
     },
   },
 
   // Big-O - algorithmic complexity detection
   { ...(bigO.configs.recommended as object), files: CODE_FILES },
+  // ponytail: big-o needs type info; disable for plain JS where it can't infer types
+  {
+    files: [ "**/*.js", "**/*.cjs", "**/*.mjs" ],
+    rules: {
+      "big-o/no-array-lookup-in-loop": "off",
+      "big-o/no-quadratic-dedup": "off",
+      "big-o/no-nested-array-spread": "off",
+    },
+  },
 
   // Depend - detect dependency bloat and redundant polyfills (JS/TS)
   { ...dependConfigs["flat/recommended"], files: CODE_FILES },
