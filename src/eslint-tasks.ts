@@ -16,6 +16,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
         task.title = "ESLint not installed. Installing...";
         // ctx.packages.add(`@eslint/js@${Supported_Version}`);
         ctx.packages.add(`eslint@${Supported_Version}`);
+        ctx.packages.add("jiti");
         // ctx.packages.add("typescript-eslint");
         return;
       }
@@ -35,6 +36,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
             task: async ctx => {
               // ctx.packages.add(`@eslint/js@${Supported_Version}`);
               ctx.packages.add(`eslint@${Supported_Version}`);
+              ctx.packages.add("jiti");
               // ctx.packages.add("typescript-eslint");
             },
           }],
