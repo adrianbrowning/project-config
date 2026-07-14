@@ -19,10 +19,10 @@ describe("--update mode", () => {
     assertFileExists(project, "knip.json");
   });
 
-  describe("--all --yes --no-release", () => {
+  describe("--all --yes", () => {
     it("generates all expected config files", () => {
       using project = new TestProject({ name: "update-all" });
-      project.runCli([ "--update", "--all", "--yes", "--no-release" ]);
+      project.runCli([ "--update", "--all", "--yes" ]);
 
       assertFileExists(project, "eslint.config.ts");
       assertFileExists(project, "tsconfig.json");

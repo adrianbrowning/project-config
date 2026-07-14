@@ -6,7 +6,6 @@ export type CliArgs = {
   // Tool selection
   all: boolean;
   tools: Array<string>;
-  noRelease: boolean;
 
   // Interactive mode control
   yes: boolean; // Accept all defaults/overwrites
@@ -24,13 +23,12 @@ export type CliArgs = {
   help: boolean;
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd", "githubActions" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions" ] as const;
 
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
   if (arg === "--yes" || arg === "-y") return true;
   if (arg === "--update" || arg === "-u") return true;
-  if (arg === "--no-release") return true;
   if (arg === "--help" || arg === "-h") return true;
   if (arg === "--ts-dom") return true;
   if (arg === "--ts-no-dom") return false;
@@ -89,16 +87,12 @@ function parseTool(arg: string, args: CliArgs): void {
 function applyAllToolsFlag(args: CliArgs): void {
   if (!args.all) return;
   args.tools = [ ...TOOL_VALUES ];
-  if (args.noRelease) {
-    args.tools = args.tools.filter(t => t !== "semanticReleaseNotes");
-  }
 }
 
 export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliArgs {
   const args: CliArgs = {
     all: false,
     tools: [],
-    noRelease: false,
     yes: false,
     update: false,
     tsMode: "bundler",
@@ -116,7 +110,6 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
       if (arg === "--all" || arg === "-a") args.all = true;
       else if (arg === "--yes" || arg === "-y") args.yes = true;
       else if (arg === "--update" || arg === "-u") args.update = true;
-      else if (arg === "--no-release") args.noRelease = true;
       else if (arg === "--help" || arg === "-h") args.help = true;
       else if (arg === "--ts-dom") args.tsDom = true;
       else if (arg === "--ts-no-dom") args.tsDom = false;
@@ -156,10 +149,9 @@ Usage:
 Options:
   --all, -a              Select all tools
   --yes, -y              Accept all defaults (non-interactive mode)
-  --no-release           Exclude semantic-release when using --all
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
-                                 semanticReleaseNotes, knip, jscpd
+                                 knip, jscpd
 
 TypeScript Options (used with --yes):
   --ts-mode=<mode>       bundler | tsc (default: bundler)
@@ -175,8 +167,8 @@ Examples:
   # Interactive mode (default)
   gingacodemonkey-config
 
-  # Select all tools except semantic-release
-  gingacodemonkey-config --all --no-release --yes
+  # Select all tools
+  gingacodemonkey-config --all --yes
 
   # Setup with specific TypeScript config
   gingacodemonkey-config --all --yes --ts-mode=bundler --ts-dom --ts-type=app --ts-jsx=react

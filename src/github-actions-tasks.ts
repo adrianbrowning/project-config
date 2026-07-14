@@ -7,7 +7,6 @@ const LINT_WORKFLOW = "__LINT_WORKFLOW__";
 const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
 const TS_CHECK_WORKFLOW = "__TS_CHECK_WORKFLOW__";
 const CLAUDE_PR_REVIEW_WORKFLOW = "__CLAUDE_PR_REVIEW_WORKFLOW__";
-const RELEASE_WORKFLOW = "__RELEASE_WORKFLOW__";
 
 // Claude PR Review CI skill files — replaced at build time from .claude/skills/cc-pr-review-ci/
 const CC_PR_REVIEW_CI_SKILL_MD = "__CC_PR_REVIEW_CI_SKILL_MD__";
@@ -27,7 +26,6 @@ export type GithubActionsOptions = {
   includeKnip?: boolean;
   includeTsCheck?: boolean;
   includeClaudePrReview?: boolean;
-  includeRelease?: boolean;
 };
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
@@ -110,13 +108,6 @@ export function createGithubActionsTasks(options: GithubActionsOptions) {
     tasks.push({
       title: "Setting up cc-pr-review-ci skill reference: testing",
       task: writeConfigFile(".claude/skills/cc-pr-review-ci/references/testing.md", CC_PR_REVIEW_CI_REF_TESTING),
-    });
-  }
-
-  if (options.includeRelease) {
-    tasks.push({
-      title: "Setting up release workflow",
-      task: writeConfigFile(".github/workflows/release.yml", RELEASE_WORKFLOW),
     });
   }
 

@@ -8,7 +8,6 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
-  assertFileNotExists,
   assertFileContains,
   assertPackageJsonScript
 } from "../utils/file-assertions.ts";
@@ -23,7 +22,6 @@ describe("Complete CLI workflow", () => {
     cliOutput = project.runCli([
       "--all",
       "--yes",
-      "--no-release",
       "--ts-mode=bundler",
       "--ts-dom",
       "--ts-type=app",
@@ -34,7 +32,7 @@ describe("Complete CLI workflow", () => {
     project.cleanup();
   });
 
-  it("sets up all tools with --all --yes --no-release flags", () => {
+  it("sets up all tools with --all --yes flags", () => {
     expect(cliOutput).toContain("Running in non-interactive mode");
   });
 
@@ -87,15 +85,12 @@ describe("Complete CLI workflow", () => {
     assertPackageJsonScript(project, "lint:knip", "knip");
   });
 
-  it("generates GitHub Actions workflows (excluding release)", () => {
+  it("generates GitHub Actions workflows", () => {
     assertFileExists(project, ".github/workflows/cache.yml");
     assertFileExists(project, ".github/workflows/ci_test.yml");
     assertFileExists(project, ".github/workflows/lint.yml");
     assertFileExists(project, ".github/workflows/knip.yml");
     assertFileExists(project, ".github/workflows/ts-check.yml");
-
-    // Release should NOT exist (--no-release flag)
-    assertFileNotExists(project, ".github/workflows/release.yml");
   });
 
   it("adds pnpm settings to pnpm-workspace.yaml", () => {

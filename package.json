@@ -115,7 +115,6 @@
     "jscpd": "^4.0.9",
     "knip": "5.70.1",
     "lint-staged": "15.2.10",
-    "semantic-release-unsquash": "^0.4.0",
     "typescript": ">= 6.0.0"
   },
   "files": [

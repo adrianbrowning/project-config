@@ -11,7 +11,6 @@ import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
-import { semanticReleaseNotesTasks } from "./sematic-release-tasks.ts";
 // import { detectTools } from "./tool-detection.ts";
 import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
@@ -56,7 +55,6 @@ const TOOL_DEFS: Array<ToolDef> = [
   { name: "Husky", value: "husky" },
   { name: "CommitLint", value: "commitLint" },
   { name: "Lint-Staged", value: "lintStaged" },
-  { name: "Semantic Release Notes", value: "semanticReleaseNotes" },
   { name: "Knip", value: "knip" },
   { name: "jscpd", value: "jscpd" },
   { name: "GitHub Actions", value: "githubActions" },
@@ -160,10 +158,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     title: "LintStaged",
     task: async (_ctx, task) => task.newListr(lintstagedTasks, { concurrent: false }),
   });
-  if (answer.includes("semanticReleaseNotes")) tasks.add({
-    title: "Semantic Release Notes",
-    task: async (_ctx, task) => task.newListr(semanticReleaseNotesTasks, { concurrent: false }),
-  });
   if (answer.includes("knip")) tasks.add({
     title: "Knip",
     task: async (_ctx, task) => task.newListr(knipTasks, { concurrent: false }),
@@ -187,7 +181,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             includeKnip: answer.includes("knip"),
             includeTsCheck: answer.includes("ts"),
             includeClaudePrReview: true,
-            includeRelease: !cliArgs.noRelease && answer.includes("semanticReleaseNotes"),
           };
         }
         else {
@@ -202,7 +195,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
               { name: "knip", message: "Knip", enabled: answer.includes("knip") },
               { name: "ts_check", message: "TypeScript Check", enabled: answer.includes("ts") },
               { name: "claude_pr_review", message: "Claude PR Review", enabled: true },
-              { name: "release", message: "Release", enabled: answer.includes("semanticReleaseNotes") },
             ],
           });
 
@@ -213,7 +205,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             includeKnip: selected.includes("knip"),
             includeTsCheck: selected.includes("ts_check"),
             includeClaudePrReview: selected.includes("claude_pr_review"),
-            includeRelease: selected.includes("release"),
           };
         }
 

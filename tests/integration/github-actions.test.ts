@@ -6,7 +6,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import {
   assertFileExists,
-  assertFileNotExists,
   assertFileContains
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
@@ -20,20 +19,20 @@ describe("GitHub Actions Workflows", () => {
     project.rmDir(".github/workflows");
   });
   it("creates .github/workflows directory", () => {
-    project.runCli([ "--all", "--yes", "--no-release" ]);
+    project.runCli([ "--all", "--yes" ]);
 
     expect(project.fileExists(".github/workflows")).toBe(true);
   });
 
   it("generates cache.yml (always included)", () => {
-    project.runCli([ "--all", "--yes", "--no-release" ]);
+    project.runCli([ "--all", "--yes" ]);
 
     assertFileExists(project, ".github/workflows/cache.yml");
     assertFileContains(project, ".github/workflows/cache.yml", "pnpm");
   });
 
   it("generates ci_test.yml (always included)", () => {
-    project.runCli([ "--all", "--yes", "--no-release" ]);
+    project.runCli([ "--all", "--yes" ]);
 
     assertFileExists(project, ".github/workflows/ci_test.yml");
   });
@@ -59,11 +58,6 @@ describe("GitHub Actions Workflows", () => {
     assertFileContains(project, ".github/workflows/ts-check.yml", "TypeScript");
   });
 
-  it("does NOT generate release.yml with --no-release flag", () => {
-    project.runCli([ "--all", "--yes", "--no-release" ]);
-
-    assertFileNotExists(project, ".github/workflows/release.yml");
-  });
 
   it("lint.yml has bot check to prevent infinite loops", () => {
     project.runCli([ "--tool=eslint", "--tool=githubActions", "--yes" ]);
@@ -93,11 +87,6 @@ describe("GitHub Actions Workflows", () => {
     expect(lintYml).toContain("actions/checkout");
   });
 
-  it("generates release.yml when semantic-release is selected", () => {
-    project.runCli([ "--tool=semanticReleaseNotes", "--tool=githubActions", "--yes" ]);
-
-    assertFileExists(project, ".github/workflows/release.yml");
-  });
 
   it("generates claude-pr-review.yml when githubActions is selected with --yes", () => {
     project.runCli([ "--tool=githubActions", "--yes" ]);

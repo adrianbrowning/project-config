@@ -12,7 +12,6 @@ export type DetectedTools = {
   husky: ToolStatus;
   commitLint: ToolStatus;
   lintStaged: ToolStatus;
-  semanticReleaseNotes: ToolStatus;
   knip: ToolStatus;
   jscpd: ToolStatus;
   githubActions: ToolStatus;
@@ -24,7 +23,6 @@ const SENTINELS: Record<keyof DetectedTools, string> = {
   husky: ".husky",
   commitLint: "commitlint.config.js",
   lintStaged: ".lintstagedrc",
-  semanticReleaseNotes: ".releaserc.json",
   knip: "knip.json",
   jscpd: ".jscpd.json",
   githubActions: path.join(".github", "workflows"),

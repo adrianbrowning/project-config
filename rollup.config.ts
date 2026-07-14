@@ -28,7 +28,6 @@ const pkgJSON = z.object({
     "jscpd": z.string(),
     "knip": z.string(),
     "lint-staged": z.string(),
-    "semantic-release-unsquash": z.string(),
     "typescript": z.string(),
   }),
 }).parse(JSON.parse(fs.readFileSync(path.join(projectRootDir, "package.json"), { encoding: "utf-8" })));
@@ -55,7 +54,6 @@ export default {
       "__jscpd_version__": pkgJSON.peerDependencies.jscpd,
       "__knip_version__": pkgJSON.peerDependencies.knip,
       "__lintstaged_version__": pkgJSON.peerDependencies["lint-staged"],
-      "__semanticrelease_version__": pkgJSON.peerDependencies["semantic-release-unsquash"],
       "__ts_version__": pkgJSON.peerDependencies.typescript,
       preventAssignment: true,
     }),

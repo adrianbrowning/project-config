@@ -16,7 +16,6 @@ const versionReplacements = {
   "__husky_version__": peerDeps.husky || "9.0.6",
   "__knip_version__": peerDeps.knip || "5.70.1",
   "__lintstaged_version__": peerDeps["lint-staged"] || "15.2.10",
-  "__semanticrelease_version__": peerDeps["semantic-release-unsquash"] || "0.4.0",
   "__jscpd_version__": peerDeps.jscpd || "^4.0.9",
   "__ts_version__": "",
 };
@@ -70,7 +69,6 @@ const ghaWorkflows: Record<string, string> = {
   "knip.yml": "KNIP_WORKFLOW",
   "ts-check.yml": "TS_CHECK_WORKFLOW",
   "claude-pr-review.yml": "CLAUDE_PR_REVIEW_WORKFLOW",
-  "release.yml": "RELEASE_WORKFLOW",
 };
 
 // Map cc-pr-review-ci skill files to their placeholder names

@@ -51,12 +51,6 @@ describe("detectTools", () => {
     expect(detectTools(tmp.path).lintStaged.installed).toBe(true);
   });
 
-  it("detects semanticReleaseNotes via .releaserc.json", () => {
-    using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, ".releaserc.json"), "{}");
-    expect(detectTools(tmp.path).semanticReleaseNotes.installed).toBe(true);
-  });
-
   it("detects knip via knip.json", () => {
     using tmp = tmpDir();
     fs.writeFileSync(path.join(tmp.path, "knip.json"), "{}");
@@ -78,7 +72,7 @@ describe("detectTools", () => {
   it("returns all tool keys", () => {
     using tmp = tmpDir();
     const result = detectTools(tmp.path);
-    const expected = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "semanticReleaseNotes", "knip", "jscpd", "githubActions" ];
+    const expected = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions" ];
     expect(Object.keys(result)).toEqual(expect.arrayContaining(expected));
     expect(Object.keys(result)).toHaveLength(expected.length);
   });
