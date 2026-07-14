@@ -31,7 +31,7 @@ describe("Lint-Staged Configuration", () => {
     const tsGlob = Object.keys(config).find(k => k.includes("ts"));
     expect(tsGlob).toBeDefined();
     const commands = config[tsGlob!] ?? [];
-    // eslint-disable-next-line big-o/no-array-lookup-in-loop
+     
     expect(commands.some(c => c.includes("eslint") && c.includes("--fix"))).toBe(true);
   });
 

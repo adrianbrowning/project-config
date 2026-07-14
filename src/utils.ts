@@ -73,8 +73,7 @@ export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg:
     pnpm: `pnpm add ${pkg} --save-dev`,
     bun: `bun add ${pkg} --dev`,
   }[packageManager];
-
-  // eslint-disable-next-line sonarjs/os-command
+   
   execSync(installCommand, { stdio: "inherit" });
 }
 

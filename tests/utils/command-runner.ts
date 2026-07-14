@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/os-command */
 /**
  * Command execution utilities for tests
  */

@@ -58,7 +58,6 @@ describe("GitHub Actions Workflows", () => {
     assertFileContains(project, ".github/workflows/ts-check.yml", "TypeScript");
   });
 
-
   it("lint.yml has bot check to prevent infinite loops", () => {
     project.runCli([ "--tool=eslint", "--tool=githubActions", "--yes" ]);
 
@@ -86,7 +85,6 @@ describe("GitHub Actions Workflows", () => {
     const lintYml = project.readFile(".github/workflows/lint.yml");
     expect(lintYml).toContain("actions/checkout");
   });
-
 
   it("generates claude-pr-review.yml when githubActions is selected with --yes", () => {
     project.runCli([ "--tool=githubActions", "--yes" ]);

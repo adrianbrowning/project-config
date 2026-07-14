@@ -1,4 +1,4 @@
-/* eslint-disable sonarjs/no-os-command-from-path, sonarjs/os-command */
+/* eslint-disable sonarjs/no-os-command-from-path */
 /**
  * Test project management utility
  * Clones the pre-installed template dir (via fs.cpSync) so each instance is isolated.
