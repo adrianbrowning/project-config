@@ -33,7 +33,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
       const tsVersion = isTypescriptInstalled();
       if (!tsVersion) {
         task.title = "TypeScript not installed. Installing...";
-        ctx.packages.add("typescript@latest");
+        ctx.packages.add("typescript@"+Supported_Version);
         ctx.packages.add("@types/node@^24.0.0");
         return;
       }
@@ -223,7 +223,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         const tsVersion = isTypescriptInstalled();
         if (!tsVersion) {
           task.title = "TypeScript not installed. Installing...";
-          ctx.packages.add("typescript@latest");
+          ctx.packages.add("typescript@"+Supported_Version);
           ctx.packages.add("@types/node@^24.0.0");
           return;
         }
