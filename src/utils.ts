@@ -83,8 +83,10 @@ export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg:
 }
 
 export function compareVersions(v1: string, v2: string): -1 | 0 | 1 {
-  const splitV1 = v1.split(".").map(Number);
-  const splitV2 = v2.split(".").map(Number);
+  const splitV1 = v1.replace(/^[^\d]+/, "").split(".")
+    .map(Number);
+  const splitV2 = v2.replace(/^[^\d]+/, "").split(".")
+    .map(Number);
 
   for (let i = 0; i < Math.max(splitV1.length, splitV2.length); i++) {
     const partV1 = splitV1[i] || 0;
