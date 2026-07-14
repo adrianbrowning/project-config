@@ -1,9 +1,8 @@
-import { execSync } from "node:child_process";
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
-import { compareVersions } from "./utils.ts";
+import { compareVersions, getPkgVersion } from "./utils.ts";
 
 type TsConfigObject = {
   extends: string;
@@ -197,19 +196,8 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
   },
 ];
 
-// Helper function declarations
 function isTypescriptInstalled(): string | undefined {
-  try {
-    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Using package manager command to check installed TypeScript version in the project
-    const version = execSync("pnpm list typescript | grep typescript").toString()
-      .trim()
-      .split(" ")[1];
-    if (!version) return undefined;
-    return version;
-  }
-  catch {
-    return undefined;
-  }
+  return getPkgVersion("typescript") ?? undefined;
 }
 
 function getTsConfig(): boolean {

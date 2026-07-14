@@ -73,8 +73,13 @@ export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg:
     pnpm: `pnpm add ${pkg} --save-dev`,
     bun: `bun add ${pkg} --dev`,
   }[packageManager];
-   
-  execSync(installCommand, { stdio: "inherit" });
+
+  try {
+    execSync(installCommand, { stdio: "inherit" });
+  }
+  catch {
+    throw new Error(`Failed to install packages. Command: ${installCommand}`);
+  }
 }
 
 export function compareVersions(v1: string, v2: string): -1 | 0 | 1 {

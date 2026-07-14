@@ -17,7 +17,7 @@ const versionReplacements = {
   "__knip_version__": peerDeps.knip || "5.70.1",
   "__lintstaged_version__": peerDeps["lint-staged"] || "15.2.10",
   "__jscpd_version__": peerDeps.jscpd || "^4.0.9",
-  "__ts_version__": "",
+  "__ts_version__": peerDeps.typescript || "6.0.3",
 };
 
 // Extract the imports object
