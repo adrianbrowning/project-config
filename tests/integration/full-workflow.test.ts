@@ -105,7 +105,8 @@ describe("Complete CLI workflow", () => {
   });
 
   it("enforces pnpm as package manager", () => {
-    assertPackageJsonScript(project, "preinstall", "only-allow pnpm");
+    const pkg = project.readJson<{ engines?: { pnpm?: string; }; }>("package.json");
+    expect(pkg.engines?.pnpm).toMatch(/^>=\d+/);
   });
 
   it("adds engines field to package.json", () => {

@@ -42,7 +42,7 @@ function createTemplate(tarball: string): string {
   execFileSync("pnpm", [
     "add", "-D",
     tarball,
-    // "typescript", "@types/node", "@types/react", "@types/react-dom",
+    "typescript@^6.0.3", "@types/node@^24.0.0",
   ], { cwd: dir, stdio: "pipe" });
 
   fs.writeFileSync(path.join(dir, ".gitignore"), "node_modules\ndist\n.cache\n");
