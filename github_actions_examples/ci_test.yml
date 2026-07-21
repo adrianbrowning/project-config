@@ -1,12 +1,21 @@
-name: Dummy CI
+name: CI Tests
 
 on:
   pull_request:
-  push:
+    branches:
+      - main
+    types: [ opened, synchronize, reopened ]
 
 jobs:
-  ci_tests:
+  test-runner:
     runs-on: ubuntu-latest
-    name: ci tests
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - run: echo "CI passed"
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Test
+        run: pnpm run test

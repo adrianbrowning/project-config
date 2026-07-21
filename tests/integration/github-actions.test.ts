@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * GitHub Actions integration tests
  */
@@ -92,13 +91,9 @@ describe("GitHub Actions Workflows", () => {
     assertFileExists(project, ".github/workflows/claude-pr-review.yml");
   });
 
-  it("generates all cc-pr-review-ci skill reference files", () => {
+  it("installs cc-pr-review-ci skill from agent-skills repo", () => {
     project.runCli([ "--tool=githubActions", "--yes" ]);
 
-    const refs = [ "devops", "duplication", "format", "holistic", "performance", "react-ts", "security", "testing" ];
-    for (const ref of refs) {
-      assertFileExists(project, `.claude/skills/cc-pr-review-ci/references/${ref}.md`);
-    }
     assertFileExists(project, ".claude/skills/cc-pr-review-ci/SKILL.md");
   });
 });

@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * Full workflow integration test
  * Tests the complete CLI workflow: setup, lint, lint:ts, commit
@@ -77,7 +76,8 @@ describe("Complete CLI workflow", () => {
 
   it("generates Lint-Staged configuration", () => {
     assertFileExists(project, ".lintstagedrc");
-    assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache --no-warn-ignored");
+    // assertFileContains(project, ".lintstagedrc", "eslint --config eslint.config.style.ts --fix --cache --no-warn-ignored");
+    assertFileContains(project, ".lintstagedrc", "pnpm lint:fix");
   });
 
   it("generates Knip configuration", () => {

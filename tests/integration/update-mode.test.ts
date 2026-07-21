@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * Integration tests for --update mode (Phase 1)
  */

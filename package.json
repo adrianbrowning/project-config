@@ -2,7 +2,8 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "@gingacodemonkey/config",
   "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
-  "version": "0.0.37",
+  "version": "0.0.38",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
     "build": "node build.ts && pnpm pack",
@@ -14,11 +15,14 @@
     "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
     "test:docker": "docker compose up --build --abort-on-container-exit",
     "lint:ts": "tsc --noEmit",
-    "lint:esl": "eslint --config eslint.config.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
-    "lint:s": "eslint --config eslint.config.style.ts \"{src,tests}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+    "lint:esl": "eslint --config eslint.config.ts \"{tests,src}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+    "lint:s": "eslint --config eslint.config.style.ts \"{tests,src}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:fix": "pnpm lint:s --fix",
-    "knip": "knip",
-    "lint": "pnpm lint:ts; pnpm lint:fix;"
+    "lint": "pnpm lint:ts && pnpm lint:esl && pnpm lint:fix",
+    "lint:esl:fix": "pnpm lint:esl --fix",
+    "lint:knip": "knip",
+    "lint:jscpd": "jscpd .",
+    "lint:e18e": "pnpm dlx @e18e/cli analyze"
   },
   "main": "dist/setup.cjs",
   "bin": {
@@ -96,6 +100,8 @@
     "typescript-eslint": "^8.64.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "21.2.1",
+    "@commitlint/config-conventional": "21.2.0",
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
@@ -104,8 +110,8 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "esbuild": "^0.28.1",
-    "eslint": "^9.39.5",
     "husky": "^9.1.7",
+    "jscpd": "^5.0.12",
     "json5": "^2.2.3",
     "knip": "6.26.0",
     "lint-staged": "17.0.8",

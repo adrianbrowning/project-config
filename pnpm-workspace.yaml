@@ -17,3 +17,10 @@ packageExtensions:
   eslint-plugin-big-o:
     peerDependencies:
       '@typescript-eslint/utils': '*'
+pnpm:
+  strictDepBuilds: true
+  minimumReleaseAgeExclude:
+    - '@gingacodemonkey/config'
+  trustPolicyIgnoreAfter: 43200
+  trustPolicy: no-downgrade
+  blockExoticSubdeps: true

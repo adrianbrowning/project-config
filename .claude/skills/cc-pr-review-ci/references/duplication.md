@@ -33,7 +33,6 @@ DOMAIN: duplication
 CRITICAL: 0
 HIGH: <count>
 OBSERVATIONS: <count>
-POSITIVES: <count>
 
 ### High Priority Issues
 [For each: files affected | title | problem description | suggested abstraction]
@@ -43,7 +42,4 @@ POSITIVES: <count>
 [For each: files affected | title | suggestion]
 [If none: "None"]
 
-### Positives
-- [e.g. "No duplication found in changed files"]
-[If none: "None"]
 ```

@@ -77,6 +77,18 @@ pnpm exec gingacodemonkey-config --all --yes --ts-mode=bundler --ts-dom --ts-typ
 
 ---
 
+## Claude PR Review Skill
+
+The Claude PR review skill (`cc-pr-review-ci`) is installed from [adrianbrowning/agent-skills](https://github.com/adrianbrowning/agent-skills). It's automatically installed when you select the GitHub Actions PR review option during setup.
+
+To manually install or update to the latest version:
+
+```bash
+pnpm dlx skills add adrianbrowning/agent-skills --skill cc-pr-review-ci -a claude-code --copy -y
+```
+
+---
+
 ## TypeScript Config Reference
 
 If you need to extend a tsconfig manually rather than using the CLI:

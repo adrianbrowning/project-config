@@ -45,32 +45,17 @@ export function has(pkg: string): boolean {
   }
 }
 
-export async function detectPackageManager(task: ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>, nonInteractive = false): Promise<"npm" | "yarn" | "pnpm" | "bun"> {
-  if (fs.existsSync("package-lock.json")) return "npm";
-  if (fs.existsSync("yarn.lock")) return "yarn";
-  if (fs.existsSync("pnpm-lock.yaml")) return "pnpm";
-  if (fs.existsSync("bun.lockb")) return "bun";
-
-  // In non-interactive mode, default to pnpm
-  if (nonInteractive) {
-    return "pnpm";
-  }
-
-  const { packageManager } = await task.prompt(ListrEnquirerPromptAdapter).run({
-    type: "select",
-    name: "packageManager",
-    message: "No lock file found. Please select your package manager:",
-    choices: [ "npm", "yarn", "pnpm", "bun" ],
-  });
-
-  return packageManager;
+// ponytail: always pnpm, add detection back if multi-PM support needed
+export function detectPackageManager(): "pnpm" {
+  return "pnpm";
 }
 
 export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg: string): void {
+  const isWorkspaceRoot = packageManager === "pnpm" && fs.existsSync("pnpm-workspace.yaml");
   const installCommand = {
     npm: `npm install ${pkg} --save-dev`,
     yarn: `yarn add ${pkg} --dev`,
-    pnpm: `pnpm add ${pkg} --save-dev`,
+    pnpm: `pnpm add ${pkg} --save-dev${isWorkspaceRoot ? " -w" : ""}`,
     bun: `bun add ${pkg} --dev`,
   }[packageManager];
 

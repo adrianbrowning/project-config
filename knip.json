@@ -1,17 +1,16 @@
 {
   "workspaces": {
     ".": {
-      "entry": [
+  "entry": [
         "src/**/*.{js,ts}",
-        "scripts/combine.ts",
-        "commitlint.config.js"
-      ],
+        "scripts/combine.ts"
+  ],
       "ignore": []
     },
     "tests": {
       "entry": [
         "**/*.{ts,tsx}"
-      ],
+  ],
       "ignore": [
         "fixtures/**/*"
       ]

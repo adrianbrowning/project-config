@@ -1,4 +1,4 @@
-name: Claude Code - PR Review
+name: Claude Code - PR Review (Bedrock)
 
 on:
   pull_request:
@@ -75,8 +75,13 @@ jobs:
       - name: Generate review.json
         uses: anthropics/claude-code-action@v1
         timeout-minutes: 30
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          REVIEW_OUTPUT_PATH: /tmp/review.json
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_bedrock: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
           track_progress: true
           prompt: |
@@ -90,9 +95,7 @@ jobs:
           claude_args: |
             --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*/pulls/*/reviews:*),Bash(gh api repos/*/pulls/*/reviews/*/comments:*),Bash(gh api repos/*/pulls/*/comments:*),Bash(git diff:*),Bash(git log:*),Read,Glob"
             --max-turns 50
-            --model claude-sonnet-4-6
-        env:
-          REVIEW_OUTPUT_PATH: /tmp/review.json
+            --model us.anthropic.claude-sonnet-4-6
 
       - name: Post inline review comments
         if: always() && steps.pr.outputs.number != ''

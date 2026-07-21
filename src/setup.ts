@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import * as enquirer from "enquirer";
 import { Listr } from "listr2";
@@ -6,7 +7,7 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
 import { createGithubActionsTasks } from "./github-actions-tasks.ts";
-import type { GithubActionsOptions } from "./github-actions-tasks.ts";
+import type { GithubActionsOptions, ClaudeRunnerType } from "./github-actions-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
@@ -116,10 +117,10 @@ function createTasks(cliArgs: CliArgs) {
     [
       {
         title: "Detecting Package Manager",
-        task: async (ctx, task) => {
+        task: ctx => {
           ctx.cliArgs = cliArgs;
           ctx.packages = createPackageCollector();
-          ctx.packageManager = await detectPackageManager(task, cliArgs.yes);
+          ctx.packageManager = detectPackageManager();
         },
       },
     ],
@@ -175,12 +176,12 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
 
         if (cliArgs.yes) {
           ghaOptions = {
-            includeCache: true,
             includeCiTest: true,
             includeLint: answer.includes("eslint"),
             includeKnip: answer.includes("knip"),
             includeTsCheck: answer.includes("ts"),
             includeClaudePrReview: true,
+            claudeRunnerType: "anthropic",
           };
         }
         else {
@@ -189,7 +190,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             name: "workflows",
             message: "Select GitHub Actions workflows to install:",
             choices: [
-              { name: "cache", message: "Cache", enabled: true },
               { name: "ci_test", message: "CI Test", enabled: true },
               { name: "lint", message: "ESLint", enabled: answer.includes("eslint") },
               { name: "knip", message: "Knip", enabled: answer.includes("knip") },
@@ -198,13 +198,26 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             ],
           });
 
+          let claudeRunnerType: ClaudeRunnerType = "anthropic";
+          if (selected.includes("claude_pr_review")) {
+            claudeRunnerType = await task.prompt(ListrEnquirerPromptAdapter).run({
+              type: "select",
+              name: "claudeRunner",
+              message: "How should Claude Code PR review be run?",
+              choices: [
+                { name: "anthropic", message: "Anthropic API (ANTHROPIC_API_KEY secret)" },
+                { name: "bedrock", message: "AWS Bedrock (AWS credentials + region)" },
+              ],
+            });
+          }
+
           ghaOptions = {
-            includeCache: selected.includes("cache"),
             includeCiTest: selected.includes("ci_test"),
             includeLint: selected.includes("lint"),
             includeKnip: selected.includes("knip"),
             includeTsCheck: selected.includes("ts_check"),
             includeClaudePrReview: selected.includes("claude_pr_review"),
+            claudeRunnerType,
           };
         }
 
@@ -243,6 +256,17 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     title: "Configuring engines",
     task: async () => {
       updatePkgJson("engines", { node: ">=24.0.0", pnpm: ">=10.0.0" });
+    },
+  });
+
+  // Set packageManager field for pnpm/action-setup and corepack
+  tasks.add({
+    title: "Setting packageManager field",
+    task: () => {
+      // eslint-disable-next-line sonarjs/no-os-command-from-path
+      const version = execSync("pnpm --version").toString()
+        .trim();
+      updatePkgJson("packageManager", `pnpm@${version}`);
     },
   });
 
