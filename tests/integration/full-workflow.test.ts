@@ -86,7 +86,7 @@ describe("Complete CLI workflow", () => {
   });
 
   it("generates GitHub Actions workflows", () => {
-    assertFileExists(project, ".github/workflows/cache.yml");
+    assertFileExists(project, ".github/actions/setup/action.yml");
     assertFileExists(project, ".github/workflows/ci_test.yml");
     assertFileExists(project, ".github/workflows/lint.yml");
     assertFileExists(project, ".github/workflows/knip.yml");

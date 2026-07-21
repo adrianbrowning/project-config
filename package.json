@@ -16,10 +16,10 @@
     "test:docker": "docker compose up --build --abort-on-container-exit",
     "lint:ts": "tsc --noEmit",
     "lint:esl": "eslint --config eslint.config.ts \"{tests,src}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+    "lint:esl:fix": "pnpm lint:esl --fix",
     "lint:s": "eslint --config eslint.config.style.ts \"{tests,src}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:fix": "pnpm lint:s --fix",
     "lint": "pnpm lint:ts && pnpm lint:esl && pnpm lint:fix",
-    "lint:esl:fix": "pnpm lint:esl --fix",
     "lint:knip": "knip",
     "lint:jscpd": "jscpd .",
     "lint:e18e": "pnpm dlx @e18e/cli analyze"
