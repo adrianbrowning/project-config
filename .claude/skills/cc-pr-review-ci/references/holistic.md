@@ -58,7 +58,6 @@ DOMAIN: holistic
 CRITICAL: <count>
 HIGH: <count>
 OBSERVATIONS: <count>
-POSITIVES: <count>
 
 ### Critical Issues
 [For each: files affected | title | problem | fix]
@@ -72,7 +71,4 @@ POSITIVES: <count>
 [For each: files affected | title | suggestion]
 [If none: "None"]
 
-### Positives
-- [What's done well from a holistic/consistency perspective]
-[If none: "None"]
 ```

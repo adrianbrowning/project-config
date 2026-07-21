@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * GitHub Actions integration tests
  */
@@ -16,7 +15,7 @@ describe("GitHub Actions Workflows", () => {
     project = new TestProject({ name: "github-actions" });
   });
   beforeEach(() => {
-    project.rmDir(".github/workflows");
+    project.rmDir(".github");
   });
   it("creates .github/workflows directory", () => {
     project.runCli([ "--all", "--yes" ]);
@@ -24,11 +23,11 @@ describe("GitHub Actions Workflows", () => {
     expect(project.fileExists(".github/workflows")).toBe(true);
   });
 
-  it("generates cache.yml (always included)", () => {
+  it("generates reusable setup action (always included)", () => {
     project.runCli([ "--all", "--yes" ]);
 
-    assertFileExists(project, ".github/workflows/cache.yml");
-    assertFileContains(project, ".github/workflows/cache.yml", "pnpm");
+    assertFileExists(project, ".github/actions/setup/action.yml");
+    assertFileContains(project, ".github/actions/setup/action.yml", "pnpm");
   });
 
   it("generates ci_test.yml (always included)", () => {
@@ -58,25 +57,25 @@ describe("GitHub Actions Workflows", () => {
     assertFileContains(project, ".github/workflows/ts-check.yml", "TypeScript");
   });
 
-  it("lint.yml has bot check to prevent infinite loops", () => {
+  it("setup action has bot check to prevent infinite loops", () => {
     project.runCli([ "--tool=eslint", "--tool=githubActions", "--yes" ]);
 
-    const lintYml = project.readFile(".github/workflows/lint.yml");
-    expect(lintYml).toContain("github-actions[bot]");
+    const setupAction = project.readFile(".github/actions/setup/action.yml");
+    expect(setupAction).toContain("github-actions[bot]");
   });
 
-  it("workflows use pnpm action", () => {
+  it("setup action uses pnpm action", () => {
     project.runCli([ "--tool=eslint", "--tool=githubActions", "--yes" ]);
 
-    const lintYml = project.readFile(".github/workflows/lint.yml");
-    expect(lintYml).toContain("pnpm/action-setup");
+    const setupAction = project.readFile(".github/actions/setup/action.yml");
+    expect(setupAction).toContain("pnpm/action-setup");
   });
 
-  it("workflows use Node.js setup action", () => {
+  it("setup action uses Node.js setup action", () => {
     project.runCli([ "--tool=eslint", "--tool=githubActions", "--yes" ]);
 
-    const lintYml = project.readFile(".github/workflows/lint.yml");
-    expect(lintYml).toContain("actions/setup-node");
+    const setupAction = project.readFile(".github/actions/setup/action.yml");
+    expect(setupAction).toContain("actions/setup-node");
   });
 
   it("workflows use checkout action", () => {
@@ -92,13 +91,9 @@ describe("GitHub Actions Workflows", () => {
     assertFileExists(project, ".github/workflows/claude-pr-review.yml");
   });
 
-  it("generates all cc-pr-review-ci skill reference files", () => {
+  it("installs cc-pr-review-ci skill from agent-skills repo", () => {
     project.runCli([ "--tool=githubActions", "--yes" ]);
 
-    const refs = [ "devops", "duplication", "format", "holistic", "performance", "react-ts", "security", "testing" ];
-    for (const ref of refs) {
-      assertFileExists(project, `.claude/skills/cc-pr-review-ci/references/${ref}.md`);
-    }
     assertFileExists(project, ".claude/skills/cc-pr-review-ci/SKILL.md");
   });
 });

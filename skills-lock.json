@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cc-pr-review-ci": {
+      "source": "adrianbrowning/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/cc-pr-review-ci/SKILL.md",
+      "computedHash": "caa567694d958fe5e627ebe5da63517947745fa3661a68227fc0deb9d0f7b125"
+    }
+  }
+}

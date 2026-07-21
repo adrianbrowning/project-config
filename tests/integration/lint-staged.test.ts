@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * Lint-Staged integration tests
  */
@@ -26,13 +25,13 @@ describe("Lint-Staged Configuration", () => {
     expect(config).toContain("*.{js,ts,jsx,tsx}");
   });
 
-  it("uses eslint fix command for JS/TS files", () => {
+  it("runs pnpm lint:fix for JS/TS files", () => {
     const config = project.readJson<Record<string, Array<string>>>(".lintstagedrc");
     const tsGlob = Object.keys(config).find(k => k.includes("ts"));
     expect(tsGlob).toBeDefined();
     const commands = config[tsGlob!] ?? [];
-     
-    expect(commands.some(c => c.includes("eslint") && c.includes("--fix"))).toBe(true);
+
+    expect(commands.some(c => c.includes("pnpm lint:fix"))).toBe(true);
   });
 
   it("is valid JSON", () => {

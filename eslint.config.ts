@@ -1,6 +1,16 @@
 import type { Linter } from "eslint";
 import defaultConfig from "./src/eslint.ts";
 
-const config: Array<Linter.Config> = [ ...defaultConfig ];
+export const extraRules: Array<Linter.Config> = [{
+  files: [ "tests/**/*" ],
+  rules: {
+    "vitest/expect-expect": "off",
+  },
+}];
+
+const config: Array<Linter.Config> = [
+  ...defaultConfig,
+  ...extraRules,
+];
 
 export default config;

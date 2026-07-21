@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * Husky and Git hooks integration tests
  */

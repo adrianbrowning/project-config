@@ -1,4 +1,3 @@
-/* eslint-disable vitest/expect-expect */
 /**
  * CommitLint integration tests
  */

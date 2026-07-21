@@ -59,7 +59,6 @@ DOMAIN: devops
 CRITICAL: <count>
 HIGH: <count>
 OBSERVATIONS: <count>
-POSITIVES: <count>
 
 ### Critical Issues
 [For each: file:line | title | problem | fix]
@@ -73,7 +72,4 @@ POSITIVES: <count>
 [For each: file:line | title | suggestion]
 [If none: "None"]
 
-### Positives
-- [What's done well in CI/DevOps]
-[If none: "None"]
 ```

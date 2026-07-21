@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, 'release-*']
+    branches: [main]
   pull_request:
-    branches: [main, 'release-*']
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -13,20 +13,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Build package
         run: pnpm build
@@ -41,6 +34,9 @@ jobs:
   integration-tests-native:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -55,16 +51,9 @@ jobs:
           - github-actions
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'pnpm'
+      - uses: ./.github/actions/setup
 
       - name: Configure git
         run: |
@@ -77,10 +66,8 @@ jobs:
         with:
           name: package-tarball
 
-      - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-          cd tests && pnpm install
+      - name: Install test dependencies
+        run: cd tests && pnpm install
 
       - name: Set TARBALL_PATH
         run: echo "TARBALL_PATH=$(ls ${{ github.workspace }}/gingacodemonkey-config-*.tgz)" >> $GITHUB_ENV
@@ -95,17 +82,13 @@ jobs:
   integration-tests-docker:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'pnpm'
+      - uses: ./.github/actions/setup
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

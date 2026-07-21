@@ -1,11 +1,10 @@
 {
   "extends": "./tsc/bundler/no-dom/app.json",
   "compilerOptions": {
-//    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
     "moduleResolution": "nodenext",
-    "module": "nodenext",
+    "module": "nodenext"
   },
   "include": [
     "./src/**/*.ts",

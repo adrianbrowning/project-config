@@ -1,215 +1,44 @@
-# PR Review Comment Format
+# review.json Schema
 
-Post as a **single `gh pr comment`**. Use this exact structure.
+The agent outputs a `review.json` file. The posting script reads it and creates a GitHub Review with inline comments.
 
-## Template
+**Never post comments directly.** Write `review.json` to the path given in `$REVIEW_OUTPUT_PATH` (default: `/tmp/review.json`).
 
-```markdown
-<details>
-<summary>📖 How to use this review</summary>
+## Schema
 
-- 🔴 **Critical** = Blocking issues, must fix before merge
-- 🟡 **High Priority** = Should fix, impacts quality/security
-- 💡 **Observations** = Nice to have, consider for future
-- ✅ **Positives** = What's working well
-
-Click any section to expand/collapse details.
-
-</details>
-
----
-
-## 🎯 Executive Summary
-
-**Status**: [✅ Approved | ⚠️ Approved with Suggestions | ❌ Changes Required]
-**Critical Issues**: [count] blocking
-**High Priority**: [count] issues
-**Observations**: [count] suggestions
-
-<details>
-<summary>📋 Quick Stats</summary>
-
-| Category | Count |
-|----------|-------|
-| Critical (blocking) | X |
-| High priority | X |
-| Observations | X |
-| Positive highlights | X |
-
-</details>
-
----
-
-## 🔴 Critical Issues (Must Fix Before Merge)
-
-<details>
-<summary>Issue <N>: [Brief title]</summary>
-
-**File**: `path/to/file.tsx:45`
-
-**Problem**: [Description]
-
-**Code**:
-```typescript
-// problematic code
+```json
+{
+  "verdict": "APPROVED" | "APPROVED_WITH_SUGGESTIONS" | "CHANGES_REQUESTED",
+  "summary": "1-2 sentence plain-text summary for the PR-level review body",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "observations": 0
+  },
+  "findings": [
+    {
+      "id": "security-no-rate-limiting",
+      "domain": "security" | "performance" | "react-ts" | "testing" | "devops" | "holistic" | "duplication" | "bug" | "scope" | "thermo",
+      "severity": "critical" | "high" | "observation",
+      "path": "src/api/handler.ts",
+      "line": 42,
+      "title": "No rate limiting on public endpoint",
+      "problem": "The /login route has no rate limiting, allowing brute-force attacks.",
+      "fix": "Add express-rate-limit middleware before this handler.",
+      "fix_prompt": "Add rate limiting to the /login route in src/api/handler.ts at line 42.\n\nUse express-rate-limit with max: 10 requests per 15 minutes per IP.\n\nExpected outcome: brute-force attempts are throttled with a 429 response."
+    }
+  ]
+}
 ```
 
-**Impact**: [Why this is critical]
+## Field rules
 
-**Fix**: [Specific solution]
+- **`id`**: `{domain}-{kebab-case-title}` — must be stable across re-runs for the same logical finding so suppression matching works. Do not include line numbers in the id.
+- **`path`**: relative path from repo root, exactly as it appears in the diff header (`+++ b/src/...` → `src/...`).
+- **`line`**: the **new-file** line number in the diff where the issue is located (the `+` side). Use the last relevant line if the issue spans multiple lines. If the finding is file-level with no specific line (e.g. a missing file), omit `line` — the posting script will post it as a file-level comment.
+- **`fix_prompt`**: plain text, no markdown formatting inside the string. Concise enough to paste directly into a chat prompt.
+- **`summary`**: written for the PR-level review body. Include verdict emoji: ✅ / ⚠️ / ❌. Mention counts.
 
-<details>
-<summary>🤖 AI Fix Prompt</summary>
+## stdout fallback (no PR number)
 
-```
-Fix [specific issue] in [file path].
-
-Problem: [Concise description]
-
-Current code at line [X]:
-[Show problematic code snippet]
-
-Required changes:
-- [Specific change 1]
-- [Specific change 2]
-
-Expected outcome: [What the fixed code should do]
-```
-
-</details>
-
-[Repeat for each critical issue]
-
----
-
-## 🟡 High Priority Issues
-
-<details>
-<summary>[Count] issues - click to expand</summary>
-
-<details>
-<summary>Issue <N>: [Brief title]</summary>
-
-**File**: `path/to/file.tsx:45`
-
-[Details...]
-
-<details>
-<summary>🤖 AI Fix Prompt</summary>
-
-```
-Fix [specific issue] in [file path].
-
-Problem: [Concise description]
-
-Current code at line [X]:
-[Show problematic code snippet]
-
-Required changes:
-- [Specific change 1]
-- [Specific change 2]
-
-Expected outcome: [What the fixed code should do]
-```
-
-</details>
-
-</details>
-
-[Repeat for each high priority issue]
-
-</details>
-
----
-
-## 💡 Observations & Suggestions
-
-<details>
-<summary>[Count] observations - click to expand</summary>
-
-<details>
-<summary>Observation <N>: [Topic]</summary>
-
-**Suggestion**: [Detailed suggestion and explanation]
-
-<details>
-<summary>🤖 AI Fix Prompt</summary>
-
-```
-Fix [specific issue] in [file path].
-
-Problem: [Concise description]
-
-Current code at line [X]:
-[Show problematic code snippet]
-
-Required changes:
-- [Specific change 1]
-- [Specific change 2]
-
-Expected outcome: [What the fixed code should do]
-```
-
-</details>
-
-</details>
-
-[Repeat for each observation]
-
-</details>
-
----
-
-## ✅ Positive Observations
-
-<details>
-<summary>What's working well - click to expand</summary>
-
-1. ✅ [Positive point 1]
-2. ✅ [Positive point 2]
-3. ✅ [Positive point 3]
-
-</details>
-
----
-
-## 📝 Required Actions
-
-**Blocking (must fix):**
-- [ ] [Action item with file reference]
-- [ ] [Action item with file reference]
-
-**High priority (should fix):**
-- [ ] [Action item]
-- [ ] [Action item]
-
-<details>
-<summary>All recommended actions</summary>
-
-**Observations (consider):**
-- [ ] [Action item]
-- [ ] [Action item]
-
-</details>
-
----
-
-## Verdict
-
-[✅ **APPROVED** | ⚠️ **APPROVED WITH SUGGESTIONS** | ❌ **CHANGES REQUESTED**]
-
-[1-2 sentence summary of why this verdict was given]
-
-[If changes requested, list the top 3 most important fixes needed]
-```
-
-## Rules
-
-- Use collapsible `<details>` sections for lengthy content
-- Keep code examples short or collapsed
-- Use emoji severity indicators consistently
-- Group issues by severity across all domains
-- Always include positive observations
-- End with clear verdict
-- If you use `#<number>` in the review, make it a link. E.g. heading `### 4. Foo Bar` → link `[#4](#4-foo-bar)`
-- DO NOT use a claude.ai link. Use summary/details format with a prompt instead
+When running locally with no PR number, print `review.json` content to stdout instead of writing to a file.
