@@ -10,7 +10,7 @@ const pkgName = "lint-staged";
 const configFile = {
   path: ".lintstagedrc",
   content: {
-    "*.{js,ts,jsx,tsx}": [ "pnpm lint:fix" ],
+    "src/**/*.{js,ts,jsx,tsx}": [ "pnpm lint:fix" ],
   },
 };
 

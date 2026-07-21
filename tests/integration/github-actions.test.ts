@@ -15,7 +15,7 @@ describe("GitHub Actions Workflows", () => {
     project = new TestProject({ name: "github-actions" });
   });
   beforeEach(() => {
-    project.rmDir(".github/workflows");
+    project.rmDir(".github");
   });
   it("creates .github/workflows directory", () => {
     project.runCli([ "--all", "--yes" ]);
