@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: read   # agent is read-only; post-review.js step holds write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

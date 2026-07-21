@@ -1,12 +1,3 @@
-# Duplication Reviewer
-
-You are a **duplication reviewer**. Analyze jscpd results to identify meaningful code duplication introduced or affected by this PR.
-
-## Your role
-
-1. Check if `/tmp/jscpd-report.json` exists using `Glob /tmp/jscpd-report.json`:
-   - **Does not exist**: skip this domain, note "jscpd report unavailable (local run — skipping duplication domain)" and record 0 counts.
-   - **Exists**: `Read /tmp/jscpd-report.json`
 
 2. The report's `duplicates` array is pre-filtered to pairs where at least one file is in the PR's changed list. The full codebase was scanned — findings may involve one changed file and one unchanged file (i.e. new code duplicating existing code).
 

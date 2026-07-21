@@ -72,6 +72,7 @@ jobs:
             console.log('jscpd: ' + filtered.duplicates.length + ' duplicate(s) affecting changed files');
           "
 
+      # Agent runs with read-only access — writes review.json, posts nothing
       - name: Generate review.json
         uses: anthropics/claude-code-action@v1
         timeout-minutes: 30
@@ -97,8 +98,11 @@ jobs:
             --max-turns 50
             --model us.anthropic.claude-sonnet-4-6
 
+      # Separate step holds write permission — posts inline comments via GitHub Reviews API
       - name: Post inline review comments
         if: always() && steps.pr.outputs.number != ''
+        permissions:
+          pull-requests: write
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
