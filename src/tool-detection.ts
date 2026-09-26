@@ -7,15 +7,15 @@ export type ToolStatus = {
 };
 
 export type DetectedTools = {
-  ts: ToolStatus;
-  eslint: ToolStatus;
-  husky: ToolStatus;
-  commitLint: ToolStatus;
-  lintStaged: ToolStatus;
-  knip: ToolStatus;
-  jscpd: ToolStatus;
-  githubActions: ToolStatus;
   bumpy: ToolStatus;
+  commitLint: ToolStatus;
+  eslint: ToolStatus;
+  githubActions: ToolStatus;
+  husky: ToolStatus;
+  jscpd: ToolStatus;
+  knip: ToolStatus;
+  lintStaged: ToolStatus;
+  ts: ToolStatus;
 };
 
 const SENTINELS: Record<keyof DetectedTools, string> = {

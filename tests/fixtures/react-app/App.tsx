@@ -17,9 +17,9 @@ export function Counter({ initialCount = 0 }: CounterProps) {
   return (
     <div>
       <h1>{"Count: "}{count}</h1>
-      <button type="button" onClick={increment}>{"Increment"}</button>
-      <button type="button" onClick={decrement}>{"Decrement"}</button>
-      <button type="button" onClick={reset}>{"Reset"}</button>
+      <button onClick={increment} type="button">{"Increment"}</button>
+      <button onClick={decrement} type="button">{"Decrement"}</button>
+      <button onClick={reset} type="button">{"Reset"}</button>
     </div>
   );
 }

@@ -2,7 +2,7 @@
  * Lint-Staged integration tests
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   assertFileExists
 } from "../utils/file-assertions.ts";

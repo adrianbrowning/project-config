@@ -4,7 +4,7 @@
  * Clones the pre-installed template dir (via fs.cpSync) so each instance is isolated.
  */
 
-import { execSync, execFileSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -29,7 +29,7 @@ export class TestProject implements Disposable {
   /**
    * Execute a shell command in the project directory
    */
-  exec(command: string, options?: { stdio?: "pipe" | "inherit"; expectFailure?: boolean; }): string {
+  exec(command: string, options?: { expectFailure?: boolean; stdio?: "inherit" | "pipe"; }): string {
     try {
       return execSync(command, {
         cwd: this.dir,
@@ -40,7 +40,7 @@ export class TestProject implements Disposable {
       });
     }
     catch (error) {
-      const err = error as { stdout?: string | Buffer; stderr?: string | Buffer; status?: number; };
+      const err = error as { status?: number; stderr?: Buffer | string; stdout?: Buffer | string; };
       const stderr = err.stderr?.toString() ?? "";
       const stdout = err.stdout?.toString() ?? "";
       if (options?.expectFailure) {

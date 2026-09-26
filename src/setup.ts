@@ -3,49 +3,49 @@ import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import * as enquirer from "enquirer";
 import { Listr } from "listr2";
 import { createBumpyTasks } from "./bumpy-tasks.ts";
-import { parseCliArgs, isInteractiveMode, printHelp, createPackageCollector } from "./cli-args.ts";
+import { createPackageCollector, isInteractiveMode, parseCliArgs, printHelp } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
 import { createGithubActionsTasks } from "./github-actions-tasks.ts";
-import type { GithubActionsOptions, ClaudeRunnerType } from "./github-actions-tasks.ts";
+import type { ClaudeRunnerType, GithubActionsOptions } from "./github-actions-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
 // import { detectTools } from "./tool-detection.ts";
-import { tsTasks, createTsTasksWithArgs } from "./ts-tasks.ts";
+import { createTsTasksWithArgs, tsTasks } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
 
 // Type definitions for enquirer MultiSelect
 type MultiSelectChoice = {
-  name: string;
-  value: string;
   enabled?: boolean;
+  name: string;
   onChoice?: (state: MultiSelectState, choice: MultiSelectChoice, index: number) => void;
+  value: string;
 };
 
 type MultiSelectState = {
-  index: number;
   choices: Array<MultiSelectChoice>;
+  index: number;
 };
 
 type MultiSelectOptions = {
-  name: string;
-  message: string;
-  hint?: string;
   choices: Array<MultiSelectChoice>;
-  result: (this: MultiSelectPrompt, names: Record<string, boolean>) => Array<string>;
+  hint?: string;
+  message: string;
+  name: string;
   onSubmit: (this: MultiSelectPrompt) => void;
+  result: (this: MultiSelectPrompt, names: Record<string, boolean>) => Array<string>;
 };
 
 type MultiSelectPrompt = {
+  enable: (item: unknown) => void;
+  focused: unknown;
+  map: (names: Record<string, boolean>) => Record<string, string>;
   run: () => Promise<Array<string>>;
   selected: Array<unknown>;
-  focused: unknown;
-  enable: (item: unknown) => void;
-  map: (names: Record<string, boolean>) => Record<string, string>;
 };
 
 const { MultiSelect } = enquirer.default as unknown as { MultiSelect: new (options: MultiSelectOptions) => MultiSelectPrompt; };

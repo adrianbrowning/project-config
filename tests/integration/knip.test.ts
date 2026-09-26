@@ -2,7 +2,7 @@
  * Knip integration tests
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,

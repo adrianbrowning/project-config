@@ -5,23 +5,23 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
 
 type TsConfigObject = {
-  extends: string;
   compilerOptions: {
     jsx?: string;
     outDir?: string;
     rootDir?: string;
   };
-  include: Array<string>;
   exclude: Array<string>;
+  extends: string;
+  include: Array<string>;
 };
 
 type PromptAnswers = {
-  runtime?: string;
-  dom?: boolean;
   bundler?: boolean;
-  type?: string;
+  dom?: boolean;
   jsx?: boolean;
   outDir?: string;
+  runtime?: string;
+  type?: string;
 };
 
 const Supported_Version = "__ts_version__";

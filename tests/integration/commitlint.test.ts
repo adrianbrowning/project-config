@@ -2,10 +2,10 @@
  * CommitLint integration tests
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  assertFileExists,
-  assertFileContains
+  assertFileContains,
+  assertFileExists
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 

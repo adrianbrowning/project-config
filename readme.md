@@ -242,5 +242,5 @@ Rules are auto-enabled based on what's installed in your project.
 |--------|-------|
 | `@stylistic/eslint-plugin` | Indent (2), quotes (double), semi, trailing commas, brace style (stroustrup), max-len (400) |
 | `eslint-plugin-unused-imports` | Removes unused imports on fix |
-| `eslint-plugin-import-x` | Enforces import order (builtins → external → internal → relative) |
+| `eslint-plugin-perfectionist` | Natural, case-insensitive sorting of imports (builtin → external → internal/`#…` → parent → sibling → index), named imports/exports, union types, interfaces, object types and JSX props |
 | `typescript-eslint` | `consistent-type-imports` (separate type imports) |

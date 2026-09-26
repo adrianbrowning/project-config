@@ -5,11 +5,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
-  assertFileExists,
   assertFileContains,
+  assertFileExists,
   assertPackageJsonScript
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
@@ -119,7 +119,7 @@ export function addClass(el: HTMLElement, className: string): void {
       ]);
 
       // Verify tsconfig
-      const tsconfig = project.readJson<{ extends: string; compilerOptions: { outDir: string; }; }>("tsconfig.json");
+      const tsconfig = project.readJson<{ compilerOptions: { outDir: string; }; extends: string; }>("tsconfig.json");
       expect(tsconfig.extends).toBe("@gingacodemonkey/config/tsc/no-dom/app");
       expect(tsconfig.compilerOptions.outDir).toBe("dist");
 

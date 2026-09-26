@@ -14,16 +14,16 @@ const CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW = "__CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW__
 export type ClaudeRunnerType = "anthropic" | "bedrock";
 
 export type GithubActionsOptions = {
-  includeCiTest?: boolean;
-  includeLint?: boolean;
-  includeKnip?: boolean;
-  includeTsCheck?: boolean;
-  includeClaudePrReview?: boolean;
   claudeRunnerType?: ClaudeRunnerType;
+  includeCiTest?: boolean;
+  includeClaudePrReview?: boolean;
+  includeKnip?: boolean;
+  includeLint?: boolean;
+  includeTsCheck?: boolean;
 };
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
-  const tasks: Array<{ title: string; task: ReturnType<typeof writeConfigFile> | (() => Promise<void>); }> = [];
+  const tasks: Array<{ task: (() => Promise<void>) | ReturnType<typeof writeConfigFile>; title: string; }> = [];
 
   // Always install the reusable setup action
   tasks.push({

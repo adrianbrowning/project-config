@@ -4,10 +4,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it, expect, beforeAll, beforeEach } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  assertFileExists,
-  assertFileContains
+  assertFileContains,
+  assertFileExists
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 

@@ -3,11 +3,11 @@
  * Tests the complete CLI workflow: setup, lint, lint:ts, commit
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
-  assertFileExists,
   assertFileContains,
+  assertFileExists,
   assertPackageJsonScript
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";

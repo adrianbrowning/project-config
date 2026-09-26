@@ -6,7 +6,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assertFileExists, assertFileNotExists, assertPackageJsonScript } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 
@@ -15,12 +15,12 @@ const examplesDir = path.join(repoRoot, "github_actions_examples");
 const { peerDependencies } = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8")) as { peerDependencies: Record<string, string>; };
 
 type BumpyConfig = {
+  access?: string;
   baseBranch: string;
   changelog: string;
   include: Array<string>;
-  access?: string;
-  publish?: { provenance?: boolean; };
   packages?: Record<string, { publishCommand?: Array<string>; }>;
+  publish?: { provenance?: boolean; };
 };
 
 function readExample(file: string): string {

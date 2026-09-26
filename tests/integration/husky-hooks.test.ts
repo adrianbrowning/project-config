@@ -2,11 +2,11 @@
  * Husky and Git hooks integration tests
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { gitCommit } from "../utils/command-runner.ts";
 import {
-  assertFileExists,
-  assertFileContains
+  assertFileContains,
+  assertFileExists
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
 

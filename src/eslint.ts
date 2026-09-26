@@ -1,10 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import eslintReact from "@eslint-react/eslint-plugin";
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
-
 import json from "@eslint/json";
-import eslintReact from "@eslint-react/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 import bigO from "eslint-plugin-big-o";
 import depend, { configs as dependConfigs } from "eslint-plugin-depend";

@@ -7,23 +7,23 @@ import type { TaskContext } from "./cli-args.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 
 interface PackageJson {
-  name?: string;
-  scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  name?: string;
+  scripts?: Record<string, string>;
 }
 
-let pj: PackageJson | null = null;
+let pj: null | PackageJson = null;
 
 export function getPackageJson(): PackageJson {
   if (pj) return pj;
   if (!fs.existsSync("package.json")) throw new Error("No package.json found");
-  pj = (JSON.parse(fs.readFileSync("package.json", "utf8")) as PackageJson | null);
+  pj = (JSON.parse(fs.readFileSync("package.json", "utf8")) as null | PackageJson);
   if(!pj) throw new Error("No package.json found");
   return pj;
 }
 
-export function getPkgVersion(pkg: string): string | null {
+export function getPkgVersion(pkg: string): null | string {
   const pj = getPackageJson();
   let version = "";
   if (pj.dependencies && pj.dependencies[pkg]) {
@@ -51,7 +51,7 @@ export function detectPackageManager(): "pnpm" {
   return "pnpm";
 }
 
-export function installPkg(packageManager: "npm" | "yarn" | "pnpm" | "bun", pkg: string): void {
+export function installPkg(packageManager: "bun" | "npm" | "pnpm" | "yarn", pkg: string): void {
   const isWorkspaceRoot = packageManager === "pnpm" && fs.existsSync("pnpm-workspace.yaml");
   const installCommand = {
     npm: `npm install ${pkg} --save-dev`,

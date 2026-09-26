@@ -21,7 +21,7 @@ export function divide(a: number, b: number): number {
   return a / b;
 }
 
-export type MathOperation = "add" | "subtract" | "multiply" | "divide";
+export type MathOperation = "add" | "divide" | "multiply" | "subtract";
 
 export function calculate(op: MathOperation, a: number, b: number): number {
   switch (op) {

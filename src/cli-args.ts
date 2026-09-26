@@ -3,28 +3,19 @@
  */
 
 export type CliArgs = {
-  // Tool selection
-  all: boolean;
-  tools: Array<string>;
-
-  // Interactive mode control
-  yes: boolean; // Accept all defaults/overwrites
-  update: boolean; // Update existing configs
-
-  // TypeScript options
-  tsMode: "bundler" | "tsc";
-  tsDom: boolean;
-  tsType: "app" | "library" | "library-monorepo";
-  tsJsx: "react" | "react-jsx" | "preserve" | null;
-  tsOutdir: string;
-  tsTypeModule: boolean;
-
-  // Release options
+  all: boolean; // Tool selection: every tool
+  help: boolean;
   noRelease: boolean; // Exclude bumpy from --all
   releaseNpm: boolean; // Publish to npm as well as GitHub releases
-
-  // Help
-  help: boolean;
+  tools: Array<string>; // Tool selection: explicit list
+  tsDom: boolean;
+  tsJsx: "preserve" | "react" | "react-jsx" | null;
+  tsMode: "bundler" | "tsc";
+  tsOutdir: string;
+  tsType: "app" | "library" | "library-monorepo";
+  tsTypeModule: boolean;
+  update: boolean; // Update existing configs
+  yes: boolean; // Accept all defaults/overwrites
 };
 
 const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy" ] as const;
@@ -199,8 +190,8 @@ Examples:
  * Collects packages to install, batched at end of setup
  */
 export type PackageCollector = {
-  packages: Set<string>;
   add: (pkg: string) => void;
+  packages: Set<string>;
 };
 
 export function createPackageCollector(): PackageCollector {
@@ -217,9 +208,9 @@ export function createPackageCollector(): PackageCollector {
  * Context type that includes CLI args for use in tasks
  */
 export type TaskContext = {
-  packageManager: "npm" | "yarn" | "pnpm" | "bun";
   cliArgs: CliArgs;
+  overwrite?: boolean;
+  packageManager: "bun" | "npm" | "pnpm" | "yarn";
   packages: PackageCollector;
   tsVersion?: string;
-  overwrite?: boolean;
 };

@@ -7,8 +7,8 @@ import type { TestProject } from "./test-project.ts";
 
 type CommandResult = {
   exitCode: number;
-  stdout: string;
   stderr: string;
+  stdout: string;
 };
 
 /**
@@ -30,7 +30,7 @@ export function runCommand(
     return { exitCode: 0, stdout, stderr: "" };
   }
   catch (error: unknown) {
-    const err = error as { status?: number; stdout?: Buffer | string; stderr?: Buffer | string; };
+    const err = error as { status?: number; stderr?: Buffer | string; stdout?: Buffer | string; };
     if (options?.expectFailure) {
       return {
         exitCode: err.status ?? 1,

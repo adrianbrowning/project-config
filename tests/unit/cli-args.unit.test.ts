@@ -1,8 +1,8 @@
 /**
  * Tests for --update flag in CLI args
  */
-import { describe, it, expect } from "vitest";
-import { parseCliArgs, isInteractiveMode } from "../../src/cli-args.ts";
+import { describe, expect, it } from "vitest";
+import { isInteractiveMode, parseCliArgs } from "../../src/cli-args.ts";
 
 describe("--update flag", () => {
   it("parses --update flag", () => {

@@ -2,10 +2,13 @@
 
 import { fixupPluginRules } from "@eslint/compat";
 import stylistic from "@stylistic/eslint-plugin";
+import perfectionist from "eslint-plugin-perfectionist";
 import unusedImports from "eslint-plugin-unused-imports";
 import { has } from "./utils.ts";
 
 const hasTypeScript = has("typescript");
+
+const sortOptions = { type: "natural", order: "asc", ignoreCase: true } as const;
 
 const config = [
   ...(await import("./eslint.ts")).default,
@@ -13,6 +16,7 @@ const config = [
     files: [ "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}" ],
     plugins: {
       "@stylistic": stylistic,
+      perfectionist,
       "unused-imports": fixupPluginRules(unusedImports),
     },
 
@@ -21,21 +25,30 @@ const config = [
         "error",
         "as-needed",
       ],
-      "import/order": [
+      "perfectionist/sort-imports": [
         "error",
         {
-          alphabetize: { order: "asc", caseInsensitive: true },
-          pathGroups: [{ pattern: "#*/**", group: "internal" }],
+          ...sortOptions,
+          // `#…` subpath imports sort with internal imports, between external and parent.
+          internalPattern: [ "^#.+", "^~/.+", "^@/.+" ],
+          newlinesBetween: "ignore",
           groups: [
             "builtin",
             "external",
-            "internal",
+            [ "internal", "subpath" ],
             "parent",
             "sibling",
             "index",
+            "unknown",
           ],
         },
       ],
+      "perfectionist/sort-named-imports": [ "error", sortOptions ],
+      "perfectionist/sort-named-exports": [ "error", sortOptions ],
+      "perfectionist/sort-union-types": [ "error", sortOptions ],
+      "perfectionist/sort-interfaces": [ "error", sortOptions ],
+      "perfectionist/sort-object-types": [ "error", sortOptions ],
+      "perfectionist/sort-jsx-props": [ "error", sortOptions ],
       "unused-imports/no-unused-imports": "error",
       "@stylistic/array-bracket-spacing": [ "error", "always", {
         arraysInArrays: false,

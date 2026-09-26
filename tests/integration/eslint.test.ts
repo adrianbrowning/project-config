@@ -2,11 +2,11 @@
  * ESLint integration tests
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
-  assertFileExists,
   assertFileContains,
+  assertFileExists,
   assertPackageJsonScript
 } from "../utils/file-assertions.ts";
 import { TestProject } from "../utils/test-project.ts";
