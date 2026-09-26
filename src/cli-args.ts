@@ -19,11 +19,15 @@ export type CliArgs = {
   tsOutdir: string;
   tsTypeModule: boolean;
 
+  // Release options
+  noRelease: boolean; // Exclude bumpy from --all
+  releaseNpm: boolean; // Publish to npm as well as GitHub releases
+
   // Help
   help: boolean;
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy" ] as const;
 
 function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--all" || arg === "-a") return true;
@@ -34,6 +38,8 @@ function parseBooleanFlag(arg: string): boolean | undefined {
   if (arg === "--ts-no-dom") return false;
   if (arg === "--ts-type-module") return true;
   if (arg === "--no-ts-type-module") return false;
+  if (arg === "--no-release") return true;
+  if (arg === "--release-npm") return true;
   return undefined;
 }
 
@@ -86,7 +92,7 @@ function parseTool(arg: string, args: CliArgs): void {
 
 function applyAllToolsFlag(args: CliArgs): void {
   if (!args.all) return;
-  args.tools = [ ...TOOL_VALUES ];
+  args.tools = args.noRelease ? TOOL_VALUES.filter(tool => tool !== "bumpy") : [ ...TOOL_VALUES ];
 }
 
 export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliArgs {
@@ -101,6 +107,8 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tsJsx: null,
     tsOutdir: "dist",
     tsTypeModule: false,
+    noRelease: false,
+    releaseNpm: false,
     help: false,
   };
 
@@ -115,6 +123,8 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
       else if (arg === "--ts-no-dom") args.tsDom = false;
       else if (arg === "--ts-type-module") args.tsTypeModule = true;
       else if (arg === "--no-ts-type-module") args.tsTypeModule = false;
+      else if (arg === "--no-release") args.noRelease = true;
+      else if (arg === "--release-npm") args.releaseNpm = true;
       continue;
     }
 
@@ -151,7 +161,12 @@ Options:
   --yes, -y              Accept all defaults (non-interactive mode)
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
-                                 knip, jscpd
+                                 knip, jscpd, githubActions, bumpy
+
+Release Options (bumpy):
+  --no-release           Exclude bumpy when using --all
+  --release-npm          Publish to npm as well as GitHub releases
+                         (default with --yes: GitHub releases only)
 
 TypeScript Options (used with --yes):
   --ts-mode=<mode>       bundler | tsc (default: bundler)

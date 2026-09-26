@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import * as enquirer from "enquirer";
 import { Listr } from "listr2";
+import { createBumpyTasks } from "./bumpy-tasks.ts";
 import { parseCliArgs, isInteractiveMode, printHelp, createPackageCollector } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
@@ -59,6 +60,7 @@ const TOOL_DEFS: Array<ToolDef> = [
   { name: "Knip", value: "knip" },
   { name: "jscpd", value: "jscpd" },
   { name: "GitHub Actions", value: "githubActions" },
+  { name: "Bumpy (releases)", value: "bumpy" },
 ];
 
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
@@ -222,6 +224,21 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
         }
 
         return task.newListr(createGithubActionsTasks(ghaOptions), { concurrent: false });
+      },
+    });
+  }
+
+  if (answer.includes("bumpy")) {
+    tasks.add({
+      title: "Bumpy",
+      task: async (_ctx, task) => {
+        const npm = cliArgs.releaseNpm || (!cliArgs.yes && await task.prompt(ListrEnquirerPromptAdapter).run<boolean>({
+          type: "confirm",
+          name: "npm",
+          message: "GitHub releases are always created. Also publish to npm? (adds `release-rc` label snapshots to @next)",
+          initial: false,
+        }));
+        return task.newListr(createBumpyTasks({ npm }), { concurrent: false });
       },
     });
   }

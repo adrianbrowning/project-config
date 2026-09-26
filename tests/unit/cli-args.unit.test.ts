@@ -30,3 +30,31 @@ describe("--update flag", () => {
     expect(isInteractiveMode(args)).toBe(false);
   });
 });
+
+describe("release flags", () => {
+  it("accepts --tool=bumpy", () => {
+    expect(parseCliArgs([ "--tool=bumpy" ]).tools).toEqual([ "bumpy" ]);
+  });
+
+  it("--all includes bumpy", () => {
+    expect(parseCliArgs([ "--all" ]).tools).toContain("bumpy");
+  });
+
+  it("--all --no-release excludes only bumpy", () => {
+    const all = parseCliArgs([ "--all" ]).tools;
+    const noRelease = parseCliArgs([ "--all", "--no-release" ]).tools;
+    expect(noRelease).toEqual(all.filter(tool => tool !== "bumpy"));
+  });
+
+  it("--no-release works before --all", () => {
+    expect(parseCliArgs([ "--no-release", "--all" ]).tools).not.toContain("bumpy");
+  });
+
+  it("defaults to GitHub-only releases", () => {
+    expect(parseCliArgs([ "--tool=bumpy", "--yes" ]).releaseNpm).toBe(false);
+  });
+
+  it("--release-npm opts into npm publishing", () => {
+    expect(parseCliArgs([ "--tool=bumpy", "--release-npm" ]).releaseNpm).toBe(true);
+  });
+});

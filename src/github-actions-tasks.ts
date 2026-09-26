@@ -2,7 +2,8 @@ import { execSync } from "node:child_process";
 import { writeConfigFile } from "./utils.ts";
 
 // GitHub Actions workflow file contents — replaced at build time from github_actions_examples/
-const SETUP_ACTION = "__SETUP_ACTION__";
+export const SETUP_ACTION = "__SETUP_ACTION__";
+export const SETUP_ACTION_PATH = ".github/actions/setup/action.yml";
 const CI_TEST_WORKFLOW = "__CI_TEST_WORKFLOW__";
 const LINT_WORKFLOW = "__LINT_WORKFLOW__";
 const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
@@ -27,7 +28,7 @@ export function createGithubActionsTasks(options: GithubActionsOptions) {
   // Always install the reusable setup action
   tasks.push({
     title: "Setting up reusable setup action",
-    task: writeConfigFile(".github/actions/setup/action.yml", SETUP_ACTION),
+    task: writeConfigFile(SETUP_ACTION_PATH, SETUP_ACTION),
   });
 
   if (options.includeCiTest !== false) {

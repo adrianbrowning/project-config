@@ -69,10 +69,16 @@ describe("detectTools", () => {
     expect(detectTools(tmp.path).githubActions.installed).toBe(true);
   });
 
+  it("detects bumpy via .bumpy directory", () => {
+    using tmp = tmpDir();
+    fs.mkdirSync(path.join(tmp.path, ".bumpy"));
+    expect(detectTools(tmp.path).bumpy.installed).toBe(true);
+  });
+
   it("returns all tool keys", () => {
     using tmp = tmpDir();
     const result = detectTools(tmp.path);
-    const expected = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions" ];
+    const expected = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy" ];
     expect(Object.keys(result)).toEqual(expect.arrayContaining(expected));
     expect(Object.keys(result)).toHaveLength(expected.length);
   });

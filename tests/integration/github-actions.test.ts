@@ -2,6 +2,8 @@
  * GitHub Actions integration tests
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import {
   assertFileExists,
@@ -89,6 +91,15 @@ describe("GitHub Actions Workflows", () => {
     project.runCli([ "--tool=githubActions", "--yes" ]);
 
     assertFileExists(project, ".github/workflows/claude-pr-review.yml");
+  });
+
+  it("writes workflows verbatim from github_actions_examples", () => {
+    project.runCli([ "--tool=ts", "--tool=eslint", "--tool=knip", "--tool=githubActions", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+    const examplesDir = path.resolve(import.meta.dirname, "../../github_actions_examples");
+    for (const file of [ "ci_test.yml", "lint.yml", "knip.yml", "ts-check.yml", "claude-pr-review.yml" ]) {
+      expect(project.readFile(`.github/workflows/${file}`)).toBe(fs.readFileSync(path.join(examplesDir, file), "utf-8"));
+    }
   });
 
   it("installs cc-pr-review-ci skill from agent-skills repo", () => {

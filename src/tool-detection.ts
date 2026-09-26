@@ -15,6 +15,7 @@ export type DetectedTools = {
   knip: ToolStatus;
   jscpd: ToolStatus;
   githubActions: ToolStatus;
+  bumpy: ToolStatus;
 };
 
 const SENTINELS: Record<keyof DetectedTools, string> = {
@@ -26,6 +27,7 @@ const SENTINELS: Record<keyof DetectedTools, string> = {
   knip: "knip.json",
   jscpd: ".jscpd.json",
   githubActions: path.join(".github", "workflows"),
+  bumpy: ".bumpy",
 };
 
 export function detectTools(cwd: string = process.cwd()): DetectedTools {

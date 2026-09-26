@@ -7,6 +7,7 @@ import type { TaskContext } from "./cli-args.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 
 interface PackageJson {
+  name?: string;
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;

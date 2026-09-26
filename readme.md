@@ -34,10 +34,10 @@ The CLI can set up any combination of:
 | `husky` | Git hooks via Husky |
 | `commitLint` | Conventional commit linting |
 | `lintStaged` | `.lintstagedrc` — run ESLint on staged files |
-| `semanticReleaseNotes` | `.releaserc.json` for automated releases |
 | `knip` | Dead code & unused dependency detection |
 | `jscpd` | Copy-paste detection |
-| `githubActions` | CI/CD workflows (cache, test, lint, release, PR review) |
+| `githubActions` | CI workflows (test, lint, knip, ts-check, Claude PR review) |
+| `bumpy` | Versioning and releases via [Bumpy](https://github.com/dmno-dev/bumpy) (see [Releases](#releases-bumpy)) |
 
 ---
 
@@ -48,7 +48,8 @@ pnpm exec gingacodemonkey-config [options]
 
   --all, -a                   Select all tools
   --yes, -y                   Accept all defaults (non-interactive)
-  --no-release                Exclude semanticReleaseNotes when using --all
+  --no-release                Exclude bumpy when using --all
+  --release-npm               Also publish to npm (default: GitHub releases only)
   --tool=<name>               Select a specific tool (repeatable)
 
 TypeScript options (used with --yes):
@@ -65,7 +66,7 @@ TypeScript options (used with --yes):
 ### Examples
 
 ```bash
-# All tools, accept defaults, no semantic release
+# All tools, accept defaults, no release tooling
 pnpm exec gingacodemonkey-config --all --no-release --yes
 
 # Specific tools only
@@ -73,7 +74,26 @@ pnpm exec gingacodemonkey-config --tool=ts --tool=eslint --yes
 
 # Full TypeScript + React app
 pnpm exec gingacodemonkey-config --all --yes --ts-mode=bundler --ts-dom --ts-type=app --ts-jsx=react-jsx
+
+# Releases to GitHub and npm
+pnpm exec gingacodemonkey-config --tool=bumpy --release-npm --yes
 ```
+
+---
+
+## Releases (Bumpy)
+
+The `bumpy` tool installs `@varlock/bumpy`, adds `bump` (`bumpy add`) and `bump:status` (`bumpy status`) scripts, and writes `.bumpy/_config.json` plus three workflows: `bumpy-check.yml`, `bumpy-comment.yml` and `release.yml`. It also writes `.github/actions/setup/action.yml` if it doesn't exist yet.
+
+The flow: each PR adds a bump file (`pnpm bump`, or label the PR `no-bump`). Merging to `main` opens or updates a `bumpy/version-packages` PR. Merging that PR tags the release and creates a GitHub release.
+
+**GitHub releases (default).** Nothing is published to npm. The release packs the package with `pnpm pack` and attaches the tarball to the GitHub release.
+
+**npm (opt-in).** Answer yes to the npm prompt, or pass `--release-npm`. The release also publishes to npm with provenance. Configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) for `release.yml`. If your package needs a build before publishing, run it from a `prepack` script.
+
+**RC releases (npm only).** Add the `release-rc` label to the version PR to publish a snapshot of `main`'s pending release to the `@next` dist-tag, e.g. `1.4.0-rc-a1b2c3d`. Bumpy comments the install command on the PR. Snapshots create no git tags, GitHub releases or commits. To publish another rc, remove the label and add it again.
+
+**`BUMPY_GH_TOKEN` (recommended).** Without it, CI does not run on the version PR. Run `pnpm exec bumpy ci setup` for guidance.
 
 ---
 

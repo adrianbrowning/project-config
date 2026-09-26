@@ -18,6 +18,7 @@ const versionReplacements = {
   "__lintstaged_version__": peerDeps["lint-staged"] || "15.2.10",
   "__jscpd_version__": peerDeps.jscpd || "^4.0.9",
   "__ts_version__": peerDeps.typescript || "6.0.3",
+  "__bumpy_version__": peerDeps["@varlock/bumpy"] || "^1.18.1",
 };
 
 // Extract the imports object
@@ -69,6 +70,10 @@ const ghaWorkflows: Record<string, string> = {
   "ts-check.yml": "TS_CHECK_WORKFLOW",
   "claude-pr-review.yml": "CLAUDE_PR_REVIEW_WORKFLOW",
   "claude-pr-review-bedrock.yml": "CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW",
+  "bumpy-check.yml": "BUMPY_CHECK_WORKFLOW",
+  "bumpy-comment.yml": "BUMPY_COMMENT_WORKFLOW",
+  "release-github.yml": "RELEASE_GITHUB_WORKFLOW",
+  "release-npm.yml": "RELEASE_NPM_WORKFLOW",
 };
 
 Promise.all([ setupBuild, eslintBuild ]).then(() => {

@@ -45,6 +45,9 @@ importers:
       '@typescript-eslint/utils':
         specifier: ^8.64.0
         version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+      '@varlock/bumpy':
+        specifier: ^1.18.1
+        version: 1.18.1
       '@vitest/eslint-plugin':
         specifier: ^1.6.23
         version: 1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)(vitest@4.1.9)
@@ -1513,6 +1516,10 @@ packages:
     resolution: {integrity: sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==}
     cpu: [x64]
     os: [win32]
+
+  '@varlock/bumpy@1.18.1':
+    resolution: {integrity: sha512-u6PHUr+laAgWWm/c3wdExHBCcvYkkTb+KsiRNR9GCFIbCDrCN9CyOZO/crtRZ5u4KWMKtUTeA7U/s+AA0k7Dcg==}
+    hasBin: true
 
   '@vitest/coverage-v8@4.1.9':
     resolution: {integrity: sha512-G9/lgqibheLVBDRuya45EbsEXTYcWoSG+TLg7i2axuzx0Eq62eXn+aWXyaVdV5vKvFSWd6ywcX8hA7la9Pvu8g==}
@@ -4672,6 +4679,8 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
+
+  '@varlock/bumpy@1.18.1': {}
 
   '@vitest/coverage-v8@4.1.9(vitest@4.1.9)':
     dependencies:

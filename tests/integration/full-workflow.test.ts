@@ -92,6 +92,11 @@ describe("Complete CLI workflow", () => {
     assertFileExists(project, ".github/workflows/ts-check.yml");
   });
 
+  it("sets up Bumpy releases", () => {
+    assertFileExists(project, ".bumpy/_config.json");
+    assertFileExists(project, ".github/workflows/release.yml");
+  });
+
   it("adds pnpm settings to pnpm-workspace.yaml", () => {
     assertFileExists(project, "pnpm-workspace.yaml");
     assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAge: 4320");
