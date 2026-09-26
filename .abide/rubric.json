@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "compiledAt": "2026-09-26T15:00:00.000Z",
+  "compiledBy": "claude",
+  "sources": [
+    {
+      "path": "CLAUDE.md",
+      "sha": "96cfb96ca3ba08bd4147b1d923d101f18a90c3d45fe4de434e31396fb8a49888",
+      "scope": "**/*"
+    }
+  ],
+  "rules": [
+    {
+      "id": "alert-developer-on-surprise",
+      "text": "If you ever encounter something in the project that surprises you, please alert the developer working with you.",
+      "source": {
+        "path": "CLAUDE.md",
+        "line": 1
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "about the conversation with the developer, not the code"
+      },
+      "status": "active"
+    },
+    {
+      "id": "record-surprise-in-claude-md",
+      "text": "Indicate that this is the case in the CLAUDE.MD file to help prevent future agents from having the same issue.",
+      "source": {
+        "path": "CLAUDE.md",
+        "line": 1
+      },
+      "check": {
+        "type": "unenforceable",
+        "reason": "depends on what surprised the agent during the session, which a diff cannot show"
+      },
+      "status": "active"
+    }
+  ]
+}
