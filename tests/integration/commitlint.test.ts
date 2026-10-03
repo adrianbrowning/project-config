@@ -35,6 +35,7 @@ describe("CommitLint Configuration", () => {
 
       const result = project.gitCommit("bad commit message", { expectFailure: true });
       expect(result.exitCode).not.toBe(0);
+      expect(result.stdout + result.stderr).toContain("type may not be empty");
     });
 
     it("accepts feat: conventional commit", () => {

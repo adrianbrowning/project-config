@@ -19,10 +19,8 @@ describe("Husky Git Hooks", () => {
     project.runCli([ "--tool=husky", "--yes" ]);
   });
 
-  it("generates .husky/pre-commit with lint-staged command", () => {
-
-    assertFileExists(project, ".husky/pre-commit");
-    assertFileContains(project, ".husky/pre-commit", "lint-staged");
+  it("writes a placeholder pre-commit hook when lint-staged is not selected", () => {
+    expect(project.readFile(".husky/pre-commit")).toBe("# pre-commit hook - configure via lint-staged or manually\n");
   });
 
   it("generates .husky/commit-msg with commitlint", () => {
@@ -51,23 +49,13 @@ describe("Husky Git Hooks", () => {
       "--ts-type=library",
     ]);
 
-    // Create a valid TypeScript file
-    project.writeFile("src/index.ts", `
-export const hello = 'world';
-`);
+    // `lint:fix` removes the extra semicolon, so a fixed commit proves the hook ran lint-staged
+    project.writeFile("src/index.ts", "export const hello = \"world\";;\n");
+    project.install();
 
-    // Install dependencies (may fail in CI due to network/permissions, but we still test the hook runs)
-    try {
-      project.install();
-    }
-    catch {
-      // Ignore install failures - the test will still verify hook execution
-    }
-
-    // Commit should succeed (lint-staged runs on pre-commit)
-    const result = gitCommit(project, "feat: add hello", { expectFailure: true });
-    // May fail due to lint-staged but should run the hook
-    expect(result.stdout + result.stderr).not.toContain("husky - command not found");
+    const result = gitCommit(project, "feat: add hello");
+    expect(result.exitCode).toBe(0);
+    expect(project.exec("git show HEAD:src/index.ts")).toBe("export const hello = \"world\";\n");
   });
 
   it("creates .husky/pre-push hook with lint command", () => {

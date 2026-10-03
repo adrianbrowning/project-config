@@ -33,12 +33,4 @@ describe("Lint-Staged Configuration", () => {
 
     expect(commands.some(c => c.includes("pnpm lint:fix"))).toBe(true);
   });
-
-  it("is valid JSON", () => {
-
-    // Should not throw when parsing as JSON
-    const config = project.readJson(".lintstagedrc");
-    expect(config).toBeDefined();
-    expect(typeof config).toBe("object");
-  });
 });
