@@ -58,3 +58,17 @@ pnpm prepare
 - Task modules use `debugger` statements throughout (remove or conditionally execute in production)
 - Version string `"__ts_version__"` is replaced during build via Rollup (currently empty, needs configuration)
 - Package manager detection order: npm → yarn → pnpm → bun (or user prompt)
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (`CONTEXT.md` + `docs/adr/` at root). See `docs/agents/domain.md`.
