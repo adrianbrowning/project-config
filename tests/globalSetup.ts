@@ -50,7 +50,18 @@ function createTemplate(tarball: string): string {
   return dir;
 }
 
+// `pnpm run` exports this repo's pnpm-workspace.yaml settings as npm_config_* env vars. Drop the supply-chain
+// ones so test projects (in tmpdir, outside this workspace) only get the settings the CLI writes for them.
+const LEAKED_WORKSPACE_SETTINGS = [
+  "npm_config_strict_dep_builds",
+  "npm_config_minimum_release_age",
+  "npm_config_trust_policy",
+  "npm_config_trust_policy_ignore_after",
+  "npm_config_block_exotic_subdeps",
+];
+
 export async function setup() {
+  for (const key of LEAKED_WORKSPACE_SETTINGS) delete process.env[key];
   const tarball = findTarball();
   templateDir = createTemplate(tarball);
   process.env.TEMPLATE_DIR = templateDir;

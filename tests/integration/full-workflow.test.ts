@@ -97,15 +97,24 @@ describe("Complete CLI workflow", () => {
     assertFileExists(project, ".github/workflows/release.yml");
   });
 
-  it("adds pnpm settings to pnpm-workspace.yaml", () => {
+  it("adds pnpm settings that pnpm actually reads", () => {
     assertFileExists(project, "pnpm-workspace.yaml");
-    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAge: 4320");
-    assertFileContains(project, "pnpm-workspace.yaml", "blockExoticSubdeps: true");
-    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicy: no-downgrade");
-    assertFileContains(project, "pnpm-workspace.yaml", "trustPolicyIgnoreAfter: 43200");
-    assertFileContains(project, "pnpm-workspace.yaml", "minimumReleaseAgeExclude:");
-    assertFileContains(project, "pnpm-workspace.yaml", "- '@gingacodemonkey/config'");
-    assertFileContains(project, "pnpm-workspace.yaml", "strictDepBuilds: true");
+    const configGet = (key: string) => project.exec(`pnpm config get ${key}`).trim();
+    expect(configGet("minimumReleaseAge")).toBe("4320");
+    expect(configGet("trustPolicy")).toBe("no-downgrade");
+    expect(configGet("strictDepBuilds")).toBe("true");
+    expect(project.readFile("pnpm-workspace.yaml")).not.toMatch(/^pnpm:/m);
+  });
+
+  it("migrates settings nested under a legacy pnpm: key to the top level", () => {
+    using legacy = new TestProject({ name: "pnpm-legacy-yaml" });
+    legacy.writeFile("pnpm-workspace.yaml", "packages:\n  - '.'\npnpm:\n  minimumReleaseAge: 10\n  strictDepBuilds: false\n");
+    legacy.runCli([ "--tool=knip", "--yes" ]);
+
+    const yaml = legacy.readFile("pnpm-workspace.yaml");
+    expect(yaml).not.toMatch(/^pnpm:/m);
+    expect(yaml).toMatch(/^packages:\n {2}- '\.'$/m);
+    expect(legacy.exec("pnpm config get minimumReleaseAge").trim()).toBe("4320");
   });
 
   it("enforces pnpm as package manager", () => {

@@ -2,8 +2,10 @@
  * Husky and Git hooks integration tests
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
-import { gitCommit } from "../utils/command-runner.ts";
+import fs from "node:fs";
+import path from "node:path";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { gitCommit, runCommand } from "../utils/command-runner.ts";
 import {
   assertFileContains,
   assertFileExists
@@ -37,6 +39,7 @@ describe("Husky Git Hooks", () => {
   });
 
   it("pre-commit hook runs lint-staged on commit", { timeout: 180000 }, () => {
+    using project = new TestProject({ name: "husky-lint-staged" });
     project.runCli([
       "--tool=ts",
       "--tool=eslint",
@@ -67,28 +70,53 @@ export const hello = 'world';
     expect(result.stdout + result.stderr).not.toContain("husky - command not found");
   });
 
-  it("ticket extraction works from feature branch", () => {
-    project.runCli([
-      "--tool=husky",
-      "--tool=commitLint",
-      "--yes",
-    ]);
-
-    // Create and switch to feature branch
-    project.gitBranch("feature/PROJ-123-add-feature");
-
-    project.writeFile("src/index.ts", `export const x = 1;`);
-
-    // The commit-msg hook should prepend ticket number
-    // Note: This test verifies the hook exists and runs, actual ticket prepending
-    // depends on the shell execution environment
-    assertFileContains(project, ".husky/commit-msg", "TICKET");
-  });
-
   it("creates .husky/pre-push hook with lint command", () => {
-    project.runCli([ "--tool=husky", "--yes" ]);
-
     assertFileExists(project, ".husky/pre-push");
     assertFileContains(project, ".husky/pre-push", "pnpm lint");
+  });
+});
+
+describe("commit-msg ticket prefix", () => {
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "husky-ticket" });
+    project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+    project.writeFile("src/index.ts", "export const x = 1;\n");
+  });
+
+  afterAll(() => {
+    project.cleanup();
+  });
+
+  it("leaves the message alone on a branch without a ticket", () => {
+    project.gitBranch("main");
+    gitCommit(project, "feat: add base");
+    expect(project.getLastCommitMessage()).toBe("feat: add base");
+  });
+
+  it("prepends the ticket from the branch name", () => {
+    project.gitBranch("feature/PROJ-123-add-feature");
+    project.writeFile("src/index.ts", "export const x = 2;\n");
+    gitCommit(project, "feat: add thing");
+    expect(project.getLastCommitMessage()).toBe("PROJ-123\n\nfeat: add thing");
+  });
+
+  it("rejects an invalid message on a ticket branch without rewriting it", () => {
+    project.writeFile("src/index.ts", "export const x = 3;\n");
+    const result = gitCommit(project, "invalid commit message", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout + result.stderr).toContain("type may not be empty");
+    expect(project.getLastCommitMessage()).toBe("PROJ-123\n\nfeat: add thing");
+  });
+
+  // commitlint rejects a ticket-only header, so stub `pnpm` and run the hook directly with POSIX sh
+  it("does not prepend the ticket twice", () => {
+    const stubBin = path.join(project.dir, ".stub-bin");
+    project.writeFile(".stub-bin/pnpm", "#!/bin/sh\nexit 0\n");
+    fs.chmodSync(path.join(stubBin, "pnpm"), 0o700);
+    project.writeFile(".msg", "PROJ-123\n\nfeat: add thing\n");
+
+    runCommand(project, `PATH="${stubBin}:$PATH" sh .husky/commit-msg .msg`);
+    expect(project.readFile(".msg")).toBe("PROJ-123\n\nfeat: add thing\n");
   });
 });

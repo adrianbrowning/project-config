@@ -38,6 +38,7 @@ describe("ESLint Configuration", () => {
   });
 
   it("lint passes on clean code", () => {
+    using project = new TestProject({ name: "eslint-clean" });
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create clean TypeScript file
@@ -121,5 +122,29 @@ export function check(a: boolean, b: boolean): boolean {
     const fixed = project.readFile("src/index.ts");
     expect(fixed).not.toContain("!(a && b)");
     expect(fixed).toContain("!a || !b");
+  });
+
+  it("jsx-a11y: keeps the recommended rules alongside the overrides", () => {
+    using project = new TestProject({ name: "eslint-jsx-a11y" });
+    // Add React before setup, as in a real React project; later `pnpm add` runs under minimumReleaseAge
+    project.exec("pnpm add -D react @types/react");
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-mode=bundler", "--ts-dom", "--ts-type=app" ]);
+    // The generated tsconfig only includes src/**.ts and has no JSX option, so opt the fixture into TSX
+    const tsconfig = project.readJson<{ compilerOptions?: Record<string, unknown>; include: Array<string>; }>("tsconfig.json");
+    project.writeJson("tsconfig.json", {
+      ...tsconfig,
+      compilerOptions: { ...tsconfig.compilerOptions, jsx: "react-jsx" },
+      include: [ ...tsconfig.include, "./src/**/*.tsx" ],
+    });
+
+    project.writeFile("src/app.tsx", `
+export function App() {
+  return <img src="x.png" />;
+}
+`);
+
+    const result = runCommand(project, "pnpm lint:esl", { expectFailure: true });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stdout).toContain("jsx-a11y/alt-text");
   });
 });

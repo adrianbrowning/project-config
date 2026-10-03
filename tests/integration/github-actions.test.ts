@@ -4,7 +4,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   assertFileContains,
   assertFileExists
@@ -13,11 +13,12 @@ import { TestProject } from "../utils/test-project.ts";
 
 describe("GitHub Actions Workflows", () => {
   let project: TestProject;
-  beforeAll(()=> {
+  // Fresh project per test: the first run enables minimumReleaseAge, so a rerun's `pnpm add` can hit young peers
+  beforeEach(() => {
     project = new TestProject({ name: "github-actions" });
   });
-  beforeEach(() => {
-    project.rmDir(".github");
+  afterEach(() => {
+    project.cleanup();
   });
   it("creates .github/workflows directory", () => {
     project.runCli([ "--all", "--yes" ]);

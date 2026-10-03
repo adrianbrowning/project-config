@@ -1,6 +1,8 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
+import { findPackageJSON } from "node:module";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTaskWrapper } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
@@ -36,10 +38,13 @@ export function getPkgVersion(pkg: string): null | string {
   return version.replace(/^[~^]/, "").trim();
 }
 
+/**
+ * Whether `pkg` is installed in the consuming project. Resolves from `process.cwd()`, not from this
+ * package: pnpm isolates dependencies, so the consumer's packages are not visible from here.
+ */
 export function has(pkg: string): boolean {
   try {
-    import.meta.resolve(pkg, import.meta.url);
-    return true;
+    return findPackageJSON(pkg, pathToFileURL(path.join(process.cwd(), "package.json")).href) !== undefined;
   }
   catch {
     return false;
@@ -156,44 +161,56 @@ export function updatePkgJson(key: string, value: unknown): void {
   fs.writeFileSync("package.json", JSON.stringify(pkgJ, null, 2));
 }
 
-function yamlSectionPrefix(content: string): string {
-  const trimmed = content.trimEnd();
-  return trimmed.length > 0 ? trimmed + "\n" : "";
+type YamlValue = Array<string> | boolean | number | Record<string, boolean> | string;
+
+const yamlChildKeyRe = /^ {2}['"]?([^'"\s:]+)['"]?:/;
+
+function yamlEntry(key: string, val: YamlValue, existingBlock = ""): string {
+  if (Array.isArray(val)) return key + ":\n" + val.map(item => "  - '" + item + "'").join("\n") + "\n";
+  if (typeof val !== "object") return key + ": " + String(val) + "\n";
+
+  // Maps merge: entries the user already has win, missing ones are appended
+  const existingLines = existingBlock.split("\n").slice(1)
+    .filter(line => line.trim().length > 0);
+  const existingKeys = new Set(existingLines.map(line => yamlChildKeyRe.exec(line)?.[1]));
+  const added = Object.entries(val).filter(([ child ]) => !existingKeys.has(child))
+    .map(([ child, childVal ]) => "  '" + child + "': " + String(childVal));
+  return key + ":\n" + [ ...existingLines, ...added ].join("\n") + "\n";
 }
 
-function upsertYamlArray(content: string, sectionHeader: string, key: string, val: Array<unknown>): string {
-  const entry = "  " + key + ":\n" + val.map(item => "    - '" + String(item) + "'").join("\n") + "\n";
-  const existingArrayRe = new RegExp("  " + key + ":\\n(?:    - .+\\n)+");
-  if (existingArrayRe.test(content)) {
-    return content.replace(existingArrayRe, entry);
-  }
-  if (content.includes(sectionHeader + "\n")) {
-    return content.replace(sectionHeader + "\n", sectionHeader + "\n" + entry);
-  }
-  return yamlSectionPrefix(content) + sectionHeader + "\n" + entry;
+/**
+ * Older versions of this CLI nested settings under a `pnpm:` key, where pnpm ignores them.
+ * Drop those nested entries for the keys being written; drop the `pnpm:` key once it is empty.
+ */
+function removeLegacyPnpmEntries(content: string, keys: Array<string>): string {
+  const legacyBlockRe = /^pnpm:[ \t]*\n((?:[ \t].*\n|\n)*)/m;
+  return content.replace(legacyBlockRe, (_block, body: string) => {
+    const kept: Array<string> = [];
+    let dropping = false;
+    for (const line of body.split("\n").slice(0, -1)) {
+      const childKey = yamlChildKeyRe.exec(line)?.[1];
+      if (childKey !== undefined) dropping = keys.includes(childKey);
+      if (!dropping) kept.push(line);
+    }
+    return kept.some(line => line.trim().length > 0) ? "pnpm:\n" + kept.join("\n") + "\n" : "";
+  });
 }
 
-function upsertYamlScalar(content: string, sectionHeader: string, key: string, val: unknown): string {
-  const entry = "  " + key + ": " + String(val);
-  const existingKeyRe = new RegExp("(  " + key + ": ).+");
-  if (existingKeyRe.test(content)) {
-    return content.replace(existingKeyRe, "$1" + String(val));
-  }
-  if (content.includes(sectionHeader + "\n")) {
-    return content.replace(sectionHeader + "\n", sectionHeader + "\n" + entry + "\n");
-  }
-  return yamlSectionPrefix(content) + sectionHeader + "\n" + entry + "\n";
-}
-
-export function updateWorkspaceYaml(section: string, values: Record<string, unknown>): void {
+/**
+ * Upsert top-level keys in pnpm-workspace.yaml. pnpm only reads settings at the top level,
+ * so existing keys (including `packages:`) are kept; scalars and lists are replaced, maps are merged.
+ */
+export function updateWorkspaceYaml(values: Record<string, YamlValue>): void {
   const filePath = "pnpm-workspace.yaml";
-  let content = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
-  const sectionHeader = section + ":";
+  const existing = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8").trimEnd() : "";
+  let content = removeLegacyPnpmEntries(existing.length > 0 ? existing + "\n" : "", Object.keys(values));
 
   for (const [ key, val ] of Object.entries(values)) {
-    content = Array.isArray(val)
-      ? upsertYamlArray(content, sectionHeader, key, val)
-      : upsertYamlScalar(content, sectionHeader, key, val);
+    // The key's own line plus any indented or `- ` list lines that belong to it
+    const existingKeyRe = new RegExp("^" + key + ":.*\\n(?:[ \\t].*\\n|- .*\\n)*", "m");
+    const existingBlock = existingKeyRe.exec(content)?.[0];
+    const entry = yamlEntry(key, val, existingBlock);
+    content = existingBlock === undefined ? content + entry : content.replace(existingKeyRe, () => entry);
   }
 
   fs.writeFileSync(filePath, content);

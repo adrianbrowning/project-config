@@ -14,17 +14,16 @@ if echo "$MESSAGE" | grep -q "\\[skip ci\\]"; then
   exit 0
 fi
 
-pnpm exec commitlint --edit "$1";
-FILE=$1
-TICKET=[$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\\w+/)?(\\w+[-_])?[0-9]+' | grep -Eo '(\\w+[-])?[0-9]+' | tr "[:lower:]" "[:upper:]")]
-if [[ $TICKET == "[]" || "$MESSAGE" == "$TICKET"* ]];then
-  exit 0;
+pnpm exec commitlint --edit "$1" || exit $?
+TICKET=$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\\w+/)?(\\w+[-_])?[0-9]+' | grep -Eo '(\\w+[-])?[0-9]+' | tr "[:lower:]" "[:upper:]")
+if [ -z "$TICKET" ]; then
+  exit 0
 fi
-# Strip leading '['
-TICKET="\${TICKET#[}"
-# Strip trailing ']'
-TICKET="\${TICKET%]}"
-echo $"$TICKET\\n\\n$MESSAGE" > $FILE`;
+case "$MESSAGE" in
+  "$TICKET"*) exit 0 ;;
+esac
+printf '%s\\n\\n%s\\n' "$TICKET" "$MESSAGE" > "$1"
+`;
 
 export const huskyTasks: Array<ListrTask<TaskContext>> = [
   {

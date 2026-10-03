@@ -260,14 +260,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     });
   }
 
-  // Add pnpm.minimumReleaseAge to package.json
-  tasks.add({
-    title: "Configuring pnpm settings",
-    task: async () => {
-      updateWorkspaceYaml("pnpm", { minimumReleaseAge: 4320, blockExoticSubdeps: true, trustPolicy: "no-downgrade", trustPolicyIgnoreAfter: 43200, minimumReleaseAgeExclude: [ "@gingacodemonkey/config" ], strictDepBuilds: true });
-    },
-  });
-
   // Add engines field to package.json
   tasks.add({
     title: "Configuring engines",
@@ -296,6 +288,18 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
       installPkg(ctx.packageManager, pkgList);
     },
   });
+
+  // pnpm supply-chain settings, written as top-level keys in pnpm-workspace.yaml. Written after the install:
+  // peers auto-installed with this package can be younger than minimumReleaseAge, which would fail setup.
+  // strictDepBuilds fails installs on unreviewed build scripts. unrs-resolver (via eslint-plugin-import-x) is
+  // already installed with its build ignored; pnpm 10 keeps failing on that recorded state under `false`, so
+  // approve it (napi-postinstall only checks for its prebuilt native binding).
+  tasks.add({
+    title: "Configuring pnpm settings",
+    task: async () => {
+      updateWorkspaceYaml({ minimumReleaseAge: 4320, blockExoticSubdeps: true, trustPolicy: "no-downgrade", trustPolicyIgnoreAfter: 43200, minimumReleaseAgeExclude: [ "@gingacodemonkey/config" ], strictDepBuilds: true, allowBuilds: { "unrs-resolver": true } });
+    },
+  });
 }
 
 // Main execution
@@ -320,29 +324,26 @@ async function main() {
   }
   else {
     // Interactive mode: use enquirer prompts
-    try {
-      // const prompt = createPrompt(cliArgs.update);
-      const prompt = createPrompt(false);
-      const answer = await prompt.run();
-      // eslint-disable-next-line no-console
-      console.log(answer);
+    // const prompt = createPrompt(cliArgs.update);
+    const prompt = createPrompt(false);
+    const answer = await prompt.run();
+    // eslint-disable-next-line no-console
+    console.log(answer);
 
-      if (answer.length === 0) {
-        // eslint-disable-next-line no-console
-        console.log("Nothing to do.");
-        return;
-      }
-
-      cliArgs.tools = answer;
-      addToolTasks(tasks, answer, cliArgs);
-      await tasks.run();
-    }
-    catch (error) {
+    if (answer.length === 0) {
       // eslint-disable-next-line no-console
-      console.error(error);
+      console.log("Nothing to do.");
+      return;
     }
+
+    cliArgs.tools = answer;
+    addToolTasks(tasks, answer, cliArgs);
+    await tasks.run();
   }
 }
 
-// eslint-disable-next-line no-console
-main().catch(console.error);
+main().catch((error: unknown) => {
+  // eslint-disable-next-line no-console
+  console.error(error);
+  process.exitCode = 1;
+});

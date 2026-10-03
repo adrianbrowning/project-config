@@ -39,7 +39,9 @@ const vitestFiles = [ "**/__tests__/**/*", "**/*.test.*" ];
 const testFiles = [ "**/tests/**", "**/#tests/**", ...vitestFiles ];
 const playwrightFiles = [ "**/e2e/**" ];
 
+// Dynamic: React plugins load only when the consuming project has React
 const reactHooksPlugin = hasReact ? (await import("eslint-plugin-react-hooks")).default : null;
+const jsxA11yRecommended = hasReact ? (await import("eslint-plugin-jsx-a11y")).default.flatConfigs.recommended : null;
 
 const getTsconfigRootDir = () => {
   const dir = import.meta.dirname.toString();
@@ -431,10 +433,11 @@ const config = [
       },
       // JSX A11y - Accessibility rules for JSX
       {
+        ...jsxA11yRecommended,
         files: [ "**/*.tsx", "**/*.jsx" ],
-        ...(await import("eslint-plugin-jsx-a11y")).default.flatConfigs.recommended,
         rules: {
-          // Override specific rules if needed
+          // Extend, not replace, the recommended set
+          ...jsxA11yRecommended?.rules,
           "jsx-a11y/anchor-is-valid": ERROR,
           "jsx-a11y/click-events-have-key-events": ERROR,
           "jsx-a11y/no-static-element-interactions": ERROR,

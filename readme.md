@@ -226,7 +226,7 @@ Rules are auto-enabled based on what's installed in your project.
 | `eslint-plugin-react-compiler` | React Compiler compatibility |
 | `eslint-plugin-react-refresh` | Fast Refresh compatibility |
 | `eslint-plugin-react-you-might-not-need-an-effect` | Warns on avoidable `useEffect` patterns |
-| `eslint-plugin-jsx-a11y` | Accessibility — `anchor-is-valid`, `click-events-have-key-events`, `no-static-element-interactions` |
+| `eslint-plugin-jsx-a11y` | Accessibility — the full recommended set, with `anchor-is-valid`, `click-events-have-key-events`, `no-static-element-interactions` as errors |
 
 ### When `vitest` / `@testing-library` / `@testing-library/jest-dom` are installed
 
