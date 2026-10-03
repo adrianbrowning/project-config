@@ -65,7 +65,7 @@ describe("Complete CLI workflow", () => {
     assertFileExists(project, ".husky/pre-commit");
     assertFileExists(project, ".husky/commit-msg");
 
-    assertFileContains(project, ".husky/pre-commit", "lint-staged");
+    expect(project.readFile(".husky/pre-commit")).toMatch(/^pnpm exec lint-staged$/m);
     assertFileContains(project, ".husky/commit-msg", "commitlint");
   });
 
@@ -117,9 +117,9 @@ describe("Complete CLI workflow", () => {
     expect(legacy.exec("pnpm config get minimumReleaseAge").trim()).toBe("4320");
   });
 
-  it("enforces pnpm as package manager", () => {
-    const pkg = project.readJson<{ engines?: { pnpm?: string; }; }>("package.json");
-    expect(pkg.engines?.pnpm).toMatch(/^>=\d+/);
+  it("sets the packageManager field to the running pnpm version", () => {
+    const pkg = project.readJson<{ packageManager?: string; }>("package.json");
+    expect(pkg.packageManager).toMatch(/^pnpm@\d+\.\d+\.\d+$/);
   });
 
   it("adds engines field to package.json", () => {
@@ -145,8 +145,7 @@ export function greet(name: string): string {
 
     // Run lint - should pass
     const lintResult = runCommand(project, "pnpm lint", { expectFailure: true });
-    // Lint may warn but should not error
-    expect(lintResult.exitCode).toBeLessThanOrEqual(1);
+    expect(lintResult.exitCode, lintResult.stdout + lintResult.stderr).toBe(0);
   });
 
   it("lint:ts passes", () => {
@@ -169,5 +168,6 @@ export function greet(name: string): string {
 
     const result = project.gitCommit("invalid commit message", { expectFailure: true });
     expect(result.exitCode).not.toBe(0);
+    expect(result.stdout + result.stderr).toContain("type may not be empty");
   });
 });
