@@ -14,15 +14,21 @@ if echo "$MESSAGE" | grep -q "\\[skip ci\\]"; then
   exit 0
 fi
 
-pnpm exec commitlint --edit "$1" || exit $?
+# Add the branch's ticket as a footer, keeping the conventional header first.
+# Bare numbers (chore/17-x) are GitHub issues: Refs: #17
 TICKET=$(git rev-parse --abbrev-ref HEAD | grep -Eo '^(\\w+/)?(\\w+[-_])?[0-9]+' | grep -Eo '(\\w+[-])?[0-9]+' | tr "[:lower:]" "[:upper:]")
-if [ -z "$TICKET" ]; then
-  exit 0
+if [ -n "$TICKET" ]; then
+  case "$TICKET" in
+    *[!0-9]*) REF="$TICKET" ;;
+    *) REF="#$TICKET" ;;
+  esac
+  if ! grep -Fqx "Refs: $REF" "$1"; then
+    printf '%s\\n\\nRefs: %s\\n' "$MESSAGE" "$REF" > "$1"
+  fi
 fi
-case "$MESSAGE" in
-  "$TICKET"*) exit 0 ;;
-esac
-printf '%s\\n\\n%s\\n' "$TICKET" "$MESSAGE" > "$1"
+
+# Validate the final message, footer included
+pnpm exec commitlint --edit "$1"
 `;
 
 export const huskyTasks: Array<ListrTask<TaskContext>> = [
