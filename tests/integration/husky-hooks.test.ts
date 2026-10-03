@@ -2,10 +2,8 @@
  * Husky and Git hooks integration tests
  */
 
-import fs from "node:fs";
-import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { gitCommit, runCommand } from "../utils/command-runner.ts";
+import { gitCommit } from "../utils/command-runner.ts";
 import {
   assertFileContains,
   assertFileExists
@@ -76,7 +74,7 @@ export const hello = 'world';
   });
 });
 
-describe("commit-msg ticket prefix", () => {
+describe("commit-msg ticket footer", () => {
   let project: TestProject;
   beforeAll(() => {
     project = new TestProject({ name: "husky-ticket" });
@@ -94,29 +92,37 @@ describe("commit-msg ticket prefix", () => {
     expect(project.getLastCommitMessage()).toBe("feat: add base");
   });
 
-  it("prepends the ticket from the branch name", () => {
+  it("adds the branch ticket as a Refs footer", () => {
     project.gitBranch("feature/PROJ-123-add-feature");
     project.writeFile("src/index.ts", "export const x = 2;\n");
     gitCommit(project, "feat: add thing");
-    expect(project.getLastCommitMessage()).toBe("PROJ-123\n\nfeat: add thing");
+    expect(project.getLastCommitMessage()).toBe("feat: add thing\n\nRefs: PROJ-123");
   });
 
-  it("rejects an invalid message on a ticket branch without rewriting it", () => {
+  it("rejects an invalid message on a ticket branch", () => {
     project.writeFile("src/index.ts", "export const x = 3;\n");
     const result = gitCommit(project, "invalid commit message", { expectFailure: true });
     expect(result.exitCode).not.toBe(0);
     expect(result.stdout + result.stderr).toContain("type may not be empty");
-    expect(project.getLastCommitMessage()).toBe("PROJ-123\n\nfeat: add thing");
+    expect(project.getLastCommitMessage()).toBe("feat: add thing\n\nRefs: PROJ-123");
   });
 
-  // commitlint rejects a ticket-only header, so stub `pnpm` and run the hook directly with POSIX sh
-  it("does not prepend the ticket twice", () => {
-    const stubBin = path.join(project.dir, ".stub-bin");
-    project.writeFile(".stub-bin/pnpm", "#!/bin/sh\nexit 0\n");
-    fs.chmodSync(path.join(stubBin, "pnpm"), 0o700);
-    project.writeFile(".msg", "PROJ-123\n\nfeat: add thing\n");
+  it("does not add the ticket twice", () => {
+    project.writeFile("src/index.ts", "export const x = 4;\n");
+    gitCommit(project, "feat: add more\n\nRefs: PROJ-123");
+    expect(project.getLastCommitMessage()).toBe("feat: add more\n\nRefs: PROJ-123");
+  });
 
-    runCommand(project, `PATH="${stubBin}:$PATH" sh .husky/commit-msg .msg`);
-    expect(project.readFile(".msg")).toBe("PROJ-123\n\nfeat: add thing\n");
+  it("refs a bare number in the branch as a GitHub issue", () => {
+    project.gitBranch("chore/17-pr-template");
+    project.writeFile("src/index.ts", "export const x = 5;\n");
+    gitCommit(project, "chore: add template");
+    expect(project.getLastCommitMessage()).toBe("chore: add template\n\nRefs: #17");
+  });
+
+  it("adds the Refs footer even when another footer mentions the ticket", () => {
+    project.writeFile("src/index.ts", "export const x = 6;\n");
+    gitCommit(project, "chore: add template\n\nCloses #17");
+    expect(project.getLastCommitMessage()).toBe("chore: add template\n\nCloses #17\n\nRefs: #17");
   });
 });
