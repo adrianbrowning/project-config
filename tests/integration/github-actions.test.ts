@@ -10,7 +10,12 @@ import { TestProject } from "../utils/test-project.ts";
 
 type Step = { if?: string; name?: string; permissions?: unknown; run?: string; uses?: string; with?: Record<string, unknown>; };
 type Job = { if?: string; needs?: Array<string> | string; outputs?: Record<string, string>; permissions?: Record<string, string>; steps: Array<Step>; };
-type Workflow = { concurrency?: { "cancel-in-progress"?: boolean; group?: string; }; jobs: Partial<Record<string, Job>>; on: Record<string, unknown>; };
+type Workflow = {
+  concurrency?: { "cancel-in-progress"?: boolean; group?: string; };
+  jobs: Partial<Record<string, Job>>;
+  on: Record<string, null | { branches?: Array<string>; }>;
+  permissions?: Record<string, string>;
+};
 type CompositeAction = { runs: { steps: Array<Step>; using: string; }; };
 
 const EXAMPLES_DIR = path.resolve(import.meta.dirname, "../../github_actions_examples");
@@ -136,5 +141,53 @@ describe("Claude review with --claude-runner=bedrock", () => {
     const upload = review.steps.find(step => step.uses?.startsWith("actions/upload-artifact@"));
     const download = post.steps.find(step => step.uses?.startsWith("actions/download-artifact@"));
     expect(download?.with?.name).toBe(upload?.with?.name);
+  });
+});
+
+describe("GitHub Actions in a pnpm workspace", () => {
+  let project: TestProject;
+  beforeAll(() => {
+    project = new TestProject({ name: "github-actions-workspace" });
+    project.runCli([ "--tool=workspace", "--tool=githubActions", "--yes" ]);
+  });
+  afterAll(() => project.cleanup());
+
+  it("writes one root CI workflow instead of the single-package ones", () => {
+    expect(fs.readdirSync(path.join(project.dir, ".github/workflows")).toSorted((a, b) => a.localeCompare(b)))
+      .toEqual([ "ci.yml", "claude-pr-review.yml" ]);
+    expect(project.readFile(".github/workflows/ci.yml")).toBe(fs.readFileSync(path.join(EXAMPLES_DIR, "workspace-ci.yml"), "utf-8"));
+  });
+
+  it("runs on PRs and pushes to main, read-only, cancelling superseded runs", () => {
+    const workflow = readWorkflow(project, "ci.yml");
+    expect(workflow.on).toEqual({ pull_request: { branches: [ "main" ] }, push: { branches: [ "main" ] } });
+    expect(workflow.concurrency).toEqual({ "group": "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}", "cancel-in-progress": true });
+    expect(workflow.permissions).toEqual({ contents: "read" });
+    expect(job(workflow, "check").permissions).toEqual({ contents: "read" });
+  });
+
+  it("installs once through the setup action, then runs every root check", () => {
+    const { steps } = job(readWorkflow(project, "ci.yml"), "check");
+    expect(steps.map(step => step.uses ?? step.run)).toEqual([
+      "actions/checkout@v7",
+      "./.github/actions/setup",
+      "pnpm lint",
+      "pnpm lint:ts",
+      "pnpm test",
+      "pnpm build",
+    ]);
+
+    // The setup action installs at the root from the lockfile and keys the pnpm store cache on it
+    const action: CompositeAction = YAML.parse(project.readFile(".github/actions/setup/action.yml"));
+    expect(action.runs.steps.map(step => step.run)).toContain("pnpm install --frozen-lockfile");
+    expect(action.runs.steps.find(step => step.uses?.startsWith("actions/cache@"))?.with?.key).toContain("hashFiles('**/pnpm-lock.yaml')");
+  });
+
+  it("treats an existing workspace the same when only githubActions is selected", () => {
+    using existing = new TestProject({ name: "github-actions-existing-workspace" });
+    existing.writeFile("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    existing.runCli([ "--tool=githubActions", "--yes" ]);
+    expect(existing.fileExists(".github/workflows/ci.yml")).toBe(true);
+    expect(existing.fileExists(".github/workflows/ci_test.yml")).toBe(false);
   });
 });

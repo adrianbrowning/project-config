@@ -19,7 +19,7 @@ import { runUpdate } from "./update/run-update.ts";
 import type { UpdatePrompts } from "./update/run-update.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
-import { createWorkspaceTasks, promptUpdateAll } from "./workspace-tasks.ts";
+import { createWorkspaceTasks, promptUpdateAll, readWorkspaceGlobs } from "./workspace-tasks.ts";
 
 // Type definitions for enquirer MultiSelect
 type MultiSelectChoice = {
@@ -183,6 +183,8 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
       title: "GitHub Actions",
       task: async (_ctx, task) => {
         let ghaOptions: GithubActionsOptions;
+        // A workspace being set up now, or one that already lists packages, gets the root CI workflow instead
+        const workspace = answer.includes("workspace") || readWorkspaceGlobs() !== null;
 
         if (cliArgs.yes) {
           ghaOptions = {
@@ -192,6 +194,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             includeTsCheck: answer.includes("ts"),
             includeClaudePrReview: true,
             claudeRunnerType: cliArgs.claudeRunner,
+            workspace,
           };
         }
         else {
@@ -200,10 +203,14 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             name: "workflows",
             message: "Select GitHub Actions workflows to install:",
             choices: [
-              { name: "ci_test", message: "CI Test", enabled: true },
-              { name: "lint", message: "ESLint", enabled: answer.includes("eslint") },
+              ...(workspace
+                ? [{ name: "workspace_ci", message: "Workspace CI (lint, type-check, test, build)", enabled: true }]
+                : [
+                  { name: "ci_test", message: "CI Test", enabled: true },
+                  { name: "lint", message: "ESLint", enabled: answer.includes("eslint") },
+                  { name: "ts_check", message: "TypeScript Check", enabled: answer.includes("ts") },
+                ]),
               { name: "knip", message: "Knip", enabled: answer.includes("knip") },
-              { name: "ts_check", message: "TypeScript Check", enabled: answer.includes("ts") },
               { name: "claude_pr_review", message: "Claude PR Review", enabled: true },
             ],
           });
@@ -228,6 +235,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             includeTsCheck: selected.includes("ts_check"),
             includeClaudePrReview: selected.includes("claude_pr_review"),
             claudeRunnerType,
+            workspace: selected.includes("workspace_ci"),
           };
         }
 

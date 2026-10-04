@@ -5,6 +5,7 @@ import { writeConfigFile } from "./utils.ts";
 export const SETUP_ACTION = "__SETUP_ACTION__";
 export const SETUP_ACTION_PATH = ".github/actions/setup/action.yml";
 export const CI_TEST_WORKFLOW = "__CI_TEST_WORKFLOW__";
+const WORKSPACE_CI_WORKFLOW = "__WORKSPACE_CI_WORKFLOW__";
 export const LINT_WORKFLOW = "__LINT_WORKFLOW__";
 export const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
 export const TS_CHECK_WORKFLOW = "__TS_CHECK_WORKFLOW__";
@@ -20,6 +21,8 @@ export type GithubActionsOptions = {
   includeKnip?: boolean;
   includeLint?: boolean;
   includeTsCheck?: boolean;
+  /** pnpm workspace: one root CI workflow (lint, type-check, test, build) replaces ci_test, lint and ts-check. */
+  workspace?: boolean;
 };
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
@@ -31,32 +34,39 @@ export function createGithubActionsTasks(options: GithubActionsOptions) {
     task: writeConfigFile(SETUP_ACTION_PATH, SETUP_ACTION),
   });
 
-  if (options.includeCiTest !== false) {
+  if (options.workspace) {
     tasks.push({
-      title: "Setting up CI test workflow",
-      task: writeConfigFile(".github/workflows/ci_test.yml", CI_TEST_WORKFLOW),
+      title: "Setting up workspace CI workflow",
+      task: writeConfigFile(".github/workflows/ci.yml", WORKSPACE_CI_WORKFLOW),
     });
   }
+  else {
+    if (options.includeCiTest !== false) {
+      tasks.push({
+        title: "Setting up CI test workflow",
+        task: writeConfigFile(".github/workflows/ci_test.yml", CI_TEST_WORKFLOW),
+      });
+    }
 
-  // Conditional workflows
-  if (options.includeLint) {
-    tasks.push({
-      title: "Setting up ESLint workflow",
-      task: writeConfigFile(".github/workflows/lint.yml", LINT_WORKFLOW),
-    });
+    if (options.includeLint) {
+      tasks.push({
+        title: "Setting up ESLint workflow",
+        task: writeConfigFile(".github/workflows/lint.yml", LINT_WORKFLOW),
+      });
+    }
+
+    if (options.includeTsCheck) {
+      tasks.push({
+        title: "Setting up TypeScript check workflow",
+        task: writeConfigFile(".github/workflows/ts-check.yml", TS_CHECK_WORKFLOW),
+      });
+    }
   }
 
   if (options.includeKnip) {
     tasks.push({
       title: "Setting up Knip workflow",
       task: writeConfigFile(".github/workflows/knip.yml", KNIP_WORKFLOW),
-    });
-  }
-
-  if (options.includeTsCheck) {
-    tasks.push({
-      title: "Setting up TypeScript check workflow",
-      task: writeConfigFile(".github/workflows/ts-check.yml", TS_CHECK_WORKFLOW),
     });
   }
 
