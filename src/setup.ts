@@ -19,7 +19,7 @@ import { runUpdate } from "./update/run-update.ts";
 import type { UpdatePrompts } from "./update/run-update.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
-import { createWorkspaceTasks, promptUpdateAll, readWorkspaceGlobs } from "./workspace-tasks.ts";
+import { addWorkspaceRootScripts, createWorkspaceTasks, promptUpdateAll, readWorkspaceGlobs } from "./workspace-tasks.ts";
 
 // Type definitions for enquirer MultiSelect
 type MultiSelectChoice = {
@@ -238,6 +238,9 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             workspace: selected.includes("workspace_ci"),
           };
         }
+
+        // ci.yml runs the workspace's root scripts: add any that are missing (setup keeps scripts the user wrote)
+        if (ghaOptions.workspace && !answer.includes("workspace")) addWorkspaceRootScripts();
 
         return task.newListr(createGithubActionsTasks(ghaOptions), { concurrent: false });
       },

@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import YAML from "yaml";
+import { runCommand } from "../utils/command-runner.ts";
 import { TestProject } from "../utils/test-project.ts";
 
 type Step = { if?: string; name?: string; permissions?: unknown; run?: string; uses?: string; with?: Record<string, unknown>; };
@@ -183,11 +184,17 @@ describe("GitHub Actions in a pnpm workspace", () => {
     expect(action.runs.steps.find(step => step.uses?.startsWith("actions/cache@"))?.with?.key).toContain("hashFiles('**/pnpm-lock.yaml')");
   });
 
-  it("treats an existing workspace the same when only githubActions is selected", () => {
+  it("an existing workspace with only githubActions selected gets ci.yml and the root scripts it runs", () => {
     using existing = new TestProject({ name: "github-actions-existing-workspace" });
     existing.writeFile("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    existing.writeJson("packages/a/package.json", { name: "a", private: true, scripts: { test: "node -e \"process.exit(4)\"" } });
     existing.runCli([ "--tool=githubActions", "--yes" ]);
+
     expect(existing.fileExists(".github/workflows/ci.yml")).toBe(true);
     expect(existing.fileExists(".github/workflows/ci_test.yml")).toBe(false);
+    const { scripts } = existing.readJson<{ scripts: Record<string, string>; }>("package.json");
+    for (const name of [ "lint", "lint:ts", "test", "build" ]) expect(scripts[name], name).toMatch(/^pnpm -r --if-present /);
+    // The CI's Test step runs the package's failing test, so the workflow would fail
+    expect(runCommand(existing, "pnpm test", { expectFailure: true }).exitCode).not.toBe(0);
   });
 });
