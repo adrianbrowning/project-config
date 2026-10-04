@@ -83,21 +83,29 @@ describe("pnpm workspace setup", () => {
       expect(showConfig(project, "packages/example").compilerOptions.strict).toBe(true);
     });
 
-    it("creates the root package.json when there is none, pinning this package's version", () => {
-      using project = new TestProject({ name: "workspace-no-manifest" });
-      const tarballSpec = project.readJson<Manifest>("package.json").devDependencies!["@gingacodemonkey/config"];
+    it("bootstraps an empty directory via pnpm dlx, pinning this package's version", () => {
+      using project = new TestProject({ name: "workspace-empty-dir" });
+      const tarballSpec = project.readJson<Manifest>("package.json").devDependencies?.["@gingacodemonkey/config"] ?? "";
+      expect(tarballSpec).toMatch(/^file:/);
+      const tarball = path.resolve(project.dir, tarballSpec.replace(/^file:/, ""));
       const ownManifest: unknown = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, "../../package.json"), "utf8"));
       const ownVersion = ownManifest !== null && typeof ownManifest === "object" && "version" in ownManifest ? ownManifest.version : undefined;
       expect(ownVersion).toEqual(expect.any(String));
-      fs.rmSync(path.join(project.dir, "package.json"));
+
+      // Nothing but .git: no manifest, no node_modules, no installed CLI
+      for (const entry of fs.readdirSync(project.dir)) {
+        if (entry !== ".git") fs.rmSync(path.join(project.dir, entry), { recursive: true, force: true });
+      }
 
       // Resolve the pinned version to this build's tarball, so the test doesn't depend on it being published
-      const overrides = JSON.stringify(JSON.stringify({ "@gingacodemonkey/config": tarballSpec }));
-      runCommand(project, `npm_config_overrides=${overrides} ./node_modules/.bin/gingacodemonkey-config --tool=workspace --yes`);
+      const overrides = JSON.stringify(JSON.stringify({ "@gingacodemonkey/config": `file:${tarball}` }));
+      runCommand(project, `npm_config_overrides=${overrides} pnpm dlx ${tarball} --tool=workspace --yes`);
 
       const manifest = project.readJson<Manifest & { private?: boolean; type?: string; }>("package.json");
       expect(manifest).toMatchObject({ private: true, type: "module" });
       expect(manifest.devDependencies?.["@gingacodemonkey/config"]).toBe(ownVersion);
+      expect(project.fileExists("packages/example/tsconfig.json")).toBe(true);
+      expect(runCommand(project, "pnpm --recursive lint", { expectFailure: true }).exitCode).toBe(0);
       expect(runCommand(project, "pnpm lint:ts", { expectFailure: true }).exitCode).toBe(0);
     });
 
