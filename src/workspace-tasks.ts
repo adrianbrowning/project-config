@@ -153,7 +153,7 @@ function createSamplePackage(dir: string): void {
 }
 
 /** The shared base goes first so a package's own `extends` and options still override it. */
-function withSharedExtends(current: unknown, sharedBase: string): Array<string> {
+export function withSharedExtends(current: unknown, sharedBase: string): Array<string> {
   if (current === undefined) return [ sharedBase ];
   const list = Array.isArray(current) ? current.map(String) : [ String(current) ];
   return list.includes(sharedBase) ? list : [ sharedBase, ...list ];

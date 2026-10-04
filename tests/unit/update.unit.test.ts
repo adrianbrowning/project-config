@@ -12,7 +12,7 @@ import { COMMITLINT_CONFIG } from "../../src/convential-tasks.ts";
 import { eslintConfigContent } from "../../src/eslint-tasks.ts";
 import { COMMIT_MSG_HOOK, PRE_PUSH_HOOK } from "../../src/husky-tasks.ts";
 import { KNOWN_TEMPLATE_HASHES } from "../../src/update/known-versions.ts";
-import { jsonFile, manifestEntry, pnpmSetting, templateFile } from "../../src/update/reconcile.ts";
+import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "../../src/update/reconcile.ts";
 import { runUpdate } from "../../src/update/run-update.ts";
 import type { UpdatePrompts } from "../../src/update/run-update.ts";
 
@@ -130,6 +130,35 @@ describe("pnpmSetting", () => {
     write("pnpm-workspace.yaml", "minimumReleaseAge: 1440\nallowBuilds:\n  esbuild: true\n  'unrs-resolver': true\n");
     expect(pnpmSetting("minimumReleaseAge", 4320).status).toBe("conflict");
     expect(pnpmSetting("allowBuilds", { "unrs-resolver": true }).status).toBe("unchanged");
+  });
+});
+
+describe("workspace tsconfigs", () => {
+  const base = "../../sharedConfig/tsconfig.base.json";
+
+  it("leaves a package that still extends the shared base, among its own extends", () => {
+    write("packages/a/tsconfig.json", JSON.stringify({ extends: [ base, "./local.json" ] }));
+    expect(tsconfigLink("packages/a/tsconfig.json", base).status).toBe("unchanged");
+  });
+
+  it("reports a dropped link as a conflict, and overwriting restores it ahead of the package's own extends", () => {
+    write("packages/a/tsconfig.json", JSON.stringify({ extends: "./local.json", compilerOptions: { strict: false } }));
+    const item = tsconfigLink("packages/a/tsconfig.json", base);
+    expect(item.status).toBe("conflict");
+    item.apply?.();
+    expect(JSON.parse(read("packages/a/tsconfig.json"))).toEqual({ extends: [ base, "./local.json" ], compilerOptions: { strict: false } });
+  });
+
+  it("adds a missing package tsconfig, and leaves one with comments alone", () => {
+    expect(tsconfigLink("packages/b/tsconfig.json", base).status).toBe("added");
+    write("packages/c/tsconfig.json", "{ // comment\n}\n");
+    expect(tsconfigLink("packages/c/tsconfig.json", base).status).toBe("customized");
+  });
+
+  it("accepts any preset in the shared base and reports a missing one", () => {
+    write("sharedConfig/tsconfig.base.json", JSON.stringify({ extends: "@gingacodemonkey/config/tsc/no-dom/library" }));
+    expect(tsconfigPreset("sharedConfig/tsconfig.base.json", "@gingacodemonkey/config/").status).toBe("unchanged");
+    expect(tsconfigPreset("missing/tsconfig.base.json", "@gingacodemonkey/config/").status).toBe("skipped");
   });
 });
 

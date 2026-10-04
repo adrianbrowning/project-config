@@ -8,6 +8,7 @@ import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import YAML from "yaml";
 import { updateWorkspaceYaml } from "../utils.ts";
+import { withSharedExtends } from "../workspace-tasks.ts";
 import { KNOWN_TEMPLATE_HASHES } from "./known-versions.ts";
 
 /**
@@ -117,6 +118,48 @@ export function manifestEntry(file: string, section: string, key: string, curren
   if (value === current) return { label, status: "unchanged" };
   if (typeof value === "string" && previous.includes(value)) return { label, status: "updated", apply };
   return { label, status: "conflict", reason: `is ${JSON.stringify(value)}, expected ${JSON.stringify(current)}`, apply };
+}
+
+function readJsonObject(file: string): Record<string, unknown> | undefined {
+  try {
+    return readManifest(file);
+  }
+  catch {
+    return undefined;
+  }
+}
+
+/**
+ * A tsconfig whose `extends` must include `base` (a workspace package's link to sharedConfig/). Everything else in
+ * the file is the user's. A dropped link is a conflict; overwriting puts it back first, keeping their own extends.
+ */
+export function tsconfigLink(file: string, base: string): PlanItem {
+  if (!fs.existsSync(file)) {
+    return { label: file, status: "added", apply: () => writeFile(file, JSON.stringify({ extends: base, include: [ "src" ] }, null, 2) + "\n") };
+  }
+  const tsconfig = readJsonObject(file);
+  if (!tsconfig) return { label: file, status: "customized", reason: "not plain JSON; left as is" };
+  if ([ tsconfig.extends ].flat().includes(base)) return { label: file, status: "unchanged" };
+  // Same rule as setup: shared base first, the package's own extends after it so its settings still win
+  const list = withSharedExtends(tsconfig.extends, base);
+  return {
+    label: file,
+    status: "conflict",
+    reason: `extends no longer includes ${base}`,
+    apply: () => writeFile(file, JSON.stringify({ ...tsconfig, extends: list.length === 1 ? list[0] : list }, null, 2) + "\n"),
+  };
+}
+
+/**
+ * The shared tsconfig base: it should extend one of this package's presets, but which one is the user's choice,
+ * so update never writes it. A missing base is reported; setup (`--tool=workspace`) can recreate it.
+ */
+export function tsconfigPreset(file: string, presetPrefix: string): PlanItem {
+  if (!fs.existsSync(file)) return { label: file, status: "skipped", reason: "missing; rerun setup with --tool=workspace to recreate it" };
+  const extendsValue = readJsonObject(file)?.extends;
+  return typeof extendsValue === "string" && extendsValue.startsWith(presetPrefix)
+    ? { label: file, status: "unchanged" }
+    : { label: file, status: "customized", reason: `doesn't extend a ${presetPrefix}… preset; left as is` };
 }
 
 function readWorkspaceDoc(): Record<string, unknown> {

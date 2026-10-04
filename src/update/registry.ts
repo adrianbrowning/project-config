@@ -15,7 +15,7 @@ import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
 import type { DetectableTool } from "../tool-detection.ts";
 import { discoverPackages, PACKAGE_SCRIPTS, packageEslintLink, readWorkspaceGlobs, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
-import { jsonFile, manifestEntry, pnpmSetting, templateFile } from "./reconcile.ts";
+import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
 // .lintstagedrc as written by earlier releases
@@ -79,6 +79,7 @@ function bumpyItems(): Array<PlanItem> {
 /** Packages already linked to sharedConfig/; update keeps them current but never links new ones. */
 function workspaceItems(): Array<PlanItem> {
   const items: Array<PlanItem> = [
+    tsconfigPreset(path.join(SHARED_DIR, "tsconfig.base.json"), "@gingacodemonkey/config/"),
     templateFile(path.join(SHARED_DIR, "eslint.config.ts"), eslintConfigContent("eslint"), { knownKey: "eslint.config.ts", userEditable: true }),
     templateFile(path.join(SHARED_DIR, "eslint.config.style.ts"), eslintConfigContent("styled"), { knownKey: "eslint.config.style.ts" }),
     ...scripts(MANIFEST, ROOT_SCRIPTS),
@@ -90,6 +91,7 @@ function workspaceItems(): Array<PlanItem> {
     if (!linked) continue;
     items.push(
       ...scripts(path.join(dir, MANIFEST), PACKAGE_SCRIPTS),
+      tsconfigLink(path.join(dir, "tsconfig.json"), `${shared}/tsconfig.base.json`),
       templateFile(link, packageEslintLink(shared, "eslint.config.ts")),
       templateFile(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts"))
     );
