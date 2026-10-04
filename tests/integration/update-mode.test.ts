@@ -97,4 +97,16 @@ describe("--update", () => {
     expect(second.output).toContain("Nothing to update.");
     expect(files.map(file => project.readFile(file))).toEqual(first);
   });
+
+  it("--overwrite never rewrites a workspace package tsconfig that dropped the shared link", () => {
+    using project = new TestProject({ name: "update-workspace-tsconfig" });
+    project.runCli([ "--tool=workspace", "--yes" ]);
+    const unlinked = JSON.stringify({ extends: "./local.json", include: [ "src" ] }, null, 2);
+    project.writeFile("packages/example/tsconfig.json", unlinked);
+
+    const result = update(project, "--tool=workspace", "--yes", "--overwrite");
+    expect(result.exitCode, result.output).toBe(0);
+    expect(result.output).toContain("customized packages/example/tsconfig.json");
+    expect(project.readFile("packages/example/tsconfig.json")).toBe(unlinked);
+  });
 });
