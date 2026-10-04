@@ -2,7 +2,7 @@
  * Lint-Staged integration tests
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   assertFileExists
 } from "../utils/file-assertions.ts";
@@ -14,6 +14,8 @@ describe("Lint-Staged Configuration", () => {
     project = new TestProject({ name: "lintstaged-config" });
     project.runCli([ "--tool=lintStaged", "--yes" ]);
   });
+  afterAll(() => project.cleanup());
+
   it("generates .lintstagedrc", () => {
 
     assertFileExists(project, ".lintstagedrc");

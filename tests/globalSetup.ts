@@ -10,22 +10,23 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+/** Newest matching `.tgz` in `dir` by mtime, so a stale build from an older version is never picked. */
+function newestTarball(dir: string, prefix = ""): string | undefined {
+  if (!fs.existsSync(dir)) return undefined;
+  return fs.readdirSync(dir)
+    .filter(f => f.startsWith(prefix) && f.endsWith(".tgz"))
+    .map(f => path.join(dir, f))
+    .filter(p => fs.statSync(p).isFile())
+    .toSorted((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs)[0];
+}
+
 function findTarball(): string {
-  const isFile = (p: string) => fs.statSync(p).isFile();
-
   const envPath = process.env.TARBALL_PATH;
-  if (envPath && fs.existsSync(envPath) && isFile(envPath)) return envPath;
+  if (envPath && fs.existsSync(envPath) && fs.statSync(envPath).isFile()) return envPath;
 
-  const pkgDir = "/pkg";
-  if (fs.existsSync(pkgDir)) {
-    const tarball = fs.readdirSync(pkgDir).find(f => f.endsWith(".tgz") && isFile(path.join(pkgDir, f)));
-    if (tarball) return path.join(pkgDir, tarball);
-  }
-
-  const projectRoot = path.resolve(import.meta.dirname, "..");
-  const tarball = fs.readdirSync(projectRoot)
-    .find(f => f.startsWith("gingacodemonkey-config-") && f.endsWith(".tgz") && isFile(path.join(projectRoot, f)));
-  if (tarball) return path.join(projectRoot, tarball);
+  const tarball = newestTarball("/pkg")
+    ?? newestTarball(path.resolve(import.meta.dirname, ".."), "gingacodemonkey-config-");
+  if (tarball) return tarball;
 
   throw new Error("No tarball found. Run `pnpm build` first.");
 }

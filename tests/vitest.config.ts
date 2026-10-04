@@ -8,7 +8,6 @@ export default defineConfig({
     testTimeout: 120000,
     hookTimeout: 60000,
     globalSetup: [ "./globalSetup.ts" ],
-    setupFiles: [ "./setup.ts" ],
     pool: "forks", // Use forks for better isolation
     fileParallelism: false, // Run tests serially for Docker stability (replaces poolOptions.forks.singleFork in Vitest 4)
   },

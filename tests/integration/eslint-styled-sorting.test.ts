@@ -2,7 +2,7 @@
  * Styled ESLint config: perfectionist sorting rules
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import { TestProject } from "../utils/test-project.ts";
 
@@ -59,6 +59,7 @@ describe("Styled ESLint config: perfectionist sorting", () => {
     project.writeFile("src/index.ts", "export const index = 1;\n");
     project.install();
   });
+  afterAll(() => project.cleanup());
 
   it("reports out-of-order imports and --fix sorts them builtin → external → internal → parent → sibling → index", () => {
     project.writeFile("src/imports.ts", SCRAMBLED_IMPORTS);

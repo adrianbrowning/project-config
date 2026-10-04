@@ -2,7 +2,7 @@
  * ESLint integration tests
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileContains,
@@ -14,9 +14,10 @@ import { TestProject } from "../utils/test-project.ts";
 describe("ESLint Configuration", () => {
   let project: TestProject;
   beforeAll(() => {
-    project = new TestProject({ name: "commit-lint-config" });
+    project = new TestProject({ name: "eslint-config" });
     project.runCli([ "--tool=eslint", "--yes" ]);
   });
+  afterAll(() => project.cleanup());
 
   it("generates eslint.config.ts with correct import", () => {
 
@@ -55,7 +56,8 @@ export function greet(name: string): string {
   });
 
   it("lint:fix modifies files with fixable issues", () => {
-    const project = new TestProject({ name: "eslint-fix" }); project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+    using project = new TestProject({ name: "eslint-fix" });
+    project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     // Create file with fixable issues (extra semicolons, spacing)
     const badCode = `
@@ -76,7 +78,7 @@ export function greet(name: string): string {
   });
 
   it("de-morgan: flags negated conjunction", () => {
-    const project = new TestProject({ name: "eslint-de-morgan-conjunction" });
+    using project = new TestProject({ name: "eslint-de-morgan-conjunction" });
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     project.writeFile("src/index.ts", `
@@ -92,7 +94,7 @@ export function check(a: boolean, b: boolean): boolean {
   });
 
   it("de-morgan: flags negated disjunction", () => {
-    const project = new TestProject({ name: "eslint-de-morgan-disjunction" });
+    using project = new TestProject({ name: "eslint-de-morgan-disjunction" });
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     project.writeFile("src/index.ts", `
@@ -108,7 +110,7 @@ export function check(a: boolean, b: boolean): boolean {
   });
 
   it("de-morgan: auto-fixes negated boolean expressions", () => {
-    const project = new TestProject({ name: "eslint-de-morgan-fix" });
+    using project = new TestProject({ name: "eslint-de-morgan-fix" });
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library" ]);
 
     project.writeFile("src/index.ts", `

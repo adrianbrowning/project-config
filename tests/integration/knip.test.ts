@@ -2,7 +2,7 @@
  * Knip integration tests
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
 import {
   assertFileExists,
@@ -16,6 +16,8 @@ describe("Knip Configuration", () => {
     project = new TestProject({ name: "knip-config" });
     project.runCli([ "--tool=knip", "--yes" ]);
   });
+  afterAll(() => project.cleanup());
+
   it("generates knip.json", () => {
 
     assertFileExists(project, "knip.json");

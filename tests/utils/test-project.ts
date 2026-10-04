@@ -8,7 +8,7 @@ import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runCommand } from "./command-runner.ts";
+import { gitCommit } from "./command-runner.ts";
 
 type ProjectOptions = {
   name: string;
@@ -123,8 +123,7 @@ export class TestProject implements Disposable {
    * Commit with a message
    */
   gitCommit(message: string, options?: { expectFailure?: boolean; }) {
-    this.gitAdd();
-    return runCommand(this, `git commit -m "${message}"`, options);
+    return gitCommit(this, message, options);
   }
 
   /**
