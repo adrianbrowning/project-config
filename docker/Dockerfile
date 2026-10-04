@@ -20,9 +20,11 @@ COPY build.ts rollup.config.ts reset.d.ts ./
 
 RUN pnpm install --frozen-lockfile && node build.ts && pnpm pack
 
-# Tests run from /workspace/tests and read ../package.json and ../github_actions_examples
+# Tests run from /workspace/tests and read ../package.json and ../github_actions_examples.
+# Unit tests import ../src, whose dependencies resolve from /workspace/node_modules, as in a checkout.
 RUN mkdir -p /workspace /test-projects && \
-    cp -r /build/src /build/package.json /build/github_actions_examples /workspace/
+    cp -r /build/src /build/package.json /build/github_actions_examples /workspace/ && \
+    ln -s /build/node_modules /workspace/node_modules
 
 WORKDIR /workspace
 
