@@ -21,18 +21,10 @@ describe("Knip Configuration", () => {
     assertFileExists(project, "knip.json");
   });
 
-  it("has entry pattern configured", () => {
-
-    const config = project.readJson<{ entry: Array<string>; }>("knip.json");
-    expect(config.entry).toBeDefined();
-    expect(Array.isArray(config.entry)).toBe(true);
-  });
-
-  it("has project pattern configured", () => {
-
-    const config = project.readJson<{ project: Array<string>; }>("knip.json");
-    expect(config.project).toBeDefined();
-    expect(Array.isArray(config.project)).toBe(true);
+  it("has entry and project patterns configured", () => {
+    const config = project.readJson<{ entry: Array<string>; project: Array<string>; }>("knip.json");
+    expect(config.entry).toEqual([ "src/**/*.{js,ts}" ]);
+    expect(config.project).toEqual([ "**/*.{js,ts}" ]);
   });
 
   it("adds knip script to package.json", () => {
@@ -49,18 +41,17 @@ export function main(): void {
 }
 `);
     isolated.install();
-    const result = runCommand(isolated, "pnpm knip", { expectFailure: true });
-    expect(result.stdout + result.stderr).not.toContain("command not found");
+    const result = runCommand(isolated, "pnpm lint:knip", { expectFailure: true });
+    expect(result.exitCode, result.stdout + result.stderr).toBe(0);
   });
 
-  it("has ignoreBinaries and ignoreDependencies arrays", () => {
-
+  it("starts with empty ignoreBinaries and ignoreDependencies", () => {
     const config = project.readJson<{
       ignoreBinaries?: Array<string>;
       ignoreDependencies?: Array<string>;
     }>("knip.json");
 
-    expect(config.ignoreBinaries).toBeDefined();
-    expect(config.ignoreDependencies).toBeDefined();
+    expect(config.ignoreBinaries).toEqual([]);
+    expect(config.ignoreDependencies).toEqual([]);
   });
 });
