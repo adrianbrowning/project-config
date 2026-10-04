@@ -193,7 +193,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
             includeKnip: answer.includes("knip"),
             includeTsCheck: answer.includes("ts"),
             includeClaudePrReview: true,
-            claudeRunnerType: "anthropic",
+            claudeRunnerType: cliArgs.claudeRunner,
           };
         }
         else {

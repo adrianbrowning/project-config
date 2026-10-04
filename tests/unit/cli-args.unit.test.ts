@@ -85,3 +85,14 @@ describe("workspace flags", () => {
     expect(parseCliArgs([ "constructor" ]).all).toBe(false);
   });
 });
+
+describe("--claude-runner", () => {
+  it("defaults to the Anthropic API", () => {
+    expect(parseCliArgs([ "--tool=githubActions", "--yes" ]).claudeRunner).toBe("anthropic");
+  });
+
+  it("accepts bedrock and ignores unknown runners", () => {
+    expect(parseCliArgs([ "--claude-runner=bedrock" ]).claudeRunner).toBe("bedrock");
+    expect(parseCliArgs([ "--claude-runner=vertex" ]).claudeRunner).toBe("anthropic");
+  });
+});

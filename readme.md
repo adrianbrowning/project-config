@@ -61,6 +61,9 @@ TypeScript options (used with --yes):
   --ts-outdir=<dir>           Default: dist
   --ts-type-module            Add "type": "module" to package.json
 
+GitHub Actions options (used with --yes):
+  --claude-runner=anthropic|bedrock  Claude PR review auth. Default: anthropic
+
 Workspace options (with --tool=workspace):
   --workspace-packages=<glob> Package glob for a new workspace (repeatable, default: packages/*)
   --workspace-update-all      Existing workspace: link every package without asking
