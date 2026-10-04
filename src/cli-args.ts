@@ -4,6 +4,7 @@
 
 export type CliArgs = {
   all: boolean; // Tool selection: every tool
+  claudeRunner: "anthropic" | "bedrock"; // Claude PR review runner for --yes runs
   help: boolean;
   noRelease: boolean; // Exclude bumpy from --all
   releaseNpm: boolean; // Publish to npm as well as GitHub releases
@@ -99,6 +100,12 @@ function parseWorkspacePackages(arg: string, args: CliArgs): void {
   if (glob && !args.workspacePackages.includes(glob)) args.workspacePackages.push(glob);
 }
 
+function parseClaudeRunner(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--claude-runner=")) return;
+  const value = arg.split("=")[1];
+  if (value === "anthropic" || value === "bedrock") args.claudeRunner = value;
+}
+
 function applyAllToolsFlag(args: CliArgs): void {
   if (!args.all) return;
   args.tools = args.noRelease ? ALL_TOOLS.filter(tool => tool !== "bumpy") : [ ...ALL_TOOLS ];
@@ -107,6 +114,7 @@ function applyAllToolsFlag(args: CliArgs): void {
 export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliArgs {
   const args: CliArgs = {
     all: false,
+    claudeRunner: "anthropic",
     tools: [],
     yes: false,
     update: false,
@@ -137,6 +145,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     parseTsOutdir(arg, args);
     parseTool(arg, args);
     parseWorkspacePackages(arg, args);
+    parseClaudeRunner(arg, args);
   }
 
   applyAllToolsFlag(args);
@@ -172,6 +181,11 @@ Workspace Options (pnpm workspace with shared root TS/ESLint configs):
                          default: packages/*). Added to an existing workspace.
   --workspace-update-all Existing workspace: link every discovered package
                          to the shared configs (default with --yes: root only)
+
+GitHub Actions Options (used with --yes):
+  --claude-runner=<runner>
+                         anthropic | bedrock: how the Claude PR review
+                         workflow authenticates (default: anthropic)
 
 Release Options (bumpy):
   --no-release           Exclude bumpy when using --all
