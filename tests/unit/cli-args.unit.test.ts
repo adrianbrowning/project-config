@@ -58,3 +58,30 @@ describe("release flags", () => {
     expect(parseCliArgs([ "--tool=bumpy", "--release-npm" ]).releaseNpm).toBe(true);
   });
 });
+
+describe("workspace flags", () => {
+  it("--all leaves out workspace", () => {
+    const tools = parseCliArgs([ "--all" ]).tools;
+    expect(tools).not.toContain("workspace");
+    expect(tools).toContain("ts");
+  });
+
+  it("accepts --tool=workspace", () => {
+    expect(parseCliArgs([ "--tool=workspace" ]).tools).toEqual([ "workspace" ]);
+  });
+
+  it("collects repeated --workspace-packages globs once each", () => {
+    const args = parseCliArgs([ "--workspace-packages=apps/*", "--workspace-packages=libs/*", "--workspace-packages=apps/*" ]);
+    expect(args.workspacePackages).toEqual([ "apps/*", "libs/*" ]);
+  });
+
+  it("--workspace-update-all opts into linking existing packages", () => {
+    expect(parseCliArgs([]).workspaceUpdateAll).toBe(false);
+    expect(parseCliArgs([ "--workspace-update-all" ]).workspaceUpdateAll).toBe(true);
+  });
+
+  it("ignores arguments that name Object.prototype members", () => {
+    expect(() => parseCliArgs([ "constructor", "toString" ])).not.toThrow();
+    expect(parseCliArgs([ "constructor" ]).all).toBe(false);
+  });
+});

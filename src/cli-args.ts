@@ -15,24 +15,36 @@ export type CliArgs = {
   tsType: "app" | "library" | "library-monorepo";
   tsTypeModule: boolean;
   update: boolean; // Update existing configs
+  workspacePackages: Array<string>; // Package globs for a new workspace (default: packages/*)
+  workspaceUpdateAll: boolean; // Existing workspace: update every discovered package without asking
   yes: boolean; // Accept all defaults/overwrites
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy" ] as const;
+const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy", "workspace" ] as const;
 
-function parseBooleanFlag(arg: string): boolean | undefined {
-  if (arg === "--all" || arg === "-a") return true;
-  if (arg === "--yes" || arg === "-y") return true;
-  if (arg === "--update" || arg === "-u") return true;
-  if (arg === "--help" || arg === "-h") return true;
-  if (arg === "--ts-dom") return true;
-  if (arg === "--ts-no-dom") return false;
-  if (arg === "--ts-type-module") return true;
-  if (arg === "--no-ts-type-module") return false;
-  if (arg === "--no-release") return true;
-  if (arg === "--release-npm") return true;
-  return undefined;
-}
+// Opt-in only: `workspace` turns the TS/ESLint setup into shared root configs, so `--all` must not imply it
+const ALL_TOOLS = TOOL_VALUES.filter(tool => tool !== "workspace");
+
+type BooleanFlag = "all" | "help" | "noRelease" | "releaseNpm" | "tsDom" | "tsTypeModule" | "update" | "workspaceUpdateAll" | "yes";
+
+// flag → [field, value]. A Map, so arguments like `constructor` can't hit Object.prototype.
+const BOOLEAN_FLAGS = new Map<string, [BooleanFlag, boolean]>([
+  [ "--all", [ "all", true ]],
+  [ "-a", [ "all", true ]],
+  [ "--yes", [ "yes", true ]],
+  [ "-y", [ "yes", true ]],
+  [ "--update", [ "update", true ]],
+  [ "-u", [ "update", true ]],
+  [ "--help", [ "help", true ]],
+  [ "-h", [ "help", true ]],
+  [ "--ts-dom", [ "tsDom", true ]],
+  [ "--ts-no-dom", [ "tsDom", false ]],
+  [ "--ts-type-module", [ "tsTypeModule", true ]],
+  [ "--no-ts-type-module", [ "tsTypeModule", false ]],
+  [ "--no-release", [ "noRelease", true ]],
+  [ "--release-npm", [ "releaseNpm", true ]],
+  [ "--workspace-update-all", [ "workspaceUpdateAll", true ]],
+]);
 
 function parseTsMode(arg: string, args: CliArgs): void {
   if (!arg.startsWith("--ts-mode=")) return;
@@ -81,9 +93,15 @@ function parseTool(arg: string, args: CliArgs): void {
   }
 }
 
+function parseWorkspacePackages(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--workspace-packages=")) return;
+  const glob = arg.slice("--workspace-packages=".length);
+  if (glob && !args.workspacePackages.includes(glob)) args.workspacePackages.push(glob);
+}
+
 function applyAllToolsFlag(args: CliArgs): void {
   if (!args.all) return;
-  args.tools = args.noRelease ? TOOL_VALUES.filter(tool => tool !== "bumpy") : [ ...TOOL_VALUES ];
+  args.tools = args.noRelease ? ALL_TOOLS.filter(tool => tool !== "bumpy") : [ ...ALL_TOOLS ];
 }
 
 export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliArgs {
@@ -101,21 +119,14 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     noRelease: false,
     releaseNpm: false,
     help: false,
+    workspacePackages: [],
+    workspaceUpdateAll: false,
   };
 
   for (const arg of argv) {
-    const boolFlag = parseBooleanFlag(arg);
-    if (boolFlag !== undefined) {
-      if (arg === "--all" || arg === "-a") args.all = true;
-      else if (arg === "--yes" || arg === "-y") args.yes = true;
-      else if (arg === "--update" || arg === "-u") args.update = true;
-      else if (arg === "--help" || arg === "-h") args.help = true;
-      else if (arg === "--ts-dom") args.tsDom = true;
-      else if (arg === "--ts-no-dom") args.tsDom = false;
-      else if (arg === "--ts-type-module") args.tsTypeModule = true;
-      else if (arg === "--no-ts-type-module") args.tsTypeModule = false;
-      else if (arg === "--no-release") args.noRelease = true;
-      else if (arg === "--release-npm") args.releaseNpm = true;
+    const boolFlag = BOOLEAN_FLAGS.get(arg);
+    if (boolFlag) {
+      args[boolFlag[0]] = boolFlag[1];
       continue;
     }
 
@@ -125,6 +136,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     parseTsJsx(arg, args);
     parseTsOutdir(arg, args);
     parseTool(arg, args);
+    parseWorkspacePackages(arg, args);
   }
 
   applyAllToolsFlag(args);
@@ -148,11 +160,18 @@ Usage:
   gingacodemonkey-config [options]
 
 Options:
-  --all, -a              Select all tools
+  --all, -a              Select all tools (except workspace)
   --yes, -y              Accept all defaults (non-interactive mode)
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
-                                 knip, jscpd, githubActions, bumpy
+                                 knip, jscpd, githubActions, bumpy, workspace
+
+Workspace Options (pnpm workspace with shared root TS/ESLint configs):
+  --workspace-packages=<glob>
+                         Package glob for a new workspace (repeatable,
+                         default: packages/*). Added to an existing workspace.
+  --workspace-update-all Existing workspace: link every discovered package
+                         to the shared configs (default with --yes: root only)
 
 Release Options (bumpy):
   --no-release           Exclude bumpy when using --all
@@ -181,6 +200,9 @@ Examples:
 
   # Select specific tools
   gingacodemonkey-config --tool=ts --tool=eslint --yes
+
+  # Create a pnpm workspace, or link every package in an existing one
+  gingacodemonkey-config --tool=workspace --yes --workspace-update-all
 
   --help, -h             Show this help message
 `);

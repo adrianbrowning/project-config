@@ -100,35 +100,7 @@ function eslintConfigFile(fileName: string, importName: string) {
         title: `Setting up ${fileName}`,
         enabled: ctx => ctx.overwrite === true,
         task: async () => {
-
-          const extendsStr = importName === "eslint"
-            ? [
-              `import type { Linter } from "eslint";`,
-              `import defaultConfig from '@gingacodemonkey/config/eslint';`,
-              ``,
-              `export const extraRules: Array<Linter.Config> = [];`,
-              ``,
-              `const config: Array<Linter.Config> = [`,
-              `  ...defaultConfig,`,
-              `  ...extraRules,`,
-              `];`,
-              ``,
-              `export default config;`,
-            ].join("\n")
-            : [
-              `import type { Linter } from "eslint";`,
-              `import { config as defaultConfig } from '@gingacodemonkey/config/styled';`,
-              `import { extraRules } from './eslint.config.ts';`,
-              ``,
-              `const config: Array<Linter.Config> = [`,
-              `  ...defaultConfig,`,
-              `  ...extraRules,`,
-              `];`,
-              ``,
-              `export default config;`,
-            ].join("\n");
-
-          fs.writeFileSync(fileName, extendsStr);
+          fs.writeFileSync(fileName, eslintConfigContent(importName === "eslint" ? "eslint" : "styled"));
         },
       },
     ],
@@ -138,4 +110,34 @@ function eslintConfigFile(fileName: string, importName: string) {
 
 function getLintConfig(fileName: string): boolean {
   return fs.existsSync("./"+fileName);
+}
+
+/** Root ESLint config files: the main config (with `extraRules`) and the styled config that reuses them. */
+export function eslintConfigContent(kind: "eslint" | "styled"): string {
+  return kind === "eslint"
+    ? [
+      `import type { Linter } from "eslint";`,
+      `import defaultConfig from '@gingacodemonkey/config/eslint';`,
+      ``,
+      `export const extraRules: Array<Linter.Config> = [];`,
+      ``,
+      `const config: Array<Linter.Config> = [`,
+      `  ...defaultConfig,`,
+      `  ...extraRules,`,
+      `];`,
+      ``,
+      `export default config;`,
+    ].join("\n")
+    : [
+      `import type { Linter } from "eslint";`,
+      `import { config as defaultConfig } from '@gingacodemonkey/config/styled';`,
+      `import { extraRules } from './eslint.config.ts';`,
+      ``,
+      `const config: Array<Linter.Config> = [`,
+      `  ...defaultConfig,`,
+      `  ...extraRules,`,
+      `];`,
+      ``,
+      `export default config;`,
+    ].join("\n");
 }

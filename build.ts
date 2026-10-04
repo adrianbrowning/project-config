@@ -19,6 +19,7 @@ const versionReplacements = {
   "__jscpd_version__": peerDeps.jscpd || "^4.0.9",
   "__ts_version__": peerDeps.typescript || "6.0.3",
   "__bumpy_version__": peerDeps["@varlock/bumpy"] || "^1.18.1",
+  "__config_version__": packageJson.version as string,
 };
 
 // Extract the imports object

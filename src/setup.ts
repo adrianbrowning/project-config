@@ -17,6 +17,7 @@ import { lintstagedTasks } from "./lintstaged-tasks.ts";
 import { createTsTasksWithArgs, tsTasks } from "./ts-tasks.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
+import { createWorkspaceTasks, promptUpdateAll } from "./workspace-tasks.ts";
 
 // Type definitions for enquirer MultiSelect
 type MultiSelectChoice = {
@@ -61,6 +62,7 @@ const TOOL_DEFS: Array<ToolDef> = [
   { name: "jscpd", value: "jscpd" },
   { name: "GitHub Actions", value: "githubActions" },
   { name: "Bumpy (releases)", value: "bumpy" },
+  { name: "pnpm workspace (shared TS/ESLint)", value: "workspace" },
 ];
 
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
@@ -88,7 +90,8 @@ function createPrompt(updateMode: boolean): MultiSelectPrompt {
         value: "all",
         onChoice(state, choice, i) {
           if (state.index === i && choice.enabled) {
-            enable(state.choices, ch => ch.name !== "none");
+            // "All" leaves workspace off: it replaces the single-package TS/ESLint setup
+            enable(state.choices, ch => ch.name !== "none" && ch.value !== "workspace");
           }
         },
       },
@@ -132,8 +135,15 @@ function createTasks(cliArgs: CliArgs) {
   );
 }
 
-function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs: CliArgs): void {
-  if (answer.includes("ts")) {
+function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs: CliArgs, interactive: boolean): void {
+  // Workspace writes shared root TS/ESLint configs itself, so the single-package ts/eslint tools step aside.
+  // It runs first: it may create the root package.json that every later task reads.
+  const workspace = answer.includes("workspace");
+  if (workspace) tasks.add({
+    title: "pnpm workspace",
+    task: async (_ctx, task) => task.newListr(createWorkspaceTasks(cliArgs, interactive ? promptUpdateAll : null), { concurrent: false }),
+  });
+  if (answer.includes("ts") && !workspace) {
     tasks.add({
       title: "TypeScript",
       task: async (_ctx, task) => {
@@ -145,7 +155,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
       },
     });
   }
-  if (answer.includes("eslint")) tasks.add({
+  if (answer.includes("eslint") && !workspace) tasks.add({
     title: "ESLint",
     task: async (_ctx, task) => task.newListr(esLintTasks, { concurrent: false }),
   });
@@ -244,8 +254,8 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
   }
 
   // Add combined lint script based on selected tools
-  const hasTs = answer.includes("ts");
-  const hasEslint = answer.includes("eslint");
+  const hasTs = answer.includes("ts") && !workspace;
+  const hasEslint = answer.includes("eslint") && !workspace;
   if (hasTs || hasEslint) {
     tasks.add({
       title: "Adding combined lint script",
@@ -319,7 +329,7 @@ async function main() {
       process.exit(1);
     }
 
-    addToolTasks(tasks, selectedTools, cliArgs);
+    addToolTasks(tasks, selectedTools, cliArgs, false);
     await tasks.run();
   }
   else {
@@ -337,7 +347,7 @@ async function main() {
     }
 
     cliArgs.tools = answer;
-    addToolTasks(tasks, answer, cliArgs);
+    addToolTasks(tasks, answer, cliArgs, true);
     await tasks.run();
   }
 }
