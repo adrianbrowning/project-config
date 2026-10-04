@@ -52,6 +52,8 @@ pnpm exec gingacodemonkey-config [options]
   --no-release                Exclude bumpy when using --all
   --release-npm               Also publish to npm (default: GitHub releases only)
   --tool=<name>               Select a specific tool (repeatable)
+  --update, -u                Reconcile existing configs with this release's defaults (see below)
+  --overwrite                 With --update: replace values you changed in files the CLI owns
 
 TypeScript options (used with --yes):
   --ts-mode=bundler|tsc       Default: bundler
@@ -120,6 +122,35 @@ Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config`
 - `eslint.config.ts` and `eslint.config.style.ts` are overwritten with re-exports of the shared configs. Put package-specific rules in `sharedConfig/eslint.config.ts` or restore your own file from git.
 
 Setup prints each package as `updated`, `unchanged`, `skipped` or `could not be migrated`. A package is left untouched and reported when its `package.json` or `tsconfig.json` isn't plain JSON (for example, a `tsconfig.json` with comments). Rerunning setup changes nothing.
+
+---
+
+## Updating an existing project
+
+`--update` brings a project set up by an older release up to the current defaults. It doesn't run setup and doesn't install packages; it only compares and rewrites the files and keys the CLI manages.
+
+```bash
+pnpm exec gingacodemonkey-config --update                # pick from the tools it detects
+pnpm exec gingacodemonkey-config --update --yes          # every detected tool
+pnpm exec gingacodemonkey-config --update --tool=husky --yes
+```
+
+A tool counts as set up when its main file exists (`tsconfig.json`, `eslint.config.ts`, `.husky/`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.github/workflows/`, `.bumpy/`, `sharedConfig/`). Without `--tool`, the pnpm settings in `pnpm-workspace.yaml` and `engines` in `package.json` are updated too; an explicit `--tool` updates only those tools.
+
+Each managed value ends up as one of:
+
+| Result | When | What happens |
+|---|---|---|
+| `unchanged` | Already the current default (ignoring trailing newlines) | Nothing |
+| `updated` | Matches a default an earlier release wrote, or sits in the old ignored `pnpm:` block | Replaced with the current default |
+| `added` | Missing | Written |
+| `customized` | A starter file you're expected to edit has your changes: `eslint.config.ts`, `sharedConfig/eslint.config.ts`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.bumpy/_config.json` | Kept as is |
+| `conflict` | You changed a file or value the CLI owns: hooks, workflows, the setup action, `eslint.config.style.ts`, package ESLint re-exports, generated scripts, pnpm settings | See below |
+| `skipped` | An optional file is missing, such as a workflow you deleted | Left missing |
+
+Files are replaced only when they match, byte for byte apart from trailing whitespace, a version this CLI wrote (hashes in `src/update/known-versions.ts`). JSON files are compared by value. Scripts and `engines` are compared entry by entry, and `allowBuilds` entries you added are kept.
+
+**Conflicts.** In interactive mode, update asks about each conflict and keeps your value unless you say yes. With `--yes` or `--tool`, a conflict stops the run with a report and nothing is written; rerun with `--overwrite` to replace those values. Running update twice in a row changes nothing the second time.
 
 ---
 

@@ -4,12 +4,12 @@ import { writeConfigFile } from "./utils.ts";
 // GitHub Actions workflow file contents — replaced at build time from github_actions_examples/
 export const SETUP_ACTION = "__SETUP_ACTION__";
 export const SETUP_ACTION_PATH = ".github/actions/setup/action.yml";
-const CI_TEST_WORKFLOW = "__CI_TEST_WORKFLOW__";
-const LINT_WORKFLOW = "__LINT_WORKFLOW__";
-const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
-const TS_CHECK_WORKFLOW = "__TS_CHECK_WORKFLOW__";
-const CLAUDE_PR_REVIEW_WORKFLOW = "__CLAUDE_PR_REVIEW_WORKFLOW__";
-const CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW = "__CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW__";
+export const CI_TEST_WORKFLOW = "__CI_TEST_WORKFLOW__";
+export const LINT_WORKFLOW = "__LINT_WORKFLOW__";
+export const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
+export const TS_CHECK_WORKFLOW = "__TS_CHECK_WORKFLOW__";
+export const CLAUDE_PR_REVIEW_WORKFLOW = "__CLAUDE_PR_REVIEW_WORKFLOW__";
+export const CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW = "__CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW__";
 
 export type ClaudeRunnerType = "anthropic" | "bedrock";
 

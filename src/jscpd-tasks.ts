@@ -5,27 +5,29 @@ import { writeConfigFile } from "./utils.ts";
 const Supported_Version = "__jscpd_version__";
 const pkgName = "jscpd";
 
+export const JSCPD_CONFIG = {
+  "minTokens": 50,
+  "format": [ "typescript", "javascript" ],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.test.js",
+    "**/*.test.jsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.spec.js",
+    "**/*.spec.jsx",
+    "**/__tests__/**",
+    "node_modules/**",
+    "dist/**",
+    "coverage/**",
+  ],
+  "reporters": [ "console" ],
+};
+
 const configFile = {
   path: ".jscpd.json",
-  content: {
-    "minTokens": 50,
-    "format": [ "typescript", "javascript" ],
-    "ignore": [
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      "**/*.test.js",
-      "**/*.test.jsx",
-      "**/*.spec.ts",
-      "**/*.spec.tsx",
-      "**/*.spec.js",
-      "**/*.spec.jsx",
-      "**/__tests__/**",
-      "node_modules/**",
-      "dist/**",
-      "coverage/**",
-    ],
-    "reporters": [ "console" ],
-  },
+  content: JSCPD_CONFIG,
 };
 
 export const jscpdTasks: Array<ListrTask<TaskContext>> = [

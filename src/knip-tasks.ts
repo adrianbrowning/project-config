@@ -6,18 +6,20 @@ import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 const Supported_Version = "__knip_version__";
 const pkgName = "knip";
 
+export const KNIP_CONFIG = {
+  "entry": [
+    "src/**/*.{js,ts}",
+  ],
+  "project": [
+    "**/*.{js,ts}",
+  ],
+  "ignoreBinaries": [],
+  "ignoreDependencies": [],
+};
+
 const configFile = {
   path: "knip.json",
-  content: {
-    "entry": [
-      "src/**/*.{js,ts}",
-    ],
-    "project": [
-      "**/*.{js,ts}",
-    ],
-    "ignoreBinaries": [],
-    "ignoreDependencies": [],
-  },
+  content: KNIP_CONFIG,
 };
 
 export const knipTasks: Array<ListrTask<TaskContext>> = [

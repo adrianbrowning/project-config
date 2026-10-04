@@ -7,6 +7,7 @@ export type CliArgs = {
   claudeRunner: "anthropic" | "bedrock"; // Claude PR review runner for --yes runs
   help: boolean;
   noRelease: boolean; // Exclude bumpy from --all
+  overwrite: boolean; // --update: replace values the user changed in files the CLI owns
   releaseNpm: boolean; // Publish to npm as well as GitHub releases
   tools: Array<string>; // Tool selection: explicit list
   tsDom: boolean;
@@ -26,7 +27,7 @@ const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip
 // Opt-in only: `workspace` turns the TS/ESLint setup into shared root configs, so `--all` must not imply it
 const ALL_TOOLS = TOOL_VALUES.filter(tool => tool !== "workspace");
 
-type BooleanFlag = "all" | "help" | "noRelease" | "releaseNpm" | "tsDom" | "tsTypeModule" | "update" | "workspaceUpdateAll" | "yes";
+type BooleanFlag = "all" | "help" | "noRelease" | "overwrite" | "releaseNpm" | "tsDom" | "tsTypeModule" | "update" | "workspaceUpdateAll" | "yes";
 
 // flag → [field, value]. A Map, so arguments like `constructor` can't hit Object.prototype.
 const BOOLEAN_FLAGS = new Map<string, [BooleanFlag, boolean]>([
@@ -45,6 +46,7 @@ const BOOLEAN_FLAGS = new Map<string, [BooleanFlag, boolean]>([
   [ "--no-release", [ "noRelease", true ]],
   [ "--release-npm", [ "releaseNpm", true ]],
   [ "--workspace-update-all", [ "workspaceUpdateAll", true ]],
+  [ "--overwrite", [ "overwrite", true ]],
 ]);
 
 function parseTsMode(arg: string, args: CliArgs): void {
@@ -125,6 +127,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tsOutdir: "dist",
     tsTypeModule: false,
     noRelease: false,
+    overwrite: false,
     releaseNpm: false,
     help: false,
     workspacePackages: [],
@@ -174,6 +177,13 @@ Options:
   --tool=<name>          Select specific tool (can be used multiple times)
                          Values: ts, eslint, husky, commitLint, lintStaged,
                                  knip, jscpd, githubActions, bumpy, workspace
+
+Update Options:
+  --update, -u           Reconcile existing configs with this release's defaults
+                         instead of running setup. Only detected tools are
+                         updated; combine with --tool=<name> for a subset.
+  --overwrite            With --update: replace values you changed in files
+                         the CLI owns (otherwise non-interactive runs fail)
 
 Workspace Options (pnpm workspace with shared root TS/ESLint configs):
   --workspace-packages=<glob>

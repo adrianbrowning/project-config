@@ -7,7 +7,10 @@ import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__husky_version__";
 
-const commitMsg = `#!/bin/sh
+export const PRE_COMMIT_PLACEHOLDER = "# pre-commit hook - configure via lint-staged or manually\n";
+export const PRE_PUSH_HOOK = "#!/bin/sh\npnpm lint";
+
+export const COMMIT_MSG_HOOK = `#!/bin/sh
 # Skip hook for semantic-release commits
 MESSAGE=$(cat "$1")
 if echo "$MESSAGE" | grep -q "\\[skip ci\\]"; then
@@ -80,7 +83,7 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
           const hookPath = ".husky/pre-commit";
           const existing = fs.existsSync(hookPath) ? fs.readFileSync(hookPath, "utf-8").trim() : "";
           if (!existing || defaultTestRe.test(existing)) {
-            fs.writeFileSync(hookPath, "# pre-commit hook - configure via lint-staged or manually\n");
+            fs.writeFileSync(hookPath, PRE_COMMIT_PLACEHOLDER);
           }
         },
       }];
@@ -88,7 +91,7 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
         taskList.push({
           title: "Adding Commit-Msg Hook",
           task: async () => {
-            fs.writeFileSync(".husky/commit-msg", commitMsg);
+            fs.writeFileSync(".husky/commit-msg", COMMIT_MSG_HOOK);
           },
         }
         );
@@ -97,7 +100,7 @@ export const huskyTasks: Array<ListrTask<TaskContext>> = [
         taskList.push({
           title: "Adding Pre-Push Hook",
           task: async () => {
-            fs.writeFileSync(".husky/pre-push", "#!/bin/sh\npnpm lint");
+            fs.writeFileSync(".husky/pre-push", PRE_PUSH_HOOK);
           },
         }
         );

@@ -9,10 +9,15 @@ const Supported_Version = "__bumpy_version__";
 const pkgName = "@varlock/bumpy";
 
 // Workflow file contents — replaced at build time from github_actions_examples/
-const BUMPY_CHECK_WORKFLOW = "__BUMPY_CHECK_WORKFLOW__";
-const BUMPY_COMMENT_WORKFLOW = "__BUMPY_COMMENT_WORKFLOW__";
-const RELEASE_GITHUB_WORKFLOW = "__RELEASE_GITHUB_WORKFLOW__";
-const RELEASE_NPM_WORKFLOW = "__RELEASE_NPM_WORKFLOW__";
+export const BUMPY_CHECK_WORKFLOW = "__BUMPY_CHECK_WORKFLOW__";
+export const BUMPY_COMMENT_WORKFLOW = "__BUMPY_COMMENT_WORKFLOW__";
+export const RELEASE_GITHUB_WORKFLOW = "__RELEASE_GITHUB_WORKFLOW__";
+export const RELEASE_NPM_WORKFLOW = "__RELEASE_NPM_WORKFLOW__";
+
+export const BUMPY_SCRIPTS: Record<string, string> = {
+  "bump": "bumpy add",
+  "bump:status": "bumpy status",
+};
 
 // Bumpy only creates GitHub releases for packages with a publish target, and
 // `skipNpmPublish` leaves none. GitHub-only mode therefore uses a custom target:
@@ -28,7 +33,7 @@ export type BumpyOptions = {
   npm: boolean;
 };
 
-function createBumpyConfig(name: string, npm: boolean) {
+export function createBumpyConfig(name: string, npm: boolean) {
   const config = {
     baseBranch: "main",
     changelog: "github",
@@ -60,8 +65,7 @@ export function createBumpyTasks(options: BumpyOptions): Array<ListrTask<TaskCon
     {
       title: "Adding bump scripts to package.json",
       task: () => {
-        updatePkgJsonScript("bump", "bumpy add");
-        updatePkgJsonScript("bump:status", "bumpy status");
+        for (const [ script, command ] of Object.entries(BUMPY_SCRIPTS)) updatePkgJsonScript(script, command);
       },
     },
     {
