@@ -70,6 +70,7 @@ jobs:
           - cli-failure
           - eslint-styled-sorting
           - update-mode
+          - workspace
 
     steps:
       - uses: actions/checkout@v7

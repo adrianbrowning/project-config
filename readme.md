@@ -38,6 +38,7 @@ The CLI can set up any combination of:
 | `jscpd` | Copy-paste detection |
 | `githubActions` | CI workflows (test, lint, knip, ts-check, Claude PR review) |
 | `bumpy` | Versioning and releases via [Bumpy](https://github.com/dmno-dev/bumpy) (see [Releases](#releases-bumpy)) |
+| `workspace` | A pnpm workspace with TS and ESLint configs shared from `sharedConfig/` (see [pnpm workspaces](#pnpm-workspaces)). Not part of `--all`. |
 
 ---
 
@@ -46,7 +47,7 @@ The CLI can set up any combination of:
 ```
 pnpm exec gingacodemonkey-config [options]
 
-  --all, -a                   Select all tools
+  --all, -a                   Select all tools (except workspace)
   --yes, -y                   Accept all defaults (non-interactive)
   --no-release                Exclude bumpy when using --all
   --release-npm               Also publish to npm (default: GitHub releases only)
@@ -59,6 +60,10 @@ TypeScript options (used with --yes):
   --ts-jsx=react|react-jsx|preserve|none  Default: none
   --ts-outdir=<dir>           Default: dist
   --ts-type-module            Add "type": "module" to package.json
+
+Workspace options (with --tool=workspace):
+  --workspace-packages=<glob> Package glob for a new workspace (repeatable, default: packages/*)
+  --workspace-update-all      Existing workspace: link every package without asking
 
   --help, -h                  Show help
 ```
@@ -77,7 +82,41 @@ pnpm exec gingacodemonkey-config --all --yes --ts-mode=bundler --ts-dom --ts-typ
 
 # Releases to GitHub and npm
 pnpm exec gingacodemonkey-config --tool=bumpy --release-npm --yes
+
+# New pnpm workspace, or link every package in an existing one
+pnpm exec gingacodemonkey-config --tool=workspace --yes --workspace-update-all
 ```
+
+---
+
+## pnpm workspaces
+
+`--tool=workspace` puts the TypeScript and ESLint rules in one place, `sharedConfig/` at the workspace root, and links every package to it. It replaces the single-package `ts` and `eslint` setup, so selecting those tools alongside it does nothing extra.
+
+```
+package.json                  lint / lint:ts / lint:fix run `pnpm -r …` across packages
+pnpm-workspace.yaml           packages globs + pnpm settings
+sharedConfig/
+  tsconfig.base.json          extends the preset chosen with the --ts-* flags
+  eslint.config.ts            the shared rules; add your own to extraRules
+  eslint.config.style.ts
+packages/<name>/
+  tsconfig.json               extends ../../sharedConfig/tsconfig.base.json
+  eslint.config.ts            re-exports ../../sharedConfig/eslint.config.ts
+  eslint.config.style.ts
+```
+
+Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config` are installed there, not in each package. Paths are relative, so packages at any depth (`apps/web/site`) resolve the shared configs.
+
+**New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file. `pnpm lint` and `pnpm lint:ts` pass straight away.
+
+**Existing workspace.** Setup writes the shared configs and root scripts, keeps your globs and pnpm settings, then offers to link every discovered package. In interactive mode it asks once. With `--tool=workspace` it only links them when you pass `--workspace-update-all`; otherwise it reports them as skipped. For each linked package:
+
+- `lint`, `lint:fix` and `lint:ts` scripts are added or replaced; other scripts stay.
+- `tsconfig.json` gets the shared base as its first `extends`, so the package's own `extends` and `compilerOptions` still win.
+- `eslint.config.ts` and `eslint.config.style.ts` are overwritten with re-exports of the shared configs. Put package-specific rules in `sharedConfig/eslint.config.ts` or restore your own file from git.
+
+Setup prints each package as `updated`, `unchanged`, `skipped` or `could not be migrated`. A package is left untouched and reported when its `package.json` or `tsconfig.json` isn't plain JSON (for example, a `tsconfig.json` with comments). Rerunning setup changes nothing.
 
 ---
 

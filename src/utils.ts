@@ -15,14 +15,16 @@ interface PackageJson {
   scripts?: Record<string, string>;
 }
 
-let pj: null | PackageJson = null;
+// Keyed by cwd, so a process that runs setup in more than one directory never writes one project's manifest into another
+let pj: null | { cwd: string; json: PackageJson; } = null;
 
 export function getPackageJson(): PackageJson {
-  if (pj) return pj;
+  if (pj?.cwd === process.cwd()) return pj.json;
   if (!fs.existsSync("package.json")) throw new Error("No package.json found");
-  pj = (JSON.parse(fs.readFileSync("package.json", "utf8")) as null | PackageJson);
-  if(!pj) throw new Error("No package.json found");
-  return pj;
+  const json = JSON.parse(fs.readFileSync("package.json", "utf8")) as null | PackageJson;
+  if (!json) throw new Error("No package.json found");
+  pj = { cwd: process.cwd(), json };
+  return json;
 }
 
 export function getPkgVersion(pkg: string): null | string {
