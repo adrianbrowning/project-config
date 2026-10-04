@@ -16,6 +16,7 @@ describe("Husky Git Hooks", () => {
     project = new TestProject({ name: "husky-precommit" });
     project.runCli([ "--tool=husky", "--yes" ]);
   });
+  afterAll(() => project.cleanup());
 
   it("writes a placeholder pre-commit hook when lint-staged is not selected", () => {
     expect(project.readFile(".husky/pre-commit")).toBe("# pre-commit hook - configure via lint-staged or manually\n");

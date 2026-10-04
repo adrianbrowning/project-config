@@ -31,6 +31,23 @@ jobs:
           path: gingacodemonkey-config-*.tgz
           retention-days: 1
 
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - name: Install test dependencies
+        run: cd tests && pnpm install
+
+      - name: Run unit tests
+        working-directory: tests
+        run: pnpm vitest run --config vitest.unit.config.ts --reporter=verbose
+
   integration-tests-native:
     needs: build
     runs-on: ubuntu-latest
@@ -49,6 +66,10 @@ jobs:
           - lint-staged
           - knip
           - github-actions
+          - bumpy
+          - cli-failure
+          - eslint-styled-sorting
+          - update-mode
 
     steps:
       - uses: actions/checkout@v7
@@ -70,7 +91,7 @@ jobs:
         run: cd tests && pnpm install
 
       - name: Set TARBALL_PATH
-        run: echo "TARBALL_PATH=$(ls ${{ github.workspace }}/gingacodemonkey-config-*.tgz)" >> $GITHUB_ENV
+        run: echo "TARBALL_PATH=$(ls ${{ github.workspace }}/gingacodemonkey-config-*.tgz)" >> "$GITHUB_ENV"
 
       - name: Run integration tests
         working-directory: tests

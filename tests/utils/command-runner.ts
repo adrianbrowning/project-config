@@ -2,7 +2,7 @@
  * Command execution utilities for tests
  */
 
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import type { TestProject } from "./test-project.ts";
 
 type CommandResult = {
@@ -12,34 +12,28 @@ type CommandResult = {
 };
 
 /**
- * Run a command and capture output/exit code
+ * Run a command and capture stdout, stderr and the exit code.
+ * Throws on a non-zero exit unless `expectFailure` is set.
  */
 export function runCommand(
   project: TestProject,
   command: string,
   options?: { expectFailure?: boolean; }
 ): CommandResult {
-  try {
-    const stdout = execSync(command, {
-      cwd: project.dir,
-      encoding: "utf-8",
-      stdio: [ "pipe", "pipe", "pipe" ],
-      env: { ...process.env, CI: "true" },
-      maxBuffer: 10 * 1024 * 1024,
-    });
-    return { exitCode: 0, stdout, stderr: "" };
+  const result = spawnSync(command, {
+    cwd: project.dir,
+    encoding: "utf-8",
+    shell: true,
+    env: { ...process.env, CI: "true" },
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+
+  const commandResult = { exitCode: result.status ?? 1, stdout: result.stdout, stderr: result.stderr };
+  if (commandResult.exitCode !== 0 && !options?.expectFailure) {
+    throw new Error(`Command failed (exit ${commandResult.exitCode}): ${command}\n${commandResult.stderr || commandResult.stdout}`);
   }
-  catch (error: unknown) {
-    const err = error as { status?: number; stderr?: Buffer | string; stdout?: Buffer | string; };
-    if (options?.expectFailure) {
-      return {
-        exitCode: err.status ?? 1,
-        stdout: typeof err.stdout === "string" ? err.stdout : err.stdout?.toString() ?? "",
-        stderr: typeof err.stderr === "string" ? err.stderr : err.stderr?.toString() ?? "",
-      };
-    }
-    throw error;
-  }
+  return commandResult;
 }
 
 /**

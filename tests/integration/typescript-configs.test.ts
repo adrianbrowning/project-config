@@ -26,7 +26,7 @@ describe("TypeScript Configurations", () => {
 
   let project: TestProject;
   beforeEach(() => {
-    project = new TestProject({ name: "ts-lint-ts-script" });
+    project = new TestProject({ name: "ts-config" });
   });
   afterEach(() => {
     project.cleanup();
@@ -40,7 +40,6 @@ describe("TypeScript Configurations", () => {
 
   describe("bundler/dom/app (Vite/React web app)", () => {
     it("generates correct tsconfig and passes lint:ts", () => {
-      const project = new TestProject({ name: "ts-bundler-dom-app" });
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -194,7 +193,6 @@ export function addClass(el: HTMLElement, className: string): void {
 
   describe("tsc/no-dom/library-monorepo", () => {
     it("generates correct tsconfig for monorepo library", () => {
-      const project = new TestProject({ name: "ts-tsc-nodom-monorepo" });
       // tsc mode with NodeNext requires ESM - set type: module
       const pkg = project.readJson<{ type?: string; }>("package.json");
       project.writeJson("package.json", { ...pkg, type: "module" });
