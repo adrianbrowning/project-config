@@ -141,12 +141,21 @@ describe("workspace tsconfigs", () => {
     expect(tsconfigLink("packages/a/tsconfig.json", base).status).toBe("unchanged");
   });
 
-  it("reports a dropped link as a conflict, and overwriting restores it ahead of the package's own extends", () => {
-    write("packages/a/tsconfig.json", JSON.stringify({ extends: "./local.json", compilerOptions: { strict: false } }));
+  it("reports a package that dropped the link and never rewrites it, even with --overwrite", async () => {
+    const tsconfig = JSON.stringify({ extends: "./local.json", compilerOptions: { strict: false } });
+    write("packages/a/tsconfig.json", tsconfig);
     const item = tsconfigLink("packages/a/tsconfig.json", base);
-    expect(item.status).toBe("conflict");
-    item.apply?.();
-    expect(JSON.parse(read("packages/a/tsconfig.json"))).toEqual({ extends: [ base, "./local.json" ], compilerOptions: { strict: false } });
+    expect(item.status).toBe("customized");
+    expect(item.apply).toBeUndefined();
+
+    // Through runUpdate with --overwrite: a linked workspace package whose tsconfig drops the shared base
+    write("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    write("package.json", "{}\n");
+    write("sharedConfig/tsconfig.base.json", JSON.stringify({ extends: "@gingacodemonkey/config/bundler/dom/app" }));
+    write("packages/a/package.json", "{}\n");
+    write("packages/a/eslint.config.ts", "import config from \"../../sharedConfig/eslint.config.ts\";\n\nexport default config;\n");
+    await runUpdate(parseCliArgs([ "--update", "--tool=workspace", "--yes", "--overwrite" ]), null, () => undefined);
+    expect(read("packages/a/tsconfig.json")).toBe(tsconfig);
   });
 
   it("adds a missing package tsconfig, and leaves one with comments alone", () => {

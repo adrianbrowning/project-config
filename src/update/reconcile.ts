@@ -8,7 +8,6 @@ import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import YAML from "yaml";
 import { updateWorkspaceYaml } from "../utils.ts";
-import { withSharedExtends } from "../workspace-tasks.ts";
 import { KNOWN_TEMPLATE_HASHES } from "./known-versions.ts";
 
 /**
@@ -130,8 +129,9 @@ function readJsonObject(file: string): Record<string, unknown> | undefined {
 }
 
 /**
- * A tsconfig whose `extends` must include `base` (a workspace package's link to sharedConfig/). Everything else in
- * the file is the user's. A dropped link is a conflict; overwriting puts it back first, keeping their own extends.
+ * A workspace package's tsconfig, which links to sharedConfig/ through `extends`. A missing one is added. An
+ * existing one is the user's: if it no longer includes the shared base, that's reported and never rewritten,
+ * even with --overwrite, because the package's own `extends` and options decide how it builds.
  */
 export function tsconfigLink(file: string, base: string): PlanItem {
   if (!fs.existsSync(file)) {
@@ -140,14 +140,7 @@ export function tsconfigLink(file: string, base: string): PlanItem {
   const tsconfig = readJsonObject(file);
   if (!tsconfig) return { label: file, status: "customized", reason: "not plain JSON; left as is" };
   if ([ tsconfig.extends ].flat().includes(base)) return { label: file, status: "unchanged" };
-  // Same rule as setup: shared base first, the package's own extends after it so its settings still win
-  const list = withSharedExtends(tsconfig.extends, base);
-  return {
-    label: file,
-    status: "conflict",
-    reason: `extends no longer includes ${base}`,
-    apply: () => writeFile(file, JSON.stringify({ ...tsconfig, extends: list.length === 1 ? list[0] : list }, null, 2) + "\n"),
-  };
+  return { label: file, status: "customized", reason: `doesn't extend ${base}; left as is (rerun setup with --tool=workspace to relink)` };
 }
 
 /**

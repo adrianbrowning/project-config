@@ -144,7 +144,7 @@ Each managed value ends up as one of:
 | `unchanged` | Already the current default (ignoring trailing newlines) | Nothing |
 | `updated` | Matches a default an earlier release wrote, or sits in the old ignored `pnpm:` block | Replaced with the current default |
 | `added` | Missing | Written |
-| `customized` | A starter file you're expected to edit has your changes: `eslint.config.ts`, `sharedConfig/eslint.config.ts`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.bumpy/_config.json` | Kept as is |
+| `customized` | A starter file you're expected to edit has your changes: `eslint.config.ts`, `sharedConfig/eslint.config.ts`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.bumpy/_config.json`. Also a workspace package `tsconfig.json` that no longer extends the shared base, or a `sharedConfig/tsconfig.base.json` that doesn't extend a preset | Kept as is, even with `--overwrite` |
 | `conflict` | You changed a file or value the CLI owns: hooks, workflows, the setup action, `eslint.config.style.ts`, package ESLint re-exports, generated scripts, pnpm settings | See below |
 | `skipped` | An optional file is missing, such as a workflow you deleted | Left missing |
 
