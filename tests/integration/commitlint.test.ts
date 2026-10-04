@@ -64,5 +64,15 @@ describe("CommitLint Configuration", () => {
       const result = project.gitCommit("chore: update dependencies");
       expect(result.exitCode).toBe(0);
     });
+
+    it("keeps quotes, $ and backticks in the commit message", () => {
+      using project = new TestProject({ name: "commitlint-metachars" });
+      project.runCli([ "--tool=husky", "--tool=commitLint", "--yes" ]);
+      project.writeFile("src/index.ts", "export const x = 1;");
+
+      const message = "fix: handle \"$HOME\" and `pwd` in paths";
+      project.gitCommit(message);
+      expect(project.getLastCommitMessage()).toBe(message);
+    });
   });
 });
