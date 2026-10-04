@@ -36,7 +36,7 @@ jobs:
         run: |
           PR="$PR_FROM_EVENT"
           [ -z "$PR" ] && PR="$PR_FROM_INPUT"
-          echo "number=$PR" >> $GITHUB_OUTPUT
+          echo "number=$PR" >> "$GITHUB_OUTPUT"
 
       - name: Validate PR number
         env:
