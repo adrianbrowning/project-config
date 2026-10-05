@@ -1,8 +1,14 @@
 import fs from "node:fs";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
+import { resolveTsJsx } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
+
+/** Every .ts and .tsx file under `srcDir`, at any depth (tsconfig globs have no brace expansion). */
+function sourceIncludes(srcDir: string): Array<string> {
+  return [ `./${srcDir}/**/*.ts`, `./${srcDir}/**/*.tsx` ];
+}
 
 type TsConfigObject = {
   compilerOptions: {
@@ -159,12 +165,12 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
           const tsConfig = {
             "extends": extendsStr,
             compilerOptions: {
-              ...(jsx ? { jsx:"react" } : {}),
+              ...(jsx ? { jsx: "react-jsx" } : {}),
               ...(outDir ? { outDir, rootDir: hasEslint ? "." : `./${srcDir}` } : {}),
             },
             include: [
               ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
-              `./${srcDir}/**.ts`,
+              ...sourceIncludes(srcDir),
             ],
             exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
           };
@@ -245,7 +251,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         const dom = cliArgs.tsDom;
         const bundler = cliArgs.tsMode === "tsc"; // bundler: false means using external bundler
         const type = cliArgs.tsType;
-        const jsx = cliArgs.tsJsx;
+        const jsx = resolveTsJsx(cliArgs);
         const outDir = cliArgs.tsOutdir;
 
         // Map type to config path format
@@ -262,7 +268,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
           },
           include: [
             ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
-            "./src/**.ts",
+            ...sourceIncludes("src"),
           ],
           exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
         };

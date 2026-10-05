@@ -53,9 +53,6 @@ describe("Styled ESLint config: perfectionist sorting", () => {
   beforeAll(() => {
     project = new TestProject({ name: "eslint-styled-sorting" });
     project.runCli([ "--tool=ts", "--tool=eslint", "--yes", "--ts-no-dom", "--ts-type=library", "--ts-jsx=react-jsx" ]);
-    // The generated tsconfig only includes `src/**.ts`; the JSX fixture needs `.tsx` in the project service.
-    const tsconfig = project.readJson<{ include: Array<string>; }>("tsconfig.json");
-    project.writeJson("tsconfig.json", { ...tsconfig, include: [ ...tsconfig.include, "./src/**.tsx" ] });
     project.writeFile("src/index.ts", "export const index = 1;\n");
     project.install();
   });

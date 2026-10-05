@@ -11,7 +11,7 @@ export type CliArgs = {
   releaseNpm: boolean; // Publish to npm as well as GitHub releases
   tools: Array<string>; // Tool selection: explicit list
   tsDom: boolean;
-  tsJsx: "preserve" | "react" | "react-jsx" | null;
+  tsJsx: "preserve" | "react" | "react-jsx" | null | undefined; // undefined: not passed, see resolveTsJsx
   tsMode: "bundler" | "tsc";
   tsOutdir: string;
   tsType: "app" | "library" | "library-monorepo";
@@ -82,6 +82,12 @@ function parseTsJsx(arg: string, args: CliArgs): void {
   }
 }
 
+/** The tsconfig `jsx` option: `--ts-jsx` when passed (`none` is null), otherwise `react-jsx` for a DOM app. */
+export function resolveTsJsx(args: CliArgs): "preserve" | "react" | "react-jsx" | null {
+  if (args.tsJsx !== undefined) return args.tsJsx;
+  return args.tsDom && args.tsType === "app" ? "react-jsx" : null;
+}
+
 function parseTsOutdir(arg: string, args: CliArgs): void {
   if (!arg.startsWith("--ts-outdir=")) return;
   const outdir = arg.split("=")[1];
@@ -123,7 +129,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tsMode: "bundler",
     tsDom: true,
     tsType: "app",
-    tsJsx: null,
+    tsJsx: undefined,
     tsOutdir: "dist",
     tsTypeModule: false,
     noRelease: false,
@@ -207,7 +213,7 @@ TypeScript Options (used with --yes):
   --ts-dom               Enable DOM support (default)
   --ts-no-dom            Disable DOM support
   --ts-type=<type>       app | library | library-monorepo (default: app)
-  --ts-jsx=<jsx>         react | react-jsx | preserve | none (default: none)
+  --ts-jsx=<jsx>         react | react-jsx | preserve | none (default: react-jsx for a DOM app, otherwise none)
   --ts-outdir=<dir>      Output directory (default: dist)
   --ts-type-module       Add "type": "module" to package.json
   --no-ts-type-module    Do not add "type": "module" (default)

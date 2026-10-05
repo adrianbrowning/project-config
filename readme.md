@@ -59,7 +59,7 @@ TypeScript options (used with --yes):
   --ts-mode=bundler|tsc       Default: bundler
   --ts-dom / --ts-no-dom      Default: dom
   --ts-type=app|library|library-monorepo  Default: app
-  --ts-jsx=react|react-jsx|preserve|none  Default: none
+  --ts-jsx=react|react-jsx|preserve|none  Default: react-jsx for a DOM app, otherwise none
   --ts-outdir=<dir>           Default: dist
   --ts-type-module            Add "type": "module" to package.json
 
