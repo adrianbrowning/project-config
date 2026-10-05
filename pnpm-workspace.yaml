@@ -2,9 +2,6 @@ packages:
   - "."
   - "tests"
 
-settings:
-  minimumReleaseAge: 4320
-
 overrides:
   baseline-browser-mapping: "^2.10.37"
   minimatch: ">=3.1.4"
