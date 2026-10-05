@@ -144,7 +144,7 @@ pnpm exec gingacodemonkey-config --update --yes          # every detected tool
 pnpm exec gingacodemonkey-config --update --tool=husky --yes
 ```
 
-**Rerunning setup to add a tool** installs packages again, and the `minimumReleaseAge: 4320` setting written by the first run applies. If the lockfile holds a dependency published less than three days ago (often a peer installed with this package), pnpm refuses the install. Setup then fails, naming the package and the time it becomes installable. Wait until then, or use `--update` for config-only changes, since it installs nothing.
+**Rerunning setup to add a tool** installs packages again, and the `minimumReleaseAge: 4320` setting written by the first run applies. If the lockfile holds a dependency published less than three days ago (often a peer installed with this package), pnpm refuses the install. Setup then fails and names the package. When pnpm can look up the publish time and your `minimumReleaseAge`, it also says when the package becomes installable. Wait until then, or use `--update` for config-only changes, since it installs nothing.
 
 A tool counts as set up when its main file exists (`tsconfig.json`, `eslint.config.ts`, `.husky/`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.github/workflows/`, `.bumpy/`, `sharedConfig/`). Without `--tool`, the pnpm settings in `pnpm-workspace.yaml` and `engines` in `package.json` are updated too; an explicit `--tool` updates only those tools.
 
