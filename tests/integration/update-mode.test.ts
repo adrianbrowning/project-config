@@ -112,8 +112,12 @@ describe("--update", () => {
 
   it("reconciles a workspace's ci.yml and leaves out the single-package workflows", () => {
     using project = new TestProject({ name: "update-workspace-ci" });
-    project.runCli([ "--tool=workspace", "--tool=githubActions", "--yes" ]);
-    const ci = project.readFile(".github/workflows/ci.yml");
+    // Seeded rather than set up: GitHub Actions setup installs the review skill over the network (#59).
+    // The built CLI's template is this file byte for byte, so update must see it as current.
+    const ci = fs.readFileSync(path.join(EXAMPLES, "workspace-ci.yml"), "utf8");
+    project.writeFile("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    project.writeFile(".github/workflows/ci.yml", ci);
+    project.writeFile(".github/actions/setup/action.yml", fs.readFileSync(path.join(EXAMPLES, "actions/setup/action.yml"), "utf8"));
 
     const current = update(project, "--tool=githubActions", "--yes");
     expect(current.exitCode, current.output).toBe(0);
