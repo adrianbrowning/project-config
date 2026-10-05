@@ -5,7 +5,7 @@ import type { ListrTask, ListrTaskWrapper } from "listr2";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
-import { getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
+import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 
 type WorkspaceTask = ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>;
 
@@ -34,16 +34,47 @@ export const PACKAGE_SCRIPTS: Record<string, string> = {
   "lint:ts": "tsc --noEmit",
 };
 
-// `pnpm -r` skips the workspace root, so these never recurse into themselves
+// Only the sample package gets a test: an existing package's tests are its own business
+const SAMPLE_SCRIPTS: Record<string, string> = { ...PACKAGE_SCRIPTS, test: "node --test" };
+
+// `pnpm -r` skips the workspace root, so these never recurse into themselves. `--if-present` skips packages without
+// the script, so optional ones (test, build) work in workspaces where only some packages have them.
 export const ROOT_SCRIPTS: Record<string, string> = {
-  "lint": "pnpm -r lint",
-  "lint:fix": "pnpm -r lint:fix",
-  "lint:ts": "pnpm -r lint:ts",
+  "lint": "pnpm -r --if-present lint",
+  "lint:fix": "pnpm -r --if-present lint:fix",
+  "lint:ts": "pnpm -r --if-present lint:ts",
+  "test": "pnpm -r --if-present test",
+  "build": "pnpm -r --if-present build",
+  "check": "pnpm lint && pnpm lint:ts && pnpm test && pnpm build",
+};
+
+// Root scripts earlier releases wrote; setup and --update replace these, but keep any other value the user set
+export const PREVIOUS_ROOT_SCRIPTS: Record<string, Array<string>> = {
+  "lint": [ "pnpm -r lint" ],
+  "lint:fix": [ "pnpm -r lint:fix" ],
+  "lint:ts": [ "pnpm -r lint:ts" ],
 };
 
 /** A package's ESLint config file: a re-export of the shared one, `shared` being the relative path to sharedConfig/. */
 export function packageEslintLink(shared: string, file: "eslint.config.style.ts" | "eslint.config.ts"): string {
   return `import config from "${shared}/${file}";\n\nexport default config;\n`;
+}
+
+type ScriptMerge = { kept: Array<string>; scripts: Record<string, string>; };
+
+/**
+ * Adds `wanted` scripts that are missing and replaces ones still at an earlier default. A script the user wrote
+ * themselves is kept (and listed in `kept`) rather than silently replaced.
+ */
+function mergeScripts(existing: Record<string, string>, wanted: Record<string, string>, previous: Record<string, Array<string>> = {}): ScriptMerge {
+  const scripts = { ...existing };
+  const kept: Array<string> = [];
+  for (const [ name, command ] of Object.entries(wanted)) {
+    const value = existing[name];
+    if (value === undefined || previous[name]?.includes(value)) scripts[name] = command;
+    else if (value !== command) kept.push(name);
+  }
+  return { scripts, kept };
 }
 
 type JsonObject = Record<string, unknown>;
@@ -142,12 +173,33 @@ function writeSharedConfigs(cliArgs: CliArgs): void {
   writeIfChanged(path.join(SHARED_DIR, "eslint.config.style.ts"), eslintConfigContent("styled"));
 }
 
+/** A package's relative path to the shared tsconfig base. */
+function sharedTsconfigBase(dir: string): string {
+  return `${path.posix.relative(dir, SHARED_DIR)}/tsconfig.base.json`;
+}
+
 function createSamplePackage(dir: string): void {
-  writeIfChanged(path.join(dir, "package.json"), toJson({ name: SAMPLE_NAME, version: "0.0.0", private: true, type: "module" }));
+  writeIfChanged(path.join(dir, "package.json"), toJson({ name: SAMPLE_NAME, version: "0.0.0", private: true, type: "module", scripts: SAMPLE_SCRIPTS }));
+  // The sample test uses node:test; TypeScript 6 loads no @types by default
+  writeIfChanged(path.join(dir, "tsconfig.json"), toJson({
+    extends: sharedTsconfigBase(dir),
+    compilerOptions: { types: [ "node" ] },
+    include: [ "src" ],
+  }));
   writeIfChanged(path.join(dir, "src", "index.ts"), [
     "export function greet(name: string): string {",
     "  return `Hello, ${name}!`;",
     "}",
+    "",
+  ].join("\n"));
+  writeIfChanged(path.join(dir, "src", "index.test.ts"), [
+    "import assert from \"node:assert/strict\";",
+    "import { test } from \"node:test\";",
+    "import { greet } from \"./index.ts\";",
+    "",
+    "await test(\"greet\", () => {",
+    "  assert.equal(greet(\"workspace\"), \"Hello, workspace!\");",
+    "});",
     "",
   ].join("\n"));
 }
@@ -160,23 +212,23 @@ function withSharedExtends(current: unknown, sharedBase: string): Array<string> 
 }
 
 /** Points one package at the shared configs. Reads everything before writing, so a failure changes nothing. */
-function linkPackage(dir: string): { reason?: string; result: PackageResult; } {
+function linkPackage(dir: string): { kept: Array<string>; reason?: string; result: PackageResult; } {
   const manifestFile = path.join(dir, "package.json");
   const tsconfigFile = path.join(dir, "tsconfig.json");
   const manifest = readJsonObject(manifestFile);
-  if (!manifest) return { result: "could not be migrated", reason: "package.json is not valid JSON" };
+  if (!manifest) return { result: "could not be migrated", reason: "package.json is not valid JSON", kept: [] };
   const tsconfig = fs.existsSync(tsconfigFile) ? readJsonObject(tsconfigFile) : {};
-  if (!tsconfig) return { result: "could not be migrated", reason: "tsconfig.json is not plain JSON (comments or trailing commas?)" };
+  if (!tsconfig) return { result: "could not be migrated", reason: "tsconfig.json is not plain JSON (comments or trailing commas?)", kept: [] };
 
   const shared = path.posix.relative(dir, SHARED_DIR);
   let changed = false;
 
-  const scripts = (manifest.scripts ?? {}) as Record<string, string>;
-  if (Object.entries(PACKAGE_SCRIPTS).some(([ name, command ]) => scripts[name] !== command)) {
-    changed = writeIfChanged(manifestFile, toJson({ ...manifest, scripts: { ...scripts, ...PACKAGE_SCRIPTS } })) || changed;
+  const { kept, scripts } = mergeScripts(manifest.scripts ?? {}, PACKAGE_SCRIPTS);
+  if (JSON.stringify(scripts) !== JSON.stringify(manifest.scripts ?? {})) {
+    changed = writeIfChanged(manifestFile, toJson({ ...manifest, scripts })) || changed;
   }
 
-  const sharedBase = `${shared}/tsconfig.base.json`;
+  const sharedBase = sharedTsconfigBase(dir);
   const extendsList = withSharedExtends(tsconfig.extends, sharedBase);
   const nextTsconfig = {
     ...tsconfig,
@@ -192,7 +244,7 @@ function linkPackage(dir: string): { reason?: string; result: PackageResult; } {
   changed = writeIfChanged(path.join(dir, "eslint.config.ts"), packageEslintLink(shared, "eslint.config.ts")) || changed;
   changed = writeIfChanged(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts")) || changed;
 
-  return { result: changed ? "updated" : "unchanged" };
+  return { result: changed ? "updated" : "unchanged", kept };
 }
 
 /**
@@ -242,9 +294,13 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
       task: () => writeSharedConfigs(cliArgs),
     },
     {
-      title: "Adding recursive lint scripts to the workspace root",
-      task: () => {
-        for (const [ name, command ] of Object.entries(ROOT_SCRIPTS)) updatePkgJsonScript(name, command);
+      title: "Adding workspace-wide scripts to the root",
+      task: (_ctx, task) => {
+        const { kept, scripts } = mergeScripts(getPackageJson().scripts ?? {}, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS);
+        for (const name of Object.keys(ROOT_SCRIPTS)) {
+          if (!kept.includes(name)) updatePkgJsonScript(name, scripts[name]!);
+        }
+        if (kept.length > 0) task.title = `Root scripts added; kept your own ${kept.join(", ")}`;
       },
     },
     {
@@ -271,9 +327,10 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
             counts.skipped++;
             return `${dir}: skipped`;
           }
-          const { result, reason } = linkPackage(dir);
+          const { kept, reason, result } = linkPackage(dir);
           counts[result]++;
-          return `${dir}: ${result}${reason ? ` (${reason})` : ""}`;
+          const notes = [ ...(reason ? [ reason ] : []), ...(kept.length > 0 ? [ `kept your own ${kept.join(", ")} script` ] : []) ];
+          return `${dir}: ${result}${notes.length > 0 ? ` (${notes.join("; ")})` : ""}`;
         });
         task.title = `Packages: ${Object.entries(counts).map(([ status, count ]) => `${count} ${status}`)
           .join(", ")}\n  ${lines.join("\n  ")}`;

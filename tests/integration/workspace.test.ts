@@ -17,6 +17,18 @@ const PACKAGE_SCRIPTS = {
   "lint:ts": "tsc --noEmit",
 };
 
+const ROOT_SCRIPTS = {
+  "lint": "pnpm -r --if-present lint",
+  "lint:fix": "pnpm -r --if-present lint:fix",
+  "lint:ts": "pnpm -r --if-present lint:ts",
+  "test": "pnpm -r --if-present test",
+  "build": "pnpm -r --if-present build",
+  "check": "pnpm lint && pnpm lint:ts && pnpm test && pnpm build",
+};
+
+/** A test script that prints a marker the command line itself doesn't contain, so output counts are exact */
+const markerTest = (name: string) => `node -e "console.log('RAN:' + '${name}')"`;
+
 const NEGATED_CONJUNCTION = "export function check(a: boolean, b: boolean): boolean {\n  return !(a && b);\n}\n";
 
 /** Every file outside node_modules/.git and build caches, so two runs can be compared */
@@ -62,10 +74,14 @@ describe("pnpm workspace setup", () => {
       expect(project.readFile("pnpm-workspace.yaml")).toMatch(/^packages:\n {2}- 'packages\/\*'$/m);
       expect(project.readJson("sharedConfig/tsconfig.base.json")).toEqual({ extends: "@gingacodemonkey/config/bundler/no-dom/library" });
       expect(project.readFile("sharedConfig/eslint.config.ts")).toContain("@gingacodemonkey/config/eslint");
-      expect(project.readJson<Manifest>("package.json").scripts).toMatchObject({ "lint": "pnpm -r lint", "lint:ts": "pnpm -r lint:ts", "lint:fix": "pnpm -r lint:fix" });
+      expect(project.readJson<Manifest>("package.json").scripts).toMatchObject(ROOT_SCRIPTS);
 
-      expect(project.readJson<Manifest>("packages/example/package.json").scripts).toEqual(PACKAGE_SCRIPTS);
-      expect(project.readJson("packages/example/tsconfig.json")).toEqual({ extends: "../../sharedConfig/tsconfig.base.json", include: [ "src" ] });
+      expect(project.readJson<Manifest>("packages/example/package.json").scripts).toEqual({ ...PACKAGE_SCRIPTS, test: "node --test" });
+      expect(project.readJson("packages/example/tsconfig.json")).toEqual({
+        extends: "../../sharedConfig/tsconfig.base.json",
+        compilerOptions: { types: [ "node" ] },
+        include: [ "src" ],
+      });
       expect(project.readFile("packages/example/eslint.config.ts")).toBe("import config from \"../../sharedConfig/eslint.config.ts\";\n\nexport default config;\n");
       expect(output).toContain("Packages: 1 updated");
 
@@ -136,7 +152,9 @@ describe("pnpm workspace setup", () => {
       expect(output).toContain("Packages: 2 updated, 0 unchanged, 0 skipped, 1 could not be migrated");
       expect(project.readFile("pnpm-workspace.yaml")).toMatch(/^packages:\n {2}- 'packages\/\*'\n {2}- 'apps\/\*\/\*'\n {2}- '!packages\/ignored'\ncatalog:\n {2}zod: \^4\.0\.0$/m);
 
-      expect(project.readJson<Manifest>("packages/a/package.json").scripts).toEqual({ build: "echo build", ...PACKAGE_SCRIPTS });
+      // `lint` was the package's own script: kept, not replaced; the missing ones are added
+      expect(project.readJson<Manifest>("packages/a/package.json").scripts).toEqual({ build: "echo build", lint: "echo old", "lint:fix": PACKAGE_SCRIPTS["lint:fix"], "lint:ts": PACKAGE_SCRIPTS["lint:ts"] });
+      expect(output).toContain("packages/a: updated (kept your own lint script)");
       expect(project.readJson("packages/a/tsconfig.json")).toEqual({
         compilerOptions: { noUnusedLocals: false },
         include: [ "src" ],
@@ -182,6 +200,48 @@ describe("pnpm workspace setup", () => {
       const changed = Object.keys({ ...before, ...after }).filter(file => before[file] !== after[file]);
       expect(changed.filter(file => !/^(?:package\.json|pnpm-workspace\.yaml|sharedConfig\/)/.test(file))).toEqual([]);
       expect(project.fileExists("sharedConfig/tsconfig.base.json")).toBe(true);
+    });
+  });
+
+  describe("workspace-wide root scripts", () => {
+    it("a new workspace passes `pnpm check`, which runs the sample package's test", () => {
+      using project = new TestProject({ name: "workspace-check" });
+      project.runCli([ "--tool=workspace", "--yes", "--ts-no-dom", "--ts-type=library" ]);
+
+      const check = runCommand(project, "pnpm check", { expectFailure: true });
+      expect(check.exitCode, check.stdout + check.stderr).toBe(0);
+      expect(check.stdout).toMatch(/pass 1/);
+    });
+
+    it("runs each package's script once, skips packages without it, and fails when any package fails", () => {
+      using project = new TestProject({ name: "workspace-recursive" });
+      project.writeFile("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n  - 'apps/*/*'\n");
+      project.writeJson("packages/a/package.json", { name: "a", private: true, scripts: { test: markerTest("a") } });
+      project.writeJson("apps/web/b/package.json", { name: "b", private: true, scripts: { test: markerTest("b") } });
+      project.writeJson("packages/c/package.json", { name: "c", private: true });
+      project.runCli([ "--tool=workspace", "--yes", "--workspace-update-all" ]);
+
+      const test = runCommand(project, "pnpm test", { expectFailure: true });
+      expect(test.exitCode, test.stdout + test.stderr).toBe(0);
+      expect(test.stdout.match(/RAN:a/g)).toHaveLength(1);
+      expect(test.stdout.match(/RAN:b/g)).toHaveLength(1);
+      expect(runCommand(project, "pnpm build", { expectFailure: true }).exitCode).toBe(0);
+
+      project.writeJson("apps/web/b/package.json", { ...project.readJson<Manifest>("apps/web/b/package.json"), scripts: { test: "node -e \"process.exit(3)\"" } });
+      expect(runCommand(project, "pnpm test", { expectFailure: true }).exitCode).not.toBe(0);
+    });
+
+    it("keeps root scripts the user wrote and replaces earlier generated ones", () => {
+      using project = new TestProject({ name: "workspace-root-scripts" });
+      const manifest = project.readJson<Manifest>("package.json");
+      project.writeJson("package.json", { ...manifest, scripts: { test: "vitest run", lint: "pnpm -r lint" } });
+      const output = project.runCli([ "--tool=workspace", "--yes" ]);
+
+      const scripts = project.readJson<Manifest>("package.json").scripts;
+      expect(scripts?.test).toBe("vitest run");
+      expect(scripts?.lint).toBe(ROOT_SCRIPTS.lint);
+      expect(scripts?.check).toBe(ROOT_SCRIPTS.check);
+      expect(output).toContain("kept your own test");
     });
   });
 });
