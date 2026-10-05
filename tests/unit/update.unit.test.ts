@@ -11,8 +11,10 @@ import { parseCliArgs } from "../../src/cli-args.ts";
 import { COMMITLINT_CONFIG } from "../../src/convential-tasks.ts";
 import { eslintConfigContent } from "../../src/eslint-tasks.ts";
 import { COMMIT_MSG_HOOK, PRE_PUSH_HOOK } from "../../src/husky-tasks.ts";
+import type { DetectableTool } from "../../src/tool-detection.ts";
 import { KNOWN_TEMPLATE_HASHES } from "../../src/update/known-versions.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "../../src/update/reconcile.ts";
+import { managedItems } from "../../src/update/registry.ts";
 import { runUpdate } from "../../src/update/run-update.ts";
 import type { UpdatePrompts } from "../../src/update/run-update.ts";
 
@@ -54,6 +56,7 @@ describe("known template versions", () => {
     [ "eslint.config.style.ts", eslintConfigContent("styled") ],
     [ "commitlint.config.js", COMMITLINT_CONFIG ],
     ...[ "ci_test", "lint", "knip", "ts-check" ].map(name => [ `.github/workflows/${name}.yml`, fs.readFileSync(path.join(EXAMPLES, `${name}.yml`), "utf8") ]),
+    [ ".github/workflows/ci.yml", fs.readFileSync(path.join(EXAMPLES, "workspace-ci.yml"), "utf8") ],
     [ ".github/workflows/claude-pr-review.yml", fs.readFileSync(path.join(EXAMPLES, "claude-pr-review.yml"), "utf8") ],
     [ ".github/workflows/claude-pr-review.yml", fs.readFileSync(path.join(EXAMPLES, "claude-pr-review-bedrock.yml"), "utf8") ],
     [ ".github/actions/setup/action.yml", fs.readFileSync(path.join(EXAMPLES, "actions/setup/action.yml"), "utf8") ],
@@ -190,6 +193,38 @@ describe("workspace tsconfigs", () => {
     expect(await runUpdate(parseCliArgs([ "--update", "--tool=workspace", "--yes" ]), null, () => undefined)).toBe(0);
     const { scripts } = JSON.parse(read("package.json")) as { scripts: Record<string, string>; };
     expect(scripts).toMatchObject({ "lint": "pnpm -r --if-present lint", "lint:ts": "pnpm -r --if-present lint:ts", "test": "pnpm -r --if-present test" });
+  });
+});
+
+describe("GitHub Actions workflows", () => {
+  const CHECKS = new Set([ ".github/workflows/ci.yml", ".github/workflows/ci_test.yml", ".github/workflows/lint.yml", ".github/workflows/ts-check.yml" ]);
+  const checkWorkflows = (detected: ReadonlyArray<DetectableTool>) => managedItems([ "githubActions" ], detected, false)
+    .map(item => item.label)
+    .filter(label => CHECKS.has(label));
+
+  it("manages ci_test, lint and ts-check in a single package, and no ci.yml", () => {
+    expect(checkWorkflows([ "githubActions" ])).toEqual([ ".github/workflows/ci_test.yml", ".github/workflows/lint.yml", ".github/workflows/ts-check.yml" ]);
+  });
+
+  // Same rule as setup: either one makes setup write ci.yml instead of the single-package workflows
+  it.each<[string, string, string, Array<DetectableTool>]>([
+    [ "a pnpm-workspace.yaml that lists packages", "pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n", [ "githubActions" ]],
+    [ "sharedConfig/ from the workspace tool", "sharedConfig/tsconfig.base.json", "{}", [ "githubActions", "workspace" ]],
+  ])("manages only ci.yml in a workspace with %s", (_title, file, content, detected) => {
+    write(file, content);
+    expect(checkWorkflows(detected)).toEqual([ ".github/workflows/ci.yml" ]);
+  });
+
+  it("replaces a ci.yml this CLI wrote and reports a hand-edited one as a conflict", () => {
+    write("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    const ciItem = () => managedItems([ "githubActions" ], [ "githubActions" ], false).find(item => item.label === ".github/workflows/ci.yml");
+    // Unbuilt source holds the placeholder, so the shipped template counts as an earlier known version here
+    write(".github/workflows/ci.yml", fs.readFileSync(path.join(EXAMPLES, "workspace-ci.yml"), "utf8"));
+    expect(ciItem()?.status).toBe("updated");
+    write(".github/workflows/ci.yml", fs.readFileSync(path.join(EXAMPLES, "workspace-ci.yml"), "utf8") + "\n  extra:\n    runs-on: ubuntu-latest\n");
+    expect(ciItem()?.status).toBe("conflict");
+    fs.rmSync(path.join(dir, ".github/workflows/ci.yml"));
+    expect(ciItem()?.status).toBe("skipped");
   });
 });
 

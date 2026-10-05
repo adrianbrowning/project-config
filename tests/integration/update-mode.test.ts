@@ -109,4 +109,22 @@ describe("--update", () => {
     expect(result.output).toContain("customized packages/example/tsconfig.json");
     expect(project.readFile("packages/example/tsconfig.json")).toBe(unlinked);
   });
+
+  it("reconciles a workspace's ci.yml and leaves out the single-package workflows", () => {
+    using project = new TestProject({ name: "update-workspace-ci" });
+    project.runCli([ "--tool=workspace", "--tool=githubActions", "--yes" ]);
+    const ci = project.readFile(".github/workflows/ci.yml");
+
+    const current = update(project, "--tool=githubActions", "--yes");
+    expect(current.exitCode, current.output).toBe(0);
+    expect(current.output).not.toMatch(/ci_test\.yml|lint\.yml|ts-check\.yml/);
+    expect(project.readFile(".github/workflows/ci.yml")).toBe(ci);
+
+    const edited = `${ci}\n  extra:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n`;
+    project.writeFile(".github/workflows/ci.yml", edited);
+    const conflict = update(project, "--tool=githubActions", "--yes");
+    expect(conflict.exitCode).toBe(1);
+    expect(conflict.output).toContain("conflict   .github/workflows/ci.yml");
+    expect(project.readFile(".github/workflows/ci.yml")).toBe(edited);
+  });
 });

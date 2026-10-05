@@ -7,7 +7,10 @@ import path from "node:path";
 import { BUMPY_CHECK_WORKFLOW, BUMPY_COMMENT_WORKFLOW, BUMPY_SCRIPTS, createBumpyConfig, RELEASE_GITHUB_WORKFLOW, RELEASE_NPM_WORKFLOW } from "../bumpy-tasks.ts";
 import { COMMITLINT_CONFIG } from "../convential-tasks.ts";
 import { ESLINT_SCRIPTS, eslintConfigContent } from "../eslint-tasks.ts";
-import { CI_TEST_WORKFLOW, CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW, CLAUDE_PR_REVIEW_WORKFLOW, KNIP_WORKFLOW, LINT_WORKFLOW, SETUP_ACTION, SETUP_ACTION_PATH, TS_CHECK_WORKFLOW } from "../github-actions-tasks.ts";
+import {
+  CI_TEST_WORKFLOW, CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW, CLAUDE_PR_REVIEW_WORKFLOW, KNIP_WORKFLOW, LINT_WORKFLOW, SETUP_ACTION, SETUP_ACTION_PATH,
+  TS_CHECK_WORKFLOW, usesWorkspaceCi, WORKSPACE_CI_WORKFLOW
+} from "../github-actions-tasks.ts";
 import { COMMIT_MSG_HOOK, PRE_COMMIT_PLACEHOLDER, PRE_PUSH_HOOK } from "../husky-tasks.ts";
 import { JSCPD_CONFIG } from "../jscpd-tasks.ts";
 import { KNIP_CONFIG } from "../knip-tasks.ts";
@@ -46,16 +49,18 @@ function workflow(name: string, current: string): PlanItem {
   return templateFile(`.github/workflows/${name}`, current, { optional: true });
 }
 
-function githubActionsItems(): Array<PlanItem> {
+function githubActionsItems(detected: ReadonlyArray<DetectableTool>): Array<PlanItem> {
   // Keep whichever Claude runner the project already uses
   const review = ".github/workflows/claude-pr-review.yml";
   const bedrock = fs.existsSync(review) && fs.readFileSync(review, "utf8").includes("use_bedrock: true");
+  // A workspace's one root ci.yml replaces ci_test, lint and ts-check, so those aren't reported as missing there
+  const checks = usesWorkspaceCi(detected.includes("workspace"))
+    ? [ workflow("ci.yml", WORKSPACE_CI_WORKFLOW) ]
+    : [ workflow("ci_test.yml", CI_TEST_WORKFLOW), workflow("lint.yml", LINT_WORKFLOW), workflow("ts-check.yml", TS_CHECK_WORKFLOW) ];
   return [
     templateFile(SETUP_ACTION_PATH, SETUP_ACTION),
-    workflow("ci_test.yml", CI_TEST_WORKFLOW),
-    workflow("lint.yml", LINT_WORKFLOW),
+    ...checks,
     workflow("knip.yml", KNIP_WORKFLOW),
-    workflow("ts-check.yml", TS_CHECK_WORKFLOW),
     workflow("claude-pr-review.yml", bedrock ? CLAUDE_PR_REVIEW_BEDROCK_WORKFLOW : CLAUDE_PR_REVIEW_WORKFLOW),
   ];
 }
@@ -122,7 +127,7 @@ const TOOL_ITEMS: Record<DetectableTool, ToolItems> = {
   ],
   knip: () => [ jsonFile("knip.json", KNIP_CONFIG, [], { userEditable: true }), manifestEntry(MANIFEST, "scripts", "lint:knip", "knip") ],
   jscpd: () => [ jsonFile(".jscpd.json", JSCPD_CONFIG, [], { userEditable: true }), manifestEntry(MANIFEST, "scripts", "lint:jscpd", "jscpd .") ],
-  githubActions: () => githubActionsItems(),
+  githubActions: detected => githubActionsItems(detected),
   bumpy: () => bumpyItems(),
   workspace: () => workspaceItems(),
 };

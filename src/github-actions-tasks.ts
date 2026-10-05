@@ -1,11 +1,12 @@
 import { execSync } from "node:child_process";
 import { writeConfigFile } from "./utils.ts";
+import { readWorkspaceGlobs } from "./workspace-tasks.ts";
 
 // GitHub Actions workflow file contents — replaced at build time from github_actions_examples/
 export const SETUP_ACTION = "__SETUP_ACTION__";
 export const SETUP_ACTION_PATH = ".github/actions/setup/action.yml";
 export const CI_TEST_WORKFLOW = "__CI_TEST_WORKFLOW__";
-const WORKSPACE_CI_WORKFLOW = "__WORKSPACE_CI_WORKFLOW__";
+export const WORKSPACE_CI_WORKFLOW = "__WORKSPACE_CI_WORKFLOW__";
 export const LINT_WORKFLOW = "__LINT_WORKFLOW__";
 export const KNIP_WORKFLOW = "__KNIP_WORKFLOW__";
 export const TS_CHECK_WORKFLOW = "__TS_CHECK_WORKFLOW__";
@@ -24,6 +25,14 @@ export type GithubActionsOptions = {
   /** pnpm workspace: one root CI workflow (lint, type-check, test, build) replaces ci_test, lint and ts-check. */
   workspace?: boolean;
 };
+
+/**
+ * Whether a project gets the root workspace CI workflow instead of the single-package ones: a workspace being set
+ * up now, or a `pnpm-workspace.yaml` that already lists packages. Setup and --update share this rule.
+ */
+export function usesWorkspaceCi(workspaceSelected: boolean): boolean {
+  return workspaceSelected || readWorkspaceGlobs() !== null;
+}
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
   const tasks: Array<{ task: (() => Promise<void>) | ReturnType<typeof writeConfigFile>; title: string; }> = [];
