@@ -40,6 +40,8 @@ describe("TypeScript Configurations", () => {
 
   describe("bundler/dom/app (Vite/React web app)", () => {
     it("generates correct tsconfig and passes lint:ts", () => {
+      // Add React before setup, as in a real React project; later `pnpm add` runs under minimumReleaseAge
+      project.exec("pnpm add -D react @types/react");
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -66,6 +68,24 @@ describe("TypeScript Configurations", () => {
       assertPackageJsonScript(project, "lint:ts");
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+    });
+
+    it("with --yes and no --ts-jsx, type-checks and lints nested .tsx and .ts without editing tsconfig.json", () => {
+      project.exec("pnpm add -D react @types/react");
+      project.runCli([ "--tool=ts", "--tool=eslint", "--yes" ]);
+      const tsconfig = project.readJson<{ compilerOptions: { jsx?: string; }; }>("tsconfig.json");
+      expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+
+      project.writeFile("src/components/App.tsx", getFixtureContent("react-app/App.tsx"));
+      expect(runCommand(project, "pnpm lint:ts", { expectFailure: true }).exitCode).toBe(0);
+      const lint = runCommand(project, "pnpm lint", { expectFailure: true });
+      expect(lint.exitCode, lint.stdout).toBe(0);
+
+      // Two directories below src/ is still part of the project
+      project.writeFile("src/a/b/deep.ts", "export const n: number = \"x\";\n");
+      const broken = runCommand(project, "pnpm lint:ts", { expectFailure: true });
+      expect(broken.exitCode).not.toBe(0);
+      expect(broken.stdout).toContain("src/a/b/deep.ts");
     });
   });
 
