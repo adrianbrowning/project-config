@@ -8,6 +8,23 @@ import { runCommand } from "../utils/command-runner.ts";
 import { TestProject } from "../utils/test-project.ts";
 
 describe("CLI failure handling", () => {
+  it.each([
+    [ "an unknown --tool, naming it and the valid tools", [ "--tool=eslnt", "--yes" ], "Unknown tool: --tool=eslnt. Valid tools: ts, eslint," ],
+    [ "an unknown --tool alongside valid ones", [ "--tool=ts", "--tool=eslnt" ], "Unknown tool: --tool=eslnt." ],
+    [ "--yes with no tools, instead of prompting", [ "--yes" ], "No tools selected." ],
+  ])("exits 1 without changing anything for %s", (_title, flags, message) => {
+    using project = new TestProject({ name: "cli-args" });
+    const before = project.readFile("package.json");
+
+    // CI=true is set, but a prompt would still hang here, so a non-zero exit also proves nothing prompted
+    const result = runCommand(project, `pnpm exec gingacodemonkey-config ${flags.join(" ")} </dev/null`, { expectFailure: true });
+
+    expect(result.exitCode).toBe(1);
+    expect(stripVTControlCharacters(result.stdout + result.stderr)).toContain(message);
+    expect(project.readFile("package.json")).toBe(before);
+    expect(project.fileExists("tsconfig.json")).toBe(false);
+  });
+
   it("exits non-zero and names the failed task when a setup task throws", () => {
     using project = new TestProject({ name: "cli-failure" });
     project.writeFile("package.json", "{ not json");

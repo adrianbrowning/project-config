@@ -48,10 +48,10 @@ The CLI can set up any combination of:
 pnpm exec gingacodemonkey-config [options]
 
   --all, -a                   Select all tools (except workspace)
-  --yes, -y                   Accept all defaults (non-interactive)
+  --yes, -y                   Accept all defaults (non-interactive; setup needs --all or --tool)
   --no-release                Exclude bumpy when using --all
   --release-npm               Also publish to npm (default: GitHub releases only)
-  --tool=<name>               Select a specific tool (repeatable)
+  --tool=<name>               Select a specific tool (repeatable; an unknown name is an error)
   --update, -u                Reconcile existing configs with this release's defaults (see below)
   --overwrite                 With --update: replace values you changed in files the CLI owns
 
