@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { detectTools } from "../../src/tool-detection.ts";
+import { DETECTABLE_TOOLS, detectTools } from "../../src/tool-detection.ts";
 
 function tmpDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tool-detect-"));
@@ -12,74 +12,34 @@ function tmpDir() {
   };
 }
 
+const SENTINEL_FIXTURES: Array<[string, (dir: string) => void]> = [
+  [ "ts", dir => fs.writeFileSync(path.join(dir, "tsconfig.json"), "{}") ],
+  [ "eslint", dir => fs.writeFileSync(path.join(dir, "eslint.config.ts"), "") ],
+  [ "husky", dir => fs.mkdirSync(path.join(dir, ".husky")) ],
+  [ "commitLint", dir => fs.writeFileSync(path.join(dir, "commitlint.config.js"), "") ],
+  [ "lintStaged", dir => fs.writeFileSync(path.join(dir, ".lintstagedrc"), "{}") ],
+  [ "knip", dir => fs.writeFileSync(path.join(dir, "knip.json"), "{}") ],
+  [ "jscpd", dir => fs.writeFileSync(path.join(dir, ".jscpd.json"), "{}") ],
+  [ "githubActions", dir => fs.mkdirSync(path.join(dir, ".github", "workflows"), { recursive: true }) ],
+  [ "bumpy", dir => fs.mkdirSync(path.join(dir, ".bumpy")) ],
+  [ "workspace", dir => fs.mkdirSync(path.join(dir, "sharedConfig")) ],
+];
+
 describe("detectTools", () => {
-  it("returns installed:false for all tools when dir is empty", () => {
+  it("detects nothing in an empty directory", () => {
     using tmp = tmpDir();
-    const result = detectTools(tmp.path);
-    for (const tool of Object.values(result)) {
-      expect(tool.installed).toBe(false);
-    }
+    expect(detectTools(tmp.path)).toEqual([]);
   });
 
-  it("detects ts via tsconfig.json", () => {
+  it.each(SENTINEL_FIXTURES)("detects %s from its sentinel alone", (tool, create) => {
     using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, "tsconfig.json"), "{}");
-    expect(detectTools(tmp.path).ts.installed).toBe(true);
+    create(tmp.path);
+    expect(detectTools(tmp.path)).toEqual([ tool ]);
   });
 
-  it("detects eslint via eslint.config.ts", () => {
+  it("covers every detectable tool, in DETECTABLE_TOOLS order", () => {
     using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, "eslint.config.ts"), "");
-    expect(detectTools(tmp.path).eslint.installed).toBe(true);
-  });
-
-  it("detects husky via .husky directory", () => {
-    using tmp = tmpDir();
-    fs.mkdirSync(path.join(tmp.path, ".husky"));
-    expect(detectTools(tmp.path).husky.installed).toBe(true);
-  });
-
-  it("detects commitLint via commitlint.config.js", () => {
-    using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, "commitlint.config.js"), "");
-    expect(detectTools(tmp.path).commitLint.installed).toBe(true);
-  });
-
-  it("detects lintStaged via .lintstagedrc", () => {
-    using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, ".lintstagedrc"), "{}");
-    expect(detectTools(tmp.path).lintStaged.installed).toBe(true);
-  });
-
-  it("detects knip via knip.json", () => {
-    using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, "knip.json"), "{}");
-    expect(detectTools(tmp.path).knip.installed).toBe(true);
-  });
-
-  it("detects jscpd via .jscpd.json", () => {
-    using tmp = tmpDir();
-    fs.writeFileSync(path.join(tmp.path, ".jscpd.json"), "{}");
-    expect(detectTools(tmp.path).jscpd.installed).toBe(true);
-  });
-
-  it("detects githubActions via .github/workflows directory", () => {
-    using tmp = tmpDir();
-    fs.mkdirSync(path.join(tmp.path, ".github", "workflows"), { recursive: true });
-    expect(detectTools(tmp.path).githubActions.installed).toBe(true);
-  });
-
-  it("detects bumpy via .bumpy directory", () => {
-    using tmp = tmpDir();
-    fs.mkdirSync(path.join(tmp.path, ".bumpy"));
-    expect(detectTools(tmp.path).bumpy.installed).toBe(true);
-  });
-
-  it("returns all tool keys", () => {
-    using tmp = tmpDir();
-    const result = detectTools(tmp.path);
-    const expected = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy" ];
-    expect(Object.keys(result)).toEqual(expect.arrayContaining(expected));
-    expect(Object.keys(result)).toHaveLength(expected.length);
+    for (const [ , create ] of SENTINEL_FIXTURES) create(tmp.path);
+    expect(detectTools(tmp.path)).toEqual(DETECTABLE_TOOLS);
   });
 });

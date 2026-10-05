@@ -13,8 +13,10 @@ import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
-// import { detectTools } from "./tool-detection.ts";
+import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "./project-defaults.ts";
 import { createTsTasksWithArgs, tsTasks } from "./ts-tasks.ts";
+import { runUpdate } from "./update/run-update.ts";
+import type { UpdatePrompts } from "./update/run-update.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
 import { createWorkspaceTasks, promptUpdateAll } from "./workspace-tasks.ts";
@@ -49,7 +51,10 @@ type MultiSelectPrompt = {
   selected: Array<unknown>;
 };
 
-const { MultiSelect } = enquirer.default as unknown as { MultiSelect: new (options: MultiSelectOptions) => MultiSelectPrompt; };
+const { Confirm, MultiSelect } = enquirer.default as unknown as {
+  Confirm: new (options: { initial: boolean; message: string; name: string; }) => { run: () => Promise<boolean>; };
+  MultiSelect: new (options: MultiSelectOptions) => MultiSelectPrompt;
+};
 
 type ToolDef = { name: string; value: string; };
 const TOOL_DEFS: Array<ToolDef> = [
@@ -67,22 +72,15 @@ const TOOL_DEFS: Array<ToolDef> = [
 
 const enable = (choices: Array<MultiSelectChoice>, fn: (ch: MultiSelectChoice) => boolean) => choices.forEach(ch => (ch.enabled = fn(ch)));
 
-function createPrompt(updateMode: boolean): MultiSelectPrompt {
-  // const detected = updateMode ? detectTools() : null;
-
-  const tools: Array<MultiSelectChoice> = TOOL_DEFS.map(({ name, value }) => {
-    const installed = false; //detected?.[value as keyof typeof detected]?.installed ?? false;
-    const label = name;/* detected
-    // eslint-disable-next-line sonarjs/no-nested-conditional
-      ? installed
-        ? `${name} (installed)` : `${name} (NEW)`
-      : name;*/
-    return { name: label, value, enabled: installed };
-  });
+/** The tool menu. With `detected` (update mode) it lists only those tools, all selected. */
+function createPrompt(detected: Array<string> | null): MultiSelectPrompt {
+  const shown = new Set(detected);
+  const defs = detected ? TOOL_DEFS.filter(({ value }) => shown.has(value)) : TOOL_DEFS;
+  const tools: Array<MultiSelectChoice> = defs.map(({ name, value }) => ({ name, value, enabled: detected !== null }));
 
   return new MultiSelect({
     name: "tool",
-    message: updateMode ? "Select tools to update" : "Please select what to install",
+    message: detected ? "Select tools to update" : "Please select what to install",
     hint: "(Use <space> to select, <return> to submit)",
     choices: [
       {
@@ -90,8 +88,8 @@ function createPrompt(updateMode: boolean): MultiSelectPrompt {
         value: "all",
         onChoice(state, choice, i) {
           if (state.index === i && choice.enabled) {
-            // "All" leaves workspace off: it replaces the single-package TS/ESLint setup
-            enable(state.choices, ch => ch.name !== "none" && ch.value !== "workspace");
+            // Setup's "All" leaves workspace off: it replaces the single-package TS/ESLint setup
+            enable(state.choices, ch => ch.name !== "none" && (detected !== null || ch.value !== "workspace"));
           }
         },
       },
@@ -260,12 +258,8 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     tasks.add({
       title: "Adding combined lint script",
       task: async () => {
-        const parts: Array<string> = [];
-        if (hasTs) parts.push("pnpm lint:ts");
-        if (hasEslint) parts.push("pnpm lint:esl");
-        if (hasEslint) parts.push("pnpm lint:fix");
-        updatePkgJsonScript("lint", parts.join(" && "));
-        updatePkgJsonScript("lint:e18e", "pnpm dlx @e18e/cli analyze");
+        updatePkgJsonScript("lint", combinedLintScript(hasTs, hasEslint));
+        updatePkgJsonScript("lint:e18e", E18E_SCRIPT);
       },
     });
   }
@@ -274,7 +268,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
   tasks.add({
     title: "Configuring engines",
     task: async () => {
-      updatePkgJson("engines", { node: ">=24.0.0", pnpm: ">=10.0.0" });
+      updatePkgJson("engines", ENGINES);
     },
   });
 
@@ -299,21 +293,39 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     },
   });
 
-  // pnpm supply-chain settings, written as top-level keys in pnpm-workspace.yaml. Written after the install:
-  // peers auto-installed with this package can be younger than minimumReleaseAge, which would fail setup.
-  // strictDepBuilds fails installs on unreviewed build scripts. unrs-resolver (via eslint-plugin-import-x) is
-  // already installed with its build ignored; pnpm 10 keeps failing on that recorded state under `false`, so
-  // approve it (napi-postinstall only checks for its prebuilt native binding).
+  // pnpm supply-chain settings (see project-defaults.ts). Written after the install: peers auto-installed
+  // with this package can be younger than minimumReleaseAge, which would fail setup.
   tasks.add({
     title: "Configuring pnpm settings",
     task: async () => {
-      updateWorkspaceYaml({ minimumReleaseAge: 4320, blockExoticSubdeps: true, trustPolicy: "no-downgrade", trustPolicyIgnoreAfter: 43200, minimumReleaseAgeExclude: [ "@gingacodemonkey/config" ], strictDepBuilds: true, allowBuilds: { "unrs-resolver": true } });
+      updateWorkspaceYaml(PNPM_SETTINGS);
     },
   });
 }
 
 // Main execution
 async function main() {
+  if (cliArgs.update) {
+    // Interactive only when nothing was chosen on the command line, matching setup's rule
+    const interactive = !cliArgs.yes && cliArgs.tools.length === 0;
+    const prompts: null | UpdatePrompts = interactive
+      ? {
+        chooseTools: async detected => {
+          const answer = new Set(await createPrompt(detected).run());
+          return detected.filter(tool => answer.has(tool));
+        },
+        confirmOverwrite: async item => new Confirm({
+          name: "overwrite",
+          message: `${item.label} ${item.reason ?? "was changed"}. Overwrite it with the current default?`,
+          initial: false,
+        }).run(),
+      }
+      : null;
+    // eslint-disable-next-line no-console
+    process.exitCode = await runUpdate(cliArgs, prompts, line => console.log(line));
+    return;
+  }
+
   const tasks = createTasks(cliArgs);
 
   // Check if running in non-interactive mode
@@ -334,8 +346,7 @@ async function main() {
   }
   else {
     // Interactive mode: use enquirer prompts
-    // const prompt = createPrompt(cliArgs.update);
-    const prompt = createPrompt(false);
+    const prompt = createPrompt(null);
     const answer = await prompt.run();
     // eslint-disable-next-line no-console
     console.log(answer);

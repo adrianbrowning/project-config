@@ -6,6 +6,13 @@ import { compareVersions, getPkgVersion, writeConfigFile } from "./utils.ts";
 let Supported_Version = "";
 let pkgName = "";
 
+export const COMMITLINT_CONFIG = `export default {
+  "extends": [ "@commitlint/config-conventional" ],
+  "rules": {
+    "subject-case": [ 2, "always", [ "sentence-case", "lower-case" ]],
+  },
+};`;
+
 export const commitLintTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if CommitLint is installed",
@@ -81,11 +88,6 @@ export const commitLintTasks: Array<ListrTask<TaskContext>> = [
   },
   {
     title: "Setting up CommitLint Config",
-    task: writeConfigFile("commitlint.config.js", `export default {
-  "extends": [ "@commitlint/config-conventional" ],
-  "rules": {
-    "subject-case": [ 2, "always", [ "sentence-case", "lower-case" ]],
-  },
-};`),
+    task: writeConfigFile("commitlint.config.js", COMMITLINT_CONFIG),
   },
 ];

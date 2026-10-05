@@ -24,22 +24,27 @@ const ESLINT_VERSION = "__eslint_version__";
 // This package's own version, so the shared configs match the CLI that wrote them
 const CONFIG_VERSION = "__config_version__";
 
-const SHARED_DIR = "sharedConfig";
+export const SHARED_DIR = "sharedConfig";
 const DEFAULT_GLOB = "packages/*";
 const SAMPLE_NAME = "example";
 
-const PACKAGE_SCRIPTS: Record<string, string> = {
+export const PACKAGE_SCRIPTS: Record<string, string> = {
   "lint": "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
   "lint:fix": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0 --fix",
   "lint:ts": "tsc --noEmit",
 };
 
 // `pnpm -r` skips the workspace root, so these never recurse into themselves
-const ROOT_SCRIPTS: Record<string, string> = {
+export const ROOT_SCRIPTS: Record<string, string> = {
   "lint": "pnpm -r lint",
   "lint:fix": "pnpm -r lint:fix",
   "lint:ts": "pnpm -r lint:ts",
 };
+
+/** A package's ESLint config file: a re-export of the shared one, `shared` being the relative path to sharedConfig/. */
+export function packageEslintLink(shared: string, file: "eslint.config.style.ts" | "eslint.config.ts"): string {
+  return `import config from "${shared}/${file}";\n\nexport default config;\n`;
+}
 
 type JsonObject = Record<string, unknown>;
 type PackageResult = "could not be migrated" | "unchanged" | "updated";
@@ -67,7 +72,7 @@ function readJsonObject(file: string): JsonObject | null {
 }
 
 /** Package globs from an existing `pnpm-workspace.yaml`, or null when it has no `packages` key. */
-function readWorkspaceGlobs(): Array<string> | null {
+export function readWorkspaceGlobs(): Array<string> | null {
   if (!fs.existsSync("pnpm-workspace.yaml")) return null;
   const lines = fs.readFileSync("pnpm-workspace.yaml", "utf8").split("\n");
   const unquote = (item: string) => item.trim().replace(/^['"]/, "")
@@ -92,7 +97,7 @@ function readWorkspaceGlobs(): Array<string> | null {
 }
 
 /** Package directories (relative, `/`-separated) matched by the workspace globs, honouring `!` exclusions. */
-function discoverPackages(globs: Array<string>): Array<string> {
+export function discoverPackages(globs: Array<string>): Array<string> {
   const normalise = (glob: string) => {
     const normalised = path.posix.normalize(glob);
     return normalised.endsWith("/") ? normalised.slice(0, -1) : normalised;
@@ -184,8 +189,8 @@ function linkPackage(dir: string): { reason?: string; result: PackageResult; } {
   }
 
   // Package ESLint configs are replaced outright; they only re-export the shared ones
-  changed = writeIfChanged(path.join(dir, "eslint.config.ts"), `import config from "${shared}/eslint.config.ts";\n\nexport default config;\n`) || changed;
-  changed = writeIfChanged(path.join(dir, "eslint.config.style.ts"), `import config from "${shared}/eslint.config.style.ts";\n\nexport default config;\n`) || changed;
+  changed = writeIfChanged(path.join(dir, "eslint.config.ts"), packageEslintLink(shared, "eslint.config.ts")) || changed;
+  changed = writeIfChanged(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts")) || changed;
 
   return { result: changed ? "updated" : "unchanged" };
 }

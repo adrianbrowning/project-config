@@ -7,6 +7,13 @@ import { compareVersions, getPkgVersion } from "./utils.ts";
 
 const Supported_Version = "__eslint_version__";
 
+export const ESLINT_SCRIPTS: Record<string, string> = {
+  "lint:esl": "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+  "lint:esl:fix": "pnpm lint:esl --fix",
+  "lint:s": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
+  "lint:fix": "pnpm lint:s --fix",
+};
+
 export const esLintTasks: Array<ListrTask<TaskContext>> = [
   {
     title: "Checking if ESLint is installed",
@@ -60,10 +67,7 @@ export const esLintTasks: Array<ListrTask<TaskContext>> = [
     title: "Adding lint scripts to package.json",
     task: async () => {
       const { updatePkgJsonScript } = await import("./utils.ts");
-      updatePkgJsonScript("lint:esl", "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
-      updatePkgJsonScript("lint:esl:fix", "pnpm lint:esl --fix");
-      updatePkgJsonScript("lint:s", "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0");
-      updatePkgJsonScript("lint:fix", "pnpm lint:s --fix");
+      for (const [ name, command ] of Object.entries(ESLINT_SCRIPTS)) updatePkgJsonScript(name, command);
     },
   },
 ];

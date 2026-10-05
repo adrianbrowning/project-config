@@ -1,24 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type ToolStatus = {
-  installed: boolean;
-  sentinelFile: string;
-};
-
-export type DetectedTools = {
-  bumpy: ToolStatus;
-  commitLint: ToolStatus;
-  eslint: ToolStatus;
-  githubActions: ToolStatus;
-  husky: ToolStatus;
-  jscpd: ToolStatus;
-  knip: ToolStatus;
-  lintStaged: ToolStatus;
-  ts: ToolStatus;
-};
-
-const SENTINELS: Record<keyof DetectedTools, string> = {
+/** Tools `--update` can reconcile, with the file or directory whose presence shows the tool is set up. */
+const SENTINELS = {
   ts: "tsconfig.json",
   eslint: "eslint.config.ts",
   husky: ".husky",
@@ -28,13 +12,14 @@ const SENTINELS: Record<keyof DetectedTools, string> = {
   jscpd: ".jscpd.json",
   githubActions: path.join(".github", "workflows"),
   bumpy: ".bumpy",
-};
+  workspace: "sharedConfig",
+} as const;
 
-export function detectTools(cwd: string = process.cwd()): DetectedTools {
-  const result = {} as DetectedTools;
-  for (const [ tool, sentinel ] of Object.entries(SENTINELS) as Array<[keyof DetectedTools, string]>) {
-    const full = path.join(cwd, sentinel);
-    result[tool] = { installed: fs.existsSync(full), sentinelFile: sentinel };
-  }
-  return result;
+export type DetectableTool = keyof typeof SENTINELS;
+
+export const DETECTABLE_TOOLS = Object.keys(SENTINELS) as Array<DetectableTool>;
+
+/** Tools set up in `cwd`, in a stable order. */
+export function detectTools(cwd: string = process.cwd()): Array<DetectableTool> {
+  return DETECTABLE_TOOLS.filter(tool => fs.existsSync(path.join(cwd, SENTINELS[tool])));
 }
