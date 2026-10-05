@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import fs from "node:fs";
 import { findPackageJSON } from "node:module";
 import path from "node:path";
@@ -58,6 +58,57 @@ export function detectPackageManager(): "pnpm" {
   return "pnpm";
 }
 
+const TOO_NEW_RE = /ERR_PNPM_NO_MATURE_MATCHING_VERSION\s+Version (\S+) \([^)]*\) of (\S+) does not meet the minimumReleaseAge constraint/;
+
+/** Each lookup returns null when pnpm can't answer, so a failed query never hides the install error. */
+type ReleaseLookup = {
+  /** `minimumReleaseAge` in minutes, as pnpm resolves it for this project. */
+  minimumReleaseAge: () => null | number;
+  publishedAt: (name: string, version: string) => Date | null;
+};
+
+/**
+ * pnpm's `minimumReleaseAge` refusal, rewritten to name the package and when it becomes installable.
+ * Null when `output` isn't that refusal.
+ */
+export function tooNewPackageMessage(output: string, lookup: ReleaseLookup): null | string {
+  const match = TOO_NEW_RE.exec(output);
+  if (!match) return null;
+  const [ , version = "", name = "" ] = match;
+  const minutes = lookup.minimumReleaseAge();
+  const published = minutes === null ? null : lookup.publishedAt(name, version);
+  const age = minutes === null ? "" : ` (${minutes} minutes)`;
+  const installable = published && minutes !== null
+    ? ` It can be installed from ${new Date(published.getTime() + minutes * 60_000).toISOString()}.`
+    : "";
+  return `${name}@${version} is younger than minimumReleaseAge${age}, so pnpm won't install it.${installable}`
+    + " To change configs in this project without installing packages, use --update.";
+}
+
+/* eslint-disable sonarjs/no-os-command-from-path */
+const registryLookup: ReleaseLookup = {
+  minimumReleaseAge: () => {
+    try {
+      const minutes = Number(execFileSync("pnpm", [ "config", "get", "minimumReleaseAge" ], { encoding: "utf8" }).trim());
+      return Number.isFinite(minutes) ? minutes : null;
+    }
+    catch {
+      return null;
+    }
+  },
+  publishedAt: (name, version) => {
+    try {
+      const times: unknown = JSON.parse(execFileSync("pnpm", [ "view", name, "time", "--json" ], { encoding: "utf8" }));
+      const time: unknown = typeof times === "object" && times !== null ? Object.entries(times).find(([ key ]) => key === version)?.[1] : undefined;
+      return typeof time === "string" ? new Date(time) : null;
+    }
+    catch {
+      return null;
+    }
+  },
+};
+/* eslint-enable sonarjs/no-os-command-from-path */
+
 export function installPkg(packageManager: "bun" | "npm" | "pnpm" | "yarn", pkg: string): void {
   const isWorkspaceRoot = packageManager === "pnpm" && fs.existsSync("pnpm-workspace.yaml");
   const installCommand = {
@@ -68,10 +119,13 @@ export function installPkg(packageManager: "bun" | "npm" | "pnpm" | "yarn", pkg:
   }[packageManager];
 
   try {
-    execSync(installCommand, { stdio: "inherit" });
+    // pnpm prints its errors on stdout, so capture it to explain a minimumReleaseAge refusal
+    execSync(installCommand, { stdio: [ "inherit", "pipe", "inherit" ], encoding: "utf8" });
   }
-  catch {
-    throw new Error(`Failed to install packages. Command: ${installCommand}`);
+  catch (error: unknown) {
+    const stdout = typeof error === "object" && error !== null && "stdout" in error ? String(error.stdout) : "";
+    const tooNew = tooNewPackageMessage(stdout, registryLookup);
+    throw new Error(tooNew ?? `Failed to install packages. Command: ${installCommand}\n${stdout.trim().slice(-2000)}`);
   }
 }
 
