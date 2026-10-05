@@ -169,6 +169,28 @@ describe("workspace tsconfigs", () => {
     expect(tsconfigPreset("sharedConfig/tsconfig.base.json", "@gingacodemonkey/config/").status).toBe("unchanged");
     expect(tsconfigPreset("missing/tsconfig.base.json", "@gingacodemonkey/config/").status).toBe("skipped");
   });
+
+  it("a user's own root script conflicts and stops the run; --overwrite replaces it with the rest", async () => {
+    write("sharedConfig/tsconfig.base.json", JSON.stringify({ extends: "@gingacodemonkey/config/bundler/dom/app" }));
+    write("package.json", JSON.stringify({ scripts: { "lint": "pnpm -r lint", "lint:ts": "pnpm -r lint:ts", "test": "vitest run" } }));
+    expect(await runUpdate(parseCliArgs([ "--update", "--tool=workspace", "--yes" ]), null, () => undefined)).toBe(1);
+    expect(JSON.parse(read("package.json"))).toEqual({ scripts: { "lint": "pnpm -r lint", "lint:ts": "pnpm -r lint:ts", "test": "vitest run" } });
+
+    // Only the user's own `test` conflicts: with --overwrite, the old generated values are replaced too
+    expect(await runUpdate(parseCliArgs([ "--update", "--tool=workspace", "--yes", "--overwrite" ]), null, () => undefined)).toBe(0);
+    const { scripts } = JSON.parse(read("package.json")) as { scripts: Record<string, string>; };
+    expect(scripts.lint).toBe("pnpm -r --if-present lint");
+    expect(scripts["lint:ts"]).toBe("pnpm -r --if-present lint:ts");
+    expect(scripts.check).toBe("pnpm lint && pnpm lint:ts && pnpm test && pnpm build");
+  });
+
+  it("treats old generated root scripts as updates, not conflicts", async () => {
+    write("sharedConfig/tsconfig.base.json", JSON.stringify({ extends: "@gingacodemonkey/config/bundler/dom/app" }));
+    write("package.json", JSON.stringify({ scripts: { "lint": "pnpm -r lint", "lint:ts": "pnpm -r lint:ts", "lint:fix": "pnpm -r lint:fix" } }));
+    expect(await runUpdate(parseCliArgs([ "--update", "--tool=workspace", "--yes" ]), null, () => undefined)).toBe(0);
+    const { scripts } = JSON.parse(read("package.json")) as { scripts: Record<string, string>; };
+    expect(scripts).toMatchObject({ "lint": "pnpm -r --if-present lint", "lint:ts": "pnpm -r --if-present lint:ts", "test": "pnpm -r --if-present test" });
+  });
 });
 
 describe("runUpdate", () => {
