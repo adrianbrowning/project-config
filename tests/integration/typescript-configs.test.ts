@@ -22,6 +22,26 @@ function getFixtureContent(fixturePath: string): string {
   );
 }
 
+/** Writes `file`, expects `pnpm lint:ts` to fail on it with one of `codes`, then removes it again. */
+function expectTypeCheckFailure(project: TestProject, file: string, content: string, codes: RegExp): void {
+  project.writeFile(file, content);
+  const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
+  fs.rmSync(path.join(project.dir, file));
+  expect(result.exitCode, result.stdout).not.toBe(0);
+  expect(result.stdout).toContain(file);
+  expect(result.stdout).toMatch(codes);
+}
+
+/** Proves tsc checks files under src/: a deliberate type error must fail. */
+function expectTypeErrorsCaught(project: TestProject, file = "src/type-error.ts"): void {
+  expectTypeCheckFailure(project, file, "export const n: number = \"x\";\n", /TS2322/);
+}
+
+/** Proves a no-dom config has no DOM lib: `document` must not exist. */
+function expectDomGlobalsRejected(project: TestProject): void {
+  expectTypeCheckFailure(project, "src/dom-probe.ts", "export const b = document.body;\n", /TS2584|TS2304/);
+}
+
 describe("TypeScript Configurations", () => {
 
   let project: TestProject;
@@ -68,6 +88,8 @@ describe("TypeScript Configurations", () => {
       assertPackageJsonScript(project, "lint:ts");
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectTypeErrorsCaught(project, "src/type-error.tsx");
     });
 
     it("with --yes and no --ts-jsx, type-checks and lints nested .tsx and .ts without editing tsconfig.json", () => {
@@ -119,6 +141,8 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -154,6 +178,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -183,6 +210,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -208,6 +238,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -236,6 +269,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
