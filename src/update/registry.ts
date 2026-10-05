@@ -14,7 +14,7 @@ import { KNIP_CONFIG } from "../knip-tasks.ts";
 import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
 import type { DetectableTool } from "../tool-detection.ts";
-import { discoverPackages, PACKAGE_SCRIPTS, packageEslintLink, readWorkspaceGlobs, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
+import { discoverPackages, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_ROOT_SCRIPTS, readWorkspaceGlobs, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
@@ -28,8 +28,8 @@ const PREVIOUS_LINTSTAGED_CONFIGS: Array<unknown> = [
 
 const MANIFEST = "package.json";
 
-function scripts(manifest: string, entries: Record<string, string>): Array<PlanItem> {
-  return Object.entries(entries).map(([ name, command ]) => manifestEntry(manifest, "scripts", name, command));
+function scripts(manifest: string, entries: Record<string, string>, previous: Record<string, Array<string>> = {}): Array<PlanItem> {
+  return Object.entries(entries).map(([ name, command ]) => manifestEntry(manifest, "scripts", name, command, previous[name]));
 }
 
 function readJson(file: string): unknown {
@@ -82,7 +82,7 @@ function workspaceItems(): Array<PlanItem> {
     tsconfigPreset(path.join(SHARED_DIR, "tsconfig.base.json"), "@gingacodemonkey/config/"),
     templateFile(path.join(SHARED_DIR, "eslint.config.ts"), eslintConfigContent("eslint"), { knownKey: "eslint.config.ts", userEditable: true }),
     templateFile(path.join(SHARED_DIR, "eslint.config.style.ts"), eslintConfigContent("styled"), { knownKey: "eslint.config.style.ts" }),
-    ...scripts(MANIFEST, ROOT_SCRIPTS),
+    ...scripts(MANIFEST, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS),
   ];
   for (const dir of discoverPackages(readWorkspaceGlobs() ?? [])) {
     const shared = path.posix.relative(dir, SHARED_DIR);

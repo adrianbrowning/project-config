@@ -99,7 +99,7 @@ pnpm exec gingacodemonkey-config --tool=workspace --yes --workspace-update-all
 `--tool=workspace` puts the TypeScript and ESLint rules in one place, `sharedConfig/` at the workspace root, and links every package to it. It replaces the single-package `ts` and `eslint` setup, so selecting those tools alongside it does nothing extra.
 
 ```
-package.json                  lint / lint:ts / lint:fix run `pnpm -r …` across packages
+package.json                  lint / lint:ts / lint:fix / test / build run across packages; check runs them all
 pnpm-workspace.yaml           packages globs + pnpm settings
 sharedConfig/
   tsconfig.base.json          extends the preset chosen with the --ts-* flags
@@ -113,11 +113,20 @@ packages/<name>/
 
 Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config` are installed there, not in each package. Paths are relative, so packages at any depth (`apps/web/site`) resolve the shared configs.
 
-**New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file. `pnpm lint` and `pnpm lint:ts` pass straight away.
+**New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file and a `node --test` test. `pnpm check` passes straight away.
+
+**Root scripts.** These are the commands to run from the workspace root, locally and in CI:
+
+| Script | Runs |
+|---|---|
+| `lint`, `lint:fix`, `lint:ts`, `test`, `build` | `pnpm -r --if-present <script>`: every package that has the script, once each; packages without it are skipped |
+| `check` | `pnpm lint && pnpm lint:ts && pnpm test && pnpm build` |
+
+A failure in any package fails the root command. `pnpm -r` never includes the workspace root, so these can't call themselves. If the root already has one of these scripts with your own command, setup keeps it and says so; an earlier generated value (`pnpm -r lint`) is replaced.
 
 **Existing workspace.** Setup writes the shared configs and root scripts, keeps your globs and pnpm settings, then offers to link every discovered package. In interactive mode it asks once. With `--tool=workspace` it only links them when you pass `--workspace-update-all`; otherwise it reports them as skipped. For each linked package:
 
-- `lint`, `lint:fix` and `lint:ts` scripts are added or replaced; other scripts stay.
+- Missing `lint`, `lint:fix` and `lint:ts` scripts are added. A script with your own command is kept and reported; other scripts stay.
 - `tsconfig.json` gets the shared base as its first `extends`, so the package's own `extends` and `compilerOptions` still win.
 - `eslint.config.ts` and `eslint.config.style.ts` are overwritten with re-exports of the shared configs. Put package-specific rules in `sharedConfig/eslint.config.ts` or restore your own file from git.
 
