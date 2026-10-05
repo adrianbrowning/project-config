@@ -25,11 +25,16 @@ function getFixtureContent(fixturePath: string): string {
 /** Writes `file`, expects `pnpm lint:ts` to fail on it with one of `codes`, then removes it again. */
 function expectTypeCheckFailure(project: TestProject, file: string, content: string, codes: RegExp): void {
   project.writeFile(file, content);
-  const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
-  fs.rmSync(path.join(project.dir, file));
-  expect(result.exitCode, result.stdout).not.toBe(0);
-  expect(result.stdout).toContain(file);
-  expect(result.stdout).toMatch(codes);
+  try {
+    const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
+    expect(result.exitCode, result.stdout).not.toBe(0);
+    expect(result.stdout).toContain(file);
+    expect(result.stdout).toMatch(codes);
+  }
+  finally {
+    // Even when an assertion fails, so later checks in the same project aren't tripped by the probe
+    fs.rmSync(path.join(project.dir, file), { force: true });
+  }
 }
 
 /** Proves tsc checks files under src/: a deliberate type error must fail. */
