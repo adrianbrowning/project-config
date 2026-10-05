@@ -29,8 +29,11 @@ describe("tooNewPackageMessage", () => {
       + "To change configs in this project without installing packages, use --update.");
   });
 
-  it("still names the package when the publish time can't be looked up", () => {
-    const message = tooNewPackageMessage(NO_MATURE, { minimumReleaseAge: () => 4320, publishedAt: () => null });
+  it.each([
+    [ "can't be looked up", null ],
+    [ "is not a valid date", new Date("not a date") ],
+  ])("still names the package when the publish time %s", (_title, published) => {
+    const message = tooNewPackageMessage(NO_MATURE, { minimumReleaseAge: () => 4320, publishedAt: () => published });
     expect(message).toContain("@typescript/typescript-linux-arm@7.1.0-dev.20261005.1 is younger than minimumReleaseAge (4320 minutes)");
     expect(message).not.toContain("It can be installed from");
   });

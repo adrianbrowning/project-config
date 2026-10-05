@@ -78,9 +78,8 @@ export function tooNewPackageMessage(output: string, lookup: ReleaseLookup): nul
   const minutes = lookup.minimumReleaseAge();
   const published = minutes === null ? null : lookup.publishedAt(name, version);
   const age = minutes === null ? "" : ` (${minutes} minutes)`;
-  const installable = published && minutes !== null
-    ? ` It can be installed from ${new Date(published.getTime() + minutes * 60_000).toISOString()}.`
-    : "";
+  const installableAt = published && minutes !== null ? published.getTime() + minutes * 60_000 : Number.NaN;
+  const installable = Number.isFinite(installableAt) ? ` It can be installed from ${new Date(installableAt).toISOString()}.` : "";
   return `${name}@${version} is younger than minimumReleaseAge${age}, so pnpm won't install it.${installable}`
     + " To change configs in this project without installing packages, use --update.";
 }
@@ -119,8 +118,9 @@ export function installPkg(packageManager: "bun" | "npm" | "pnpm" | "yarn", pkg:
   }[packageManager];
 
   try {
-    // pnpm prints its errors on stdout, so capture it to explain a minimumReleaseAge refusal
-    execSync(installCommand, { stdio: [ "inherit", "pipe", "inherit" ], encoding: "utf8" });
+    // pnpm prints its errors on stdout, so capture it to explain a minimumReleaseAge refusal, and pass it
+    // through once pnpm finishes so a successful install still shows its summary
+    process.stdout.write(execSync(installCommand, { stdio: [ "inherit", "pipe", "inherit" ], encoding: "utf8" }));
   }
   catch (error: unknown) {
     const stdout = typeof error === "object" && error !== null && "stdout" in error ? String(error.stdout) : "";
