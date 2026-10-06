@@ -1,0 +1,148 @@
+# Moves runtime, bundled and peer dependencies to their newest compatible versions, validates the result and
+# opens (or refreshes) one PR. Policy, credentials and manual runs: docs/dependency-updates.md.
+name: Dependency updates
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+# One run at a time, so two runs never race to push the same branch
+concurrency:
+  group: dependency-updates
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  PR_BRANCH: automation/dependency-updates
+  # Unique per run, so an unreleased bump file from an earlier merged update is never overwritten
+  BUMP_FILE: .bumpy/dependency-updates-${{ github.run_id }}.md
+
+jobs:
+  # Installs and runs third-party code, so it gets a read-only token and hands its result on as a patch
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.update.outputs.changed }}
+      sha: ${{ steps.update.outputs.sha }}
+    steps:
+      # Always main, so a manual run from another branch can't publish that branch's contents
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: ./.github/actions/setup
+        with:
+          checkout-ref: main
+
+      - name: Update dependency versions
+        id: update
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          node scripts/update-dependencies.ts --summary "$RUNNER_TEMP/summary.md" --bump-file "$BUMP_FILE"
+          if git diff --quiet -- package.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update the lockfile
+        if: steps.update.outputs.changed == 'true'
+        run: pnpm install --no-frozen-lockfile
+
+      # Captured before any check runs, so nothing the checks write (`pnpm lint` runs the style fixer) can end up in the PR
+      - name: Save the dependency changes
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          git add --intent-to-add "$BUMP_FILE"
+          git diff --binary -- package.json pnpm-lock.yaml "$BUMP_FILE" > "$RUNNER_TEMP/dependencies.patch"
+
+      - name: Build
+        if: steps.update.outputs.changed == 'true'
+        run: pnpm build
+
+      - name: Lint
+        if: steps.update.outputs.changed == 'true'
+        run: pnpm lint
+
+      - name: Unit tests
+        if: steps.update.outputs.changed == 'true'
+        working-directory: tests
+        run: pnpm vitest run --config vitest.unit.config.ts
+
+      - name: Integration tests
+        if: steps.update.outputs.changed == 'true'
+        working-directory: tests
+        env:
+          CI: true
+        run: |
+          git config --global user.email "test@test.com"
+          git config --global user.name "Test User"
+          git config --global init.defaultBranch main
+          TARBALL_PATH=$(ls "$GITHUB_WORKSPACE"/gingacodemonkey-config-*.tgz) pnpm vitest run integration
+
+      - name: Upload the dependency changes
+        if: steps.update.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-updates
+          path: |
+            ${{ runner.temp }}/dependencies.patch
+            ${{ runner.temp }}/summary.md
+          retention-days: 7
+
+  # Runs only after every check above passed
+  pull-request:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # The exact main commit the update job validated; the patch is applied on top of it
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.update.outputs.sha }}
+          # A PAT or app token makes the PR's own CI run; GITHUB_TOKEN pushes don't trigger workflows
+          token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || github.token }}
+
+      - name: Download the dependency changes
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-updates
+          path: ${{ runner.temp }}/dependency-updates
+
+      # The branch is rebuilt from main every run, so the PR always shows this run's updates and nothing stale
+      - name: Commit to the update branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$PR_BRANCH"
+          git apply --index "$RUNNER_TEMP/dependency-updates/dependencies.patch"
+          git commit -m "chore(deps): update runtime and peer dependencies"
+          git push --force origin "$PR_BRANCH"
+
+      - name: Open or update the pull request
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "Automated by the [Dependency updates]($RUN_URL) workflow. Policy: \`docs/dependency-updates.md\`."
+            echo
+            cat "$RUNNER_TEMP/dependency-updates/summary.md"
+            echo
+            echo "Passed before this PR was opened: \`pnpm build\`, \`pnpm lint\`, unit tests, native integration tests."
+          } > "$RUNNER_TEMP/body.md"
+          existing=$(gh pr list --head "$PR_BRANCH" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --head "$PR_BRANCH" --base main --title "chore(deps): update runtime and peer dependencies" --body-file "$RUNNER_TEMP/body.md"
+          fi

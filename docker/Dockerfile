@@ -12,6 +12,7 @@ WORKDIR /build
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY src/ src/
+COPY scripts/ scripts/
 COPY tsc/ tsc/
 COPY rollup-plugins/ rollup-plugins/
 COPY github_actions_examples/ github_actions_examples/
@@ -21,9 +22,9 @@ COPY build.ts rollup.config.ts reset.d.ts ./
 RUN pnpm install --frozen-lockfile && node build.ts && pnpm pack
 
 # Tests run from /workspace/tests and read ../package.json and ../github_actions_examples.
-# Unit tests import ../src, whose dependencies resolve from /workspace/node_modules, as in a checkout.
+# Unit tests import ../src and ../scripts, whose dependencies resolve from /workspace/node_modules, as in a checkout.
 RUN mkdir -p /workspace /test-projects && \
-    cp -r /build/src /build/package.json /build/github_actions_examples /workspace/ && \
+    cp -r /build/src /build/scripts /build/package.json /build/github_actions_examples /workspace/ && \
     ln -s /build/node_modules /workspace/node_modules
 
 WORKDIR /workspace
