@@ -132,6 +132,17 @@ A failure in any package fails the root command. `pnpm -r` never includes the wo
 
 Setup prints each package as `updated`, `unchanged`, `skipped` or `could not be migrated`. A package is left untouched and reported when its `package.json` or `tsconfig.json` isn't plain JSON (for example, a `tsconfig.json` with comments). Rerunning setup changes nothing.
 
+**Internal dependencies (`workspace:` protocol).** A linked package's dependencies on other packages of the workspace use pnpm's [workspace protocol](https://pnpm.io/workspaces#workspace-protocol-workspace), so install always links the local package and fails, rather than downloading a registry copy, when it's missing. Setup and `--update` apply this to `dependencies`, `devDependencies`, `optionalDependencies` and `peerDependencies`, and never move an entry to another section:
+
+- A plain version range the local package's version satisfies (`^1.0.0`, `~1.2.0`, `*`) becomes `workspace:^`. An `npm:` alias of a workspace package becomes `workspace:<name>@^`.
+- An existing `workspace:` spec of any form (`workspace:*`, `workspace:~`, `workspace:^1.2.0`) is kept.
+- Anything else is reported and left as is: a range the local version doesn't satisfy (rewriting it would change which version you asked for, so fix the range or the local version), a dist-tag such as `latest`, a `file:`, `link:` or git spec, or a local package without a valid `version`.
+- Only exact names count, so a registry package `@acme/lib-extra` is never mistaken for the workspace's `@acme/lib`.
+
+`pnpm pack` and `pnpm publish` turn `workspace:^` into a caret range on the local version, for example `"@acme/lib": "^1.2.0"`, so published packages carry ordinary semver ranges.
+
+**Undeclared imports.** Setup and `--update` also scan each linked package's source files (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`; not `node_modules/`, `dist/`, dot-directories or nested packages) for `import`, `export … from`, `import()` and `require()` of another workspace package, including subpaths such as `@acme/lib/utils`. Each one the package declares in no dependency section is reported as `<importer> imports <imported> but doesn't declare it`. Nothing is added for you, since whether it's a dependency, dev dependency or peer is your call: add it with `workspace:^`.
+
 ---
 
 ## Updating an existing project
@@ -153,9 +164,9 @@ Each managed value ends up as one of:
 | Result | When | What happens |
 |---|---|---|
 | `unchanged` | Already the current default (ignoring trailing newlines) | Nothing |
-| `updated` | Matches a default an earlier release wrote, or sits in the old ignored `pnpm:` block | Replaced with the current default |
+| `updated` | Matches a default an earlier release wrote, or sits in the old ignored `pnpm:` block. Also an internal dependency with a plain range the local version satisfies | Replaced with the current default (`workspace:^` for an internal dependency) |
 | `added` | Missing | Written |
-| `customized` | A starter file you're expected to edit has your changes: `eslint.config.ts`, `sharedConfig/eslint.config.ts`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.bumpy/_config.json`. Also a workspace package `tsconfig.json` that no longer extends the shared base, or a `sharedConfig/tsconfig.base.json` that doesn't extend a preset | Kept as is, even with `--overwrite` |
+| `customized` | A starter file you're expected to edit has your changes: `eslint.config.ts`, `sharedConfig/eslint.config.ts`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.bumpy/_config.json`. Also a workspace package `tsconfig.json` that no longer extends the shared base, a `sharedConfig/tsconfig.base.json` that doesn't extend a preset, an internal dependency the [`workspace:` policy](#pnpm-workspaces) leaves as is, or an undeclared internal import | Kept as is, even with `--overwrite` |
 | `conflict` | You changed a file or value the CLI owns: hooks, workflows, the setup action, `eslint.config.style.ts`, package ESLint re-exports, generated scripts, pnpm settings | See below |
 | `skipped` | An optional file is missing, such as a workflow you deleted | Left missing |
 
