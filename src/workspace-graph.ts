@@ -34,6 +34,52 @@ function isObject(value: unknown): value is JsonObject {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/** Package globs from `<root>/pnpm-workspace.yaml`, or null when it's missing or has no `packages` key. */
+export function readWorkspaceGlobs(root = "."): Array<string> | null {
+  const file = path.join(root, "pnpm-workspace.yaml");
+  if (!fs.existsSync(file)) return null;
+  const lines = fs.readFileSync(file, "utf8").split("\n");
+  const unquote = (item: string) => item.trim().replace(/^['"]/, "")
+    .replace(/['"]$/, "");
+
+  const start = lines.findIndex(line => line.startsWith("packages:"));
+  if (start === -1) return null;
+  const inline = lines[start]!.slice("packages:".length).trim();
+  if (inline.startsWith("[")) return inline.replace(/^\[/, "").replace(/\]$/, "")
+    .split(",")
+    .map(unquote)
+    .filter(Boolean);
+
+  const globs: Array<string> = [];
+  for (const line of lines.slice(start + 1)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) continue;
+    if (!trimmed.startsWith("-")) break;
+    globs.push(unquote(trimmed.slice(1)));
+  }
+  return globs.filter(Boolean);
+}
+
+/**
+ * Package directories matched by the workspace globs, honouring `!` exclusions. The globs and the returned dirs
+ * (`/`-separated) are relative to `root`.
+ */
+export function discoverPackages(globs: Array<string>, root = "."): Array<string> {
+  const normalise = (glob: string) => {
+    const normalised = path.posix.normalize(glob);
+    return normalised.endsWith("/") ? normalised.slice(0, -1) : normalised;
+  };
+  const include = globs.filter(glob => !glob.startsWith("!")).map(normalise);
+  const exclude = globs.filter(glob => glob.startsWith("!")).map(glob => normalise(glob.slice(1)));
+  if (include.length === 0) return [];
+
+  return [ ...new Set(fs.globSync(include, { cwd: root }).map(match => match.split(path.sep).join("/"))) ]
+    .filter(dir => dir !== "." && !/(?:^|\/)node_modules(?:\/|$)/.test(dir))
+    .filter(dir => fs.existsSync(path.join(root, dir, "package.json")))
+    .filter(dir => !exclude.some(glob => path.matchesGlob(dir, glob)))
+    .toSorted((a, b) => a.localeCompare(b));
+}
+
 /**
  * Reads each package directory's manifest. A package without valid JSON or a `name` can't take part in
  * dependency edges, so it's returned in `unreadable` with the reason instead of failing the whole workspace.

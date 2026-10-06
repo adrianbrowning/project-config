@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 import type { ListrTask } from "listr2";
 import type { TaskContext } from "./cli-args.ts";
 import { writeConfigFile } from "./utils.ts";
-import { readWorkspaceGlobs } from "./workspace-tasks.ts";
+import { readWorkspaceGlobs } from "./workspace-graph.ts";
 
 // GitHub Actions workflow file contents — replaced at build time from github_actions_examples/
 export const SETUP_ACTION = "__SETUP_ACTION__";

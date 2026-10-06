@@ -5,7 +5,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findCycles, internalDependencies, readWorkspacePackages } from "../../src/workspace-graph.ts";
+import { discoverPackages, findCycles, internalDependencies, readWorkspaceGlobs, readWorkspacePackages } from "../../src/workspace-graph.ts";
 
 let dir: string;
 let originalCwd: string;
@@ -83,5 +83,21 @@ describe("findCycles", () => {
 
     expect(findCycles(edges)).toEqual([[ "a", "b", "c" ]]);
     expect(findCycles(edges.filter(e => e.section !== "devDependencies"))).toEqual([]);
+  });
+});
+
+describe("discoverPackages", () => {
+  it("reads the globs and finds packages relative to another root", () => {
+    fs.writeFileSync(path.join(dir, "pnpm-workspace.yaml"), "packages:\n  - \"apps/**\"\n  - \"!apps/skip\"\n");
+    writePackage("apps/web/nested", { name: "nested" });
+    writePackage("apps/skip", { name: "skip" });
+    writePackage("apps/node_modules/dep", { name: "dep" });
+    process.chdir(os.tmpdir());
+
+    const globs = readWorkspaceGlobs(dir);
+
+    expect(globs).toEqual([ "apps/**", "!apps/skip" ]);
+    expect(discoverPackages(globs!, dir)).toEqual([ "apps/web/nested" ]);
+    expect(readWorkspaceGlobs()).toBeNull();
   });
 });

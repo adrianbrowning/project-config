@@ -7,6 +7,7 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
+import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
 
 type WorkspaceTask = ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>;
 
@@ -101,48 +102,6 @@ function readJsonObject(file: string): JsonObject | null {
   catch {
     return null;
   }
-}
-
-/** Package globs from an existing `pnpm-workspace.yaml`, or null when it has no `packages` key. */
-export function readWorkspaceGlobs(): Array<string> | null {
-  if (!fs.existsSync("pnpm-workspace.yaml")) return null;
-  const lines = fs.readFileSync("pnpm-workspace.yaml", "utf8").split("\n");
-  const unquote = (item: string) => item.trim().replace(/^['"]/, "")
-    .replace(/['"]$/, "");
-
-  const start = lines.findIndex(line => line.startsWith("packages:"));
-  if (start === -1) return null;
-  const inline = lines[start]!.slice("packages:".length).trim();
-  if (inline.startsWith("[")) return inline.replace(/^\[/, "").replace(/\]$/, "")
-    .split(",")
-    .map(unquote)
-    .filter(Boolean);
-
-  const globs: Array<string> = [];
-  for (const line of lines.slice(start + 1)) {
-    const trimmed = line.trim();
-    if (trimmed === "" || trimmed.startsWith("#")) continue;
-    if (!trimmed.startsWith("-")) break;
-    globs.push(unquote(trimmed.slice(1)));
-  }
-  return globs.filter(Boolean);
-}
-
-/** Package directories (relative, `/`-separated) matched by the workspace globs, honouring `!` exclusions. */
-export function discoverPackages(globs: Array<string>): Array<string> {
-  const normalise = (glob: string) => {
-    const normalised = path.posix.normalize(glob);
-    return normalised.endsWith("/") ? normalised.slice(0, -1) : normalised;
-  };
-  const include = globs.filter(glob => !glob.startsWith("!")).map(normalise);
-  const exclude = globs.filter(glob => glob.startsWith("!")).map(glob => normalise(glob.slice(1)));
-  if (include.length === 0) return [];
-
-  return [ ...new Set(fs.globSync(include).map(match => match.split(path.sep).join("/"))) ]
-    .filter(dir => dir !== "." && !/(?:^|\/)node_modules(?:\/|$)/.test(dir))
-    .filter(dir => fs.existsSync(path.join(dir, "package.json")))
-    .filter(dir => !exclude.some(glob => path.matchesGlob(dir, glob)))
-    .toSorted((a, b) => a.localeCompare(b));
 }
 
 /** Where the sample package goes for a glob: `packages/*` → `packages/example`, `apps/web` → `apps/web`. */
