@@ -250,6 +250,22 @@ If you need to extend a tsconfig manually rather than using the CLI:
 }
 ```
 
+### Explicit `.ts` imports
+
+Every preset accepts relative imports that end in `.ts`, `.tsx`, `.mts` or `.cts`:
+
+```ts
+import { value } from "./value.ts";
+```
+
+The base config sets `rewriteRelativeImportExtensions`, so `tsc` presets emit `./value.js` in the JavaScript output and Node runs it as-is. Bundler presets don't emit, and the bundler resolves the `.ts` file itself.
+
+Declaration files keep the `.ts` specifier (`export { value } from "./value.ts"` in `dist/index.d.ts`). That's fine: TypeScript resolves `./value.ts` in a `.d.ts` to the `./value.d.ts` next to it, so consumers get the real types.
+
+Limitations:
+- Needs TypeScript 5.7 or later.
+- Only relative specifiers are rewritten. A `.ts` path that reaches `tsc` through an alias (`paths`, or a `package.json#imports` entry that points at `.ts` files) stays as `.ts` in the output.
+
 ---
 
 ## ESLint
