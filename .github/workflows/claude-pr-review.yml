@@ -90,6 +90,8 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ steps.pr.outputs.number }}
 
+            Read CODING_STANDARDS.md at the repo root first, and include every violation of its rules in the review.
+
             /cc-pr-review-ci ${{ steps.pr.outputs.number }}
 
           claude_args: |

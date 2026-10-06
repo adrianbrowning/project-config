@@ -69,4 +69,7 @@ jobs:
 
       - name: Fail if knip failed
         if: steps.knip-check.outputs.exit_code != '0'
-        run: exit 1
+        # Repeat the findings here: this is the step `gh run view --log-failed` shows
+        run: |
+          cat knip-output.txt
+          exit 1

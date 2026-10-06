@@ -17,8 +17,8 @@ Closes #
 ## Checklist
 
 - [ ] Version bumped in `package.json` (`pnpm build:bump`) if the published package changes
-- [ ] `pnpm lint` passes
-- [ ] `pnpm lint:knip` passes
+- [ ] `pnpm lint` passes (type-check, ESLint, style and Knip)
+- [ ] Removed any `CLAUDE.md` surprise that cites the issue this PR closes
 - [ ] `pnpm build && pnpm test` passes (integration tests run against the built tarball)
 - [ ] Commit messages follow commitlint conventions (`type: Subject`)
 

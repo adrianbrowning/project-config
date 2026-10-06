@@ -57,7 +57,9 @@ jobs:
 
       - name: Fail on ESLint errors
         if: steps.lint-check.outputs.has_errors == 'true'
+        # Repeat the errors here: this is the step `gh run view --log-failed` shows
         run: |
+          cat lint-output.txt
           echo "ESLint found errors. Failing workflow."
           exit 1
 

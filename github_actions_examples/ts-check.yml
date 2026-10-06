@@ -69,4 +69,7 @@ jobs:
 
       - name: Fail if TS check failed
         if: steps.ts-check.outputs.exit_code != '0'
-        run: exit 1
+        # Repeat the errors here: this is the step `gh run view --log-failed` shows
+        run: |
+          cat ts-check-output.txt
+          exit 1

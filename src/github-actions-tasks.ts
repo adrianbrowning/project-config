@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { writeConfigFile } from "./utils.ts";
 import { readWorkspaceGlobs } from "./workspace-tasks.ts";
 
@@ -35,7 +37,7 @@ export function usesWorkspaceCi(workspaceSelected: boolean): boolean {
 }
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
-  const tasks: Array<{ task: (() => Promise<void>) | ReturnType<typeof writeConfigFile>; title: string; }> = [];
+  const tasks: Array<Pick<ListrTask<TaskContext>, "task" | "title">> = [];
 
   // Always install the reusable setup action
   tasks.push({

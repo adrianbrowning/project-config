@@ -19,7 +19,7 @@
     "lint:esl:fix": "pnpm lint:esl --fix",
     "lint:s": "eslint --config eslint.config.style.ts \"{tests,src}/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
     "lint:fix": "pnpm lint:s --fix",
-    "lint": "pnpm lint:ts && pnpm lint:esl && pnpm lint:fix",
+    "lint": "pnpm lint:ts && pnpm lint:esl && pnpm lint:fix && pnpm lint:knip",
     "lint:knip": "knip",
     "lint:jscpd": "jscpd .",
     "lint:e18e": "pnpm dlx @e18e/cli analyze"
