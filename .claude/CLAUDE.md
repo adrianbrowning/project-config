@@ -10,7 +10,7 @@
 - **Build:** `pnpm build` runs `node build.ts` (esbuild) and packs the tarball. Only `pnpm start` (watch mode) still uses `rollup.config.ts`.
 - **Tests:** `tests/` is a separate workspace package. Unit tests: `pnpm vitest run --config vitest.unit.config.ts` from `tests/`. Integration tests run the built tarball, so `pnpm build` first.
 - **Checks:** `pnpm lint` runs type-check, ESLint, the style pass and Knip, the same checks CI runs before tests.
-- **Dependency updates:** `.github/workflows/dependency-updates.yml` runs `scripts/update-dependencies.ts` weekly. Peer ranges follow the installed `dependencies`/`devDependencies` versions, and `build.ts` copies them into the CLI. Policy in `docs/dependency-updates.md`.
+- **Dependency updates:** `.github/workflows/dependency-updates.yml` runs `scripts/update-dependencies.ts` weekly. A peer takes its installed `dependencies`/`devDependencies` version when that version is inside the peer's range, and otherwise gets reported as drift. `build.ts` copies the peers into the CLI. Policy in `docs/dependency-updates.md`.
 
 ## Agent skills
 
