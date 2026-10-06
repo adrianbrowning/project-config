@@ -131,8 +131,9 @@ describe("workspace project references (tsc preset)", () => {
     const build = runCommand(project, "pnpm exec tsc --build --verbose", { expectFailure: true });
     expect(build.exitCode, build.stdout + build.stderr).toBe(0);
     expect(buildOrder(build.stdout, project)).toEqual([ "packages/lib", SITE ]);
-    expect(project.readFile(`${SITE}/dist/src/index.js`)).toContain("from \"@demo/lib\"");
-    expect(project.fileExists("packages/lib/dist/src/index.js")).toBe(true);
+    // tsc mode sets rootDir src (#31), so src/ compiles straight into dist/, where the #src imports point
+    expect(project.readFile(`${SITE}/dist/index.js`)).toContain("from \"@demo/lib\"");
+    expect(project.fileExists("packages/lib/dist/index.js")).toBe(true);
     expect(untracked(project)).toBe(before);
   });
 });

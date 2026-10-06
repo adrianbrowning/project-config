@@ -29,7 +29,7 @@ The CLI can set up any combination of:
 
 | Tool | What it sets up |
 |------|-----------------|
-| `ts` | `tsconfig.json` with preset selection |
+| `ts` | `tsconfig.json` with preset selection, and the [`#src` package import](#src-package-imports) |
 | `eslint` | `eslint.config.ts` |
 | `husky` | Git hooks via Husky |
 | `commitLint` | Conventional commit linting |
@@ -116,7 +116,7 @@ packages/<name>/
 
 Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config` are installed there, not in each package. Paths are relative, so packages at any depth (`apps/web/site`) resolve the shared configs.
 
-**New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file and a `node --test` test. `pnpm check` passes straight away.
+**New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) whose source and `node:test` test import each other through `#src/…`. `pnpm check` passes straight away.
 
 **Root scripts.** These are the commands to run from the workspace root, locally and in CI. With `githubActions` selected (or run later in an existing workspace), setup writes `.github/workflows/ci.yml`, which installs once with the frozen lockfile and runs `pnpm lint`, `pnpm lint:ts`, `pnpm test` and `pnpm build` on pull requests and pushes to `main`. It's read-only, and a newer push cancels the run it supersedes. `--update` keeps `ci.yml` current like the other workflows, and in a workspace doesn't look for the single-package `ci_test.yml`, `lint.yml` or `ts-check.yml`.
 
@@ -132,6 +132,7 @@ A failure in any package fails the root command. `pnpm -r` never includes the wo
 - Missing `lint`, `lint:fix` and `lint:ts` (`tsc --build`) scripts are added, and an earlier generated `lint:ts` (`tsc --noEmit`) is replaced. A script with your own command is kept and reported; other scripts stay.
 - `tsconfig.json` gets the shared base as its first `extends`, so the package's own `extends` and `compilerOptions` still win.
 - `eslint.config.ts` and `eslint.config.style.ts` are overwritten with re-exports of the shared configs. Put package-specific rules in `sharedConfig/eslint.config.ts` or restore your own file from git.
+- `package.json` gets the [`#src` package import](#src-package-imports), mapped to the package's own `src/` whatever its depth (in `tsc` mode, plus `rootDir: "src"` in its `tsconfig.json` if it sets none).
 
 Setup prints each package as `updated`, `unchanged`, `skipped` or `could not be migrated`. A package is left untouched and reported when its `package.json` or `tsconfig.json` isn't plain JSON (for example, a `tsconfig.json` with comments). Rerunning setup changes nothing.
 
@@ -159,7 +160,7 @@ Nothing points at `src/`, so `pnpm pack` ships compiled JavaScript and declarati
 "gingacodemonkey": { "subpathExports": { "./utils": "./src/utils.ts", "./icons/*": "./src/icons/*.ts" } }
 ```
 
-Subpaths you add to `exports` yourself, a custom root export (a string or conditions object), `imports` (such as `#src/*`) and extra `files` entries are kept; one of your exports that resolves to TypeScript source is reported. A value of yours that differs from a managed one (say your own `main` or `build`) is kept and reported by setup, and is a `conflict` for `--update`. With a custom root export, `main` and `types` are left to you.
+Subpaths you add to `exports` yourself, a custom root export (a string or conditions object), your own `imports` aliases and extra `files` entries are kept; one of your exports that resolves to TypeScript source is reported. A library's generated `#src/*.ts` import points only at `dist/`, so the tarball holds every target. A value of yours that differs from a managed one (say your own `main` or `build`) is kept and reported by setup, and is a `conflict` for `--update`. With a custom root export, `main` and `types` are left to you.
 
 **Project references.** After linking, setup makes the workspace build with [`tsc --build`](https://www.typescriptlang.org/docs/handbook/project-references.html), so TypeScript checks packages incrementally and each dependency before its consumers. `pnpm exec tsc --build` from the root builds every package; `pnpm lint:ts` runs each package's `tsc --build` (dependencies first), which also builds what it references.
 
@@ -348,7 +349,38 @@ Declaration files keep the `.ts` specifier (`export { value } from "./value.ts"`
 
 Limitations:
 - Needs TypeScript 5.7 or later.
-- Only relative specifiers are rewritten. A `.ts` path that reaches `tsc` through an alias (`paths`, or a `package.json#imports` entry that points at `.ts` files) stays as `.ts` in the output.
+- Only relative specifiers are rewritten. A `.ts` path that reaches `tsc` through an alias (`paths`, or a `package.json#imports` entry that points at `.ts` files) stays as `.ts` in the output. The generated [`#src` import](#src-package-imports) is built for that: in `tsc` mode it resolves `#src/value.ts` to the compiled `.js` file.
+
+### `#src` package imports
+
+Setup gives every TypeScript project, and every linked workspace package, a native [`package.json#imports`](https://nodejs.org/api/packages.html#subpath-imports) entry, so source files import each other from anywhere under `src/` without `../../`:
+
+```ts
+// src/features/billing/invoice.ts
+import { formatMoney } from "#src/utils/money.ts";
+```
+
+It's on by default in interactive and `--yes` setup; there's no tool or flag to pick. Write the `.ts` extension, as with [explicit `.ts` imports](#explicit-ts-imports) (#30). The key is `#src/*.ts` rather than `#src/*` because TypeScript refuses a `.ts` specifier that an alias passes through unchanged (TS2877, since the base config sets `rewriteRelativeImportExtensions`); extensionless `#src/utils/money` doesn't resolve anywhere. `.tsx` files aren't covered by the alias.
+
+The mapping depends on the TypeScript mode, read from the preset the tsconfig extends (`sharedConfig/tsconfig.base.json` in a workspace):
+
+| Mode | `imports["#src/*.ts"]` | |
+|---|---|---|
+| `bundler` | `"./src/*.ts"` | The type-checker, your bundler and Node's type stripping all read the source |
+| `tsc`, app or private package | `{ "types": "./dist/*.d.ts", "gingacodemonkey:source": "./src/*.ts", "default": "./dist/*.js" }` | Compiled JavaScript keeps `#src/utils/money.ts`, which Node resolves to `dist/utils/money.js`: nothing loads TypeScript from `src/` |
+| `tsc`, publishable library | `{ "types": "./dist/*.d.ts", "default": "./dist/*.js" }` | Same, with every target inside the published `dist/` |
+
+`dist` is the package's own `outDir` (`--ts-outdir`, default `dist`; one the tsconfig already sets wins, as does `declarationDir` for `types`). In `tsc` mode, setup also sets `rootDir: "src"` when the tsconfig has none, so `src/x.ts` compiles to `dist/x.js` where the mapping points; a single-package `tsconfig.json` in `tsc` mode therefore no longer includes `eslint.config.ts` (ESLint loads it itself). TypeScript maps `dist/*.d.ts` back to `src/` while compiling, so a clean checkout type-checks and builds without existing output. A publishable library is the same as for [library packages](#pnpm-workspaces): a `library`/`library-monorepo` preset, not `"private": true`, and a `src/index.ts`.
+
+**Tests without a build (`tsc` mode).** Run tests with the `gingacodemonkey:source` condition so `#src` resolves to `src/` and Node strips the types itself:
+
+```bash
+node --conditions=gingacodemonkey:source --test
+```
+
+The workspace sample package's `test` script is exactly that in `tsc` mode (`node --test` in bundler mode). The condition is for a package's own tests: published consumers and other runs never pass it and use `dist/`. A publishable library has no `src/` in its tarball, so it gets no such condition; build before testing it (`tsc --build && node --test`).
+
+**Existing `imports`.** The entry is merged in: your other aliases (`#config`, `#utils/*`, …) keep their values and order. A `#src/*.ts` with a different value, or a hand-written `#src/*` (which `#src/*.ts` would take over for `.ts` files), is never silently replaced: interactive setup asks, `--yes` setup keeps it and reports `kept your own package.json › imports["#src/*.ts"]`, and `--update` reports a `conflict` that only `--overwrite` replaces. A mapping this CLI generated for another mode, or for an app that has since become a library, is `updated`. Rerunning setup or update changes nothing.
 
 ---
 

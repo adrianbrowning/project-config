@@ -14,7 +14,7 @@ const OLD_COMMIT_MSG = fs.readFileSync(path.join(FIXTURES, "commit-msg.2abe477")
 const OLD_LINT_WORKFLOW = fs.readFileSync(path.join(FIXTURES, "lint.yml.8c7e2a6"), "utf8");
 const TOOLS = [ "--tool=ts", "--tool=eslint", "--tool=husky", "--tool=commitLint", "--tool=lintStaged", "--tool=githubActions" ];
 
-type Manifest = { scripts: Record<string, string>; };
+type Manifest = { imports?: Record<string, unknown>; scripts: Record<string, string>; };
 
 /** A current setup rolled back to what older releases wrote, plus the user's own changes. */
 function olderProject(name: string): TestProject {
@@ -27,8 +27,9 @@ function olderProject(name: string): TestProject {
   const workspace = project.readFile("pnpm-workspace.yaml").replace(/^(?:minimumReleaseAge|strictDepBuilds):.*\n/gm, "");
   project.writeFile("pnpm-workspace.yaml", `pnpm:\n  minimumReleaseAge: 4320\n  strictDepBuilds: true\n${workspace}`);
 
-  // The user's own changes, which update must keep
+  // The user's own changes, which update must keep; releases before #31 wrote no #src import
   const manifest = project.readJson<Manifest>("package.json");
+  delete manifest.imports;
   project.writeJson("package.json", { ...manifest, scripts: { ...manifest.scripts, build: "tsc -p ." } });
   project.writeFile("commitlint.config.js", `${project.readFile("commitlint.config.js")}\n// team tweak\n`);
   return project;
@@ -55,6 +56,8 @@ describe("--update", () => {
     expect(workspace).toMatchObject({ minimumReleaseAge: 4320, strictDepBuilds: true });
 
     expect(project.readJson<Manifest>("package.json").scripts.build).toBe("tsc -p .");
+    expect(result.output).toMatch(/added\s+package\.json › imports\["#src\/\*\.ts"\]/);
+    expect(project.readJson<Manifest>("package.json").imports).toEqual({ "#src/*.ts": "./src/*.ts" });
     expect(project.readFile("commitlint.config.js")).toContain("// team tweak");
     expect(result.output).toContain("customized commitlint.config.js");
   });
