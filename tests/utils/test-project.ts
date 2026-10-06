@@ -21,7 +21,7 @@ export class TestProject implements Disposable {
     const templateDir = process.env.TEMPLATE_DIR;
     if (!templateDir) throw new Error("TEMPLATE_DIR not set — globalSetup may not have run");
     this.dir = path.join(os.tmpdir(), `gcm-test-${options.name}-${Date.now()}`);
-    // ponytail: cpSync with hardlinks — fast clone without re-running pnpm install
+    // ponytail: full copy of the template (node_modules included), cheaper than re-running pnpm install
     fs.cpSync(templateDir, this.dir, { recursive: true });
     execFileSync("git", [ "init" ], { cwd: this.dir, stdio: "pipe" });
   }

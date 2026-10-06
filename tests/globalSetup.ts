@@ -1,8 +1,8 @@
 /* eslint-disable sonarjs/no-os-command-from-path */
 /**
  * Global test setup — runs once for the entire suite.
- * Creates a pre-installed template project so each test can clone it
- * via hardlinks (~100ms) instead of running `pnpm add` (~15s).
+ * Creates a pre-installed template project so each test can copy it (~9s on macOS, ~29k files)
+ * instead of running `pnpm add`. The copy is most of a test's runtime; share one project across cases where they can't interfere.
  */
 
 import { execFileSync } from "node:child_process";
