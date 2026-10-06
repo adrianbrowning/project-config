@@ -1,9 +1,8 @@
-The role of this file is to describe common mistakes and confusion points that agents might encounter as they work in this project. If you ever encounter something in the project that surprises you, please alert the developer working with you and indicate that this is the case in the CLAUDE.MD file to help prevent future agents from having the same issue.
+The role of this file is to describe common mistakes and confusion points that agents might encounter as they work in this project. If you ever encounter something in the project that surprises you, please alert the developer working with you and indicate that this is the case in the CLAUDE.MD file to help prevent future agents from having the same issue. When a surprise is a bug with an issue, cite it (`(#57)`), so the PR that fixes it can find and remove the line.
 
 ## Surprises found so far
 
-- `.claude/CLAUDE.md` is out of date. It describes `src/setup.js` and `src/*-tasks.js`, but the source is TypeScript (`src/setup.ts`, `src/*-tasks.ts`). It also lists Semantic Release as a selectable tool, which commit `c292d28` removed (a copy is kept on branch `semantic-release-changelog`).
-- `readme.md` still documents the `semanticReleaseNotes` tool and the `--no-release` flag. Neither exists in `src/cli-args.ts` or `src/setup.ts` any more.
+- This checkout is one worktree of a bare repo (`git worktree list`), and a branch may already be checked out in a sibling directory. To test a PR's head without disturbing this checkout, give it its own worktree: `git worktree add ../<name> origin/<branch> && pnpm install --frozen-lockfile`.
 - Integration tests run against the built tarball (`gingacodemonkey-config-*.tgz`), not `src/`. Run `pnpm build` before `pnpm test`, or the tests exercise stale code.
 - `pnpm run` exports this repo's `pnpm-workspace.yaml` settings to child processes as `npm_config_*` env vars, and those override the generated test projects' own settings. `tests/globalSetup.ts` deletes the supply-chain ones.
 - With `strictDepBuilds: true`, pnpm 10 keeps failing with `ERR_PNPM_IGNORED_BUILDS` for any package already recorded as ignored in `node_modules/.modules.yaml`, even after you add `allowBuilds: { pkg: false }`. Only `true` (which runs the build) clears it, or deleting `node_modules`.

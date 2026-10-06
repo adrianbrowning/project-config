@@ -92,6 +92,8 @@ jobs:
 
             /cc-pr-review-ci ${{ steps.pr.outputs.number }}
 
+            Also apply every rule in CODING_STANDARDS.md at the repo root, and flag each violation.
+
           claude_args: |
             --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*/pulls/*/reviews:*),Bash(gh api repos/*/pulls/*/reviews/*/comments:*),Bash(gh api repos/*/pulls/*/comments:*),Bash(git diff:*),Bash(git log:*),Read,Glob"
             --max-turns 50

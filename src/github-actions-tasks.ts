@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import type { ListrTask } from "listr2";
+import type { TaskContext } from "./cli-args.ts";
 import { writeConfigFile } from "./utils.ts";
 
 // GitHub Actions workflow file contents — replaced at build time from github_actions_examples/
@@ -26,7 +28,7 @@ export type GithubActionsOptions = {
 };
 
 export function createGithubActionsTasks(options: GithubActionsOptions) {
-  const tasks: Array<{ task: (() => Promise<void>) | ReturnType<typeof writeConfigFile>; title: string; }> = [];
+  const tasks: Array<Pick<ListrTask<TaskContext>, "task" | "title">> = [];
 
   // Always install the reusable setup action
   tasks.push({

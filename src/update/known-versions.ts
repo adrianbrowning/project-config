@@ -30,13 +30,15 @@ export const KNOWN_TEMPLATE_HASHES: Record<string, ReadonlyArray<string>> = {
     "2c86bc915eb9dfc827f3ceccf184c2d91bd3013946d479be642f6335742c9772", // cac3f28
   ],
   ".github/workflows/knip.yml": [
-    "9a153a4afe32f7d5eee2e1938e7e1b46feb436aa26c678e7ba3381891ded8de8", // HEAD, cac3f28
+    "d9bc5283e82783a5c1906a217ee961b4f2d968ae8f9e9fbd569c7dc96bedc9e3", // HEAD
+    "9a153a4afe32f7d5eee2e1938e7e1b46feb436aa26c678e7ba3381891ded8de8", // cac3f28
     "de5309bd1566f8f9e3c94123544a1862fc1ef7dfd785f3592952fef44db7d885", // 4a73a8e
     "777b796fd67d51d344a0d76f8a91ef15d73a201fd8615f6788366c70c0a6cdca", // 4fe02b0
     "1345cb63f2db2cc868a4592ae9ed4ba25a69a936fbf926a3a7a6452ac12b2eac", // 8c7e2a6
   ],
   ".github/workflows/lint.yml": [
-    "76059ade6515ca34507baabe726d14edfc357c2ac9abd5cdba8e792e760ac908", // HEAD, cac3f28
+    "41c02db73c11a6680122eaf75b5e7fa3eb1bca927888654974c161fb38a27b24", // HEAD
+    "76059ade6515ca34507baabe726d14edfc357c2ac9abd5cdba8e792e760ac908", // cac3f28
     "53870e80e7d8989e9c8a127cc918142beac92c297053977f4bc33b6c36fd68e5", // 4a73a8e
     "0903d40743ba92351df2645f8e04f35270868aaca70131226c0a3b109fdc7f7b", // 4fe02b0
     "0085a960859497b5c17e98a9c5ae4860765050c4ae67d50590f276f3ac776cae", // 8c7e2a6
@@ -46,7 +48,8 @@ export const KNOWN_TEMPLATE_HASHES: Record<string, ReadonlyArray<string>> = {
     "9cce0fac55beaa84cc0ef00384dd36b44b894a5fc3ad45084f7940b61c9b2cf3", // HEAD, e4bafe7
   ],
   ".github/workflows/ts-check.yml": [
-    "5b68d7ab00b8ae82a0c59b08ae13b052c78d3d8fa3c1e18c4697f98f1e11310b", // HEAD, cac3f28
+    "8a031821de1ce368650fd1fe1f2969152b3d972a12f34d6f2353a7408b4549fa", // HEAD
+    "5b68d7ab00b8ae82a0c59b08ae13b052c78d3d8fa3c1e18c4697f98f1e11310b", // cac3f28
     "c8da57fdf4654ed51369bd7dc085a561896e24542edf0825daa1242cc335d833", // 4a73a8e
     "a90047daa49a38a55732b0f5905cea7f0b1ca70026c839c8bc253d2e01315be7", // 4fe02b0
     "4628573291a354c016d7f457b111acf6dd3c6d674c0a31e49b0191c1eb0f7f32", // 8c7e2a6
