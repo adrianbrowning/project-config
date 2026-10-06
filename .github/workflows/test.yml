@@ -48,8 +48,28 @@ jobs:
         working-directory: tests
         run: pnpm vitest run --config vitest.unit.config.ts --reporter=verbose
 
+  # One matrix entry per tests/integration/*.test.ts, so a new file gets its own job without editing this list.
+  list-integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      files: ${{ steps.list.outputs.files }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tests/integration
+
+      - name: List integration test files
+        id: list
+        run: |
+          files=$(find tests/integration -maxdepth 1 -name '*.test.ts' -exec basename {} .test.ts \; | sort | jq -R . | jq -cs .)
+          [ "$files" != "[]" ] || { echo "No integration test files found" >&2; exit 1; }
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
   integration-tests-native:
-    needs: build
+    needs: [ build, list-integration-tests ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -57,21 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-file:
-          - full-workflow
-          - typescript-configs
-          - ts-import-extensions
-          - eslint
-          - husky-hooks
-          - commitlint
-          - lint-staged
-          - knip
-          - github-actions
-          - bumpy
-          - cli-failure
-          - eslint-styled-sorting
-          - update-mode
-          - workspace
+        test-file: ${{ fromJSON(needs.list-integration-tests.outputs.files) }}
 
     steps:
       - uses: actions/checkout@v7
