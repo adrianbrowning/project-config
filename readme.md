@@ -172,6 +172,31 @@ Subpaths you add to `exports` yourself, a custom root export (a string or condit
 
 `--update` keeps the references, build options, root solution and `.gitignore` entries in sync the same way.
 
+### Package boundaries
+
+The default ESLint config, and so `sharedConfig/eslint.config.ts`, includes `gingacodemonkey/workspace-boundaries`: a package may use another workspace package only by name, through what that package's `package.json` `exports` declares. A package without `exports` exposes only its bare name. The rule ships in `@gingacodemonkey/config/eslint` rather than in the generated file, so a shared config from any release, edited or not, picks it up when you upgrade the package; outside a pnpm workspace it does nothing.
+
+| Import from `@scope/web` | |
+|---|---|
+| `@scope/lib`, `@scope/lib/utils` (declared in `exports`) | allowed |
+| `#src/local.ts`, `./local.ts` (the package's own files) | allowed |
+| external packages, `node:` builtins | allowed |
+| `@scope/lib/src/internal`, `@scope/lib/utils.ts`, `@scope/lib/index.js` (not in `exports`, or `null` there) | error |
+| `../../packages/lib/src/internal.ts`, or an absolute path / `file:` URL into another package | error |
+| `#lib/*` mapped in `@scope/web`'s own `imports` to `../../packages/lib/src/*` or `@scope/lib/src/*` | error |
+
+Packages come from the globs in the `pnpm-workspace.yaml` above the linted file (nested globs, single directories and `!` exclusions included); a package nested inside another is its own boundary. Every import is resolved to where it really lands before it's judged, following symlinks and the file system's case, so spellings like `./../`, `//`, `/./`, a trailing `/`, `..` that re-enters a package, `node_modules/@scope/lib/…` or a different extension can't get round it. A bare import must be written canonically (`@scope/lib/./utils` is rejected; write `@scope/lib/utils`). Files outside every package, such as root tooling, aren't checked. An editor's long-running ESLint server reads the packages once, so restart it after adding a package or changing `exports`.
+
+For exceptions such as generated code or tooling, add an allow list to `extraRules` in `sharedConfig/eslint.config.ts`. Each glob matches what the import reaches, written as `<package name>/<path in the package>`, so it covers both bare and relative spellings:
+
+```ts
+export const extraRules: Array<Linter.Config> = [
+  { rules: { "gingacodemonkey/workspace-boundaries": [ "error", { allow: [ "@scope/lib/src/generated/**" ] } ] } },
+];
+```
+
+For a single import, use `// eslint-disable-next-line gingacodemonkey/workspace-boundaries` with a reason.
+
 ---
 
 ## Updating an existing project
@@ -349,6 +374,7 @@ Rules are auto-enabled based on what's installed in your project.
 | `eslint-plugin-no-barrel-files` | Prevents barrel/index re-export anti-pattern |
 | `eslint-plugin-promise` | Promise best practices (`always-return`, `catch-or-return`) |
 | `eslint-plugin-unicorn` | `unicorn/prefer-node-protocol` |
+| `gingacodemonkey` (built in) | `workspace-boundaries` — pnpm workspace packages import each other only through their `exports` ([Package boundaries](#package-boundaries)) |
 
 ### When `typescript` is installed
 

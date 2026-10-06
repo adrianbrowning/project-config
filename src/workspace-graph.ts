@@ -83,16 +83,17 @@ export function discoverPackages(globs: Array<string>, root = "."): Array<string
 }
 
 /**
- * Reads each package directory's manifest. A package without valid JSON or a `name` can't take part in
- * dependency edges, so it's returned in `unreadable` with the reason instead of failing the whole workspace.
+ * Reads each package directory's manifest (`dirs` relative to `root`). A package without valid JSON or a `name`
+ * can't take part in dependency edges, so it's returned in `unreadable` with the reason instead of failing the
+ * whole workspace.
  */
-export function readWorkspacePackages(dirs: ReadonlyArray<string>): { packages: Array<WorkspacePackage>; unreadable: Array<UnreadablePackage>; } {
+export function readWorkspacePackages(dirs: ReadonlyArray<string>, root = "."): { packages: Array<WorkspacePackage>; unreadable: Array<UnreadablePackage>; } {
   const packages: Array<WorkspacePackage> = [];
   const unreadable: Array<UnreadablePackage> = [];
   for (const dir of dirs) {
     let manifest: unknown;
     try {
-      manifest = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"));
+      manifest = JSON.parse(fs.readFileSync(path.join(root, dir, "package.json"), "utf8"));
     }
     catch {
       unreadable.push({ dir, reason: "package.json is not valid JSON" });

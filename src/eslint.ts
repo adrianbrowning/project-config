@@ -16,6 +16,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { has } from "./utils.ts";
+import { workspaceBoundariesPlugin } from "./workspace-boundaries.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -268,6 +269,11 @@ const config = [
 
   // Barrel files - avoid barrel file anti-patterns
   { ...noBarrelFiles.flat, files: CODE_FILES },
+
+  // pnpm workspace packages import each other only through their exports; inert outside a workspace package.
+  // The plugin is registered for every file so an `extraRules` entry for the rule (an `allow` list) needs no `files`.
+  { plugins: { gingacodemonkey: workspaceBoundariesPlugin } },
+  { files: CODE_FILES, rules: { "gingacodemonkey/workspace-boundaries": ERROR } },
 
   // all files
   {
