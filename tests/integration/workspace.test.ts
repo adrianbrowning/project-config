@@ -14,7 +14,16 @@ type ShowConfig = { compilerOptions: Record<string, unknown>; };
 const PACKAGE_SCRIPTS = {
   "lint": "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
   "lint:fix": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0 --fix",
-  "lint:ts": "tsc --noEmit",
+  "lint:ts": "tsc --build",
+};
+
+// Build options project references add to a package with a bundler (no-emit) preset
+const BUILD_OPTIONS = {
+  composite: true,
+  outDir: "dist",
+  tsBuildInfoFile: "dist/.tsbuildinfo",
+  noEmit: false,
+  emitDeclarationOnly: true,
 };
 
 const ROOT_SCRIPTS = {
@@ -79,7 +88,7 @@ describe("pnpm workspace setup", () => {
       expect(project.readJson<Manifest>("packages/example/package.json").scripts).toEqual({ ...PACKAGE_SCRIPTS, test: "node --test" });
       expect(project.readJson("packages/example/tsconfig.json")).toEqual({
         extends: "../../sharedConfig/tsconfig.base.json",
-        compilerOptions: { types: [ "node" ] },
+        compilerOptions: { types: [ "node" ], ...BUILD_OPTIONS },
         include: [ "src" ],
       });
       expect(project.readFile("packages/example/eslint.config.ts")).toBe("import config from \"../../sharedConfig/eslint.config.ts\";\n\nexport default config;\n");
@@ -156,13 +165,14 @@ describe("pnpm workspace setup", () => {
       expect(project.readJson<Manifest>("packages/a/package.json").scripts).toEqual({ build: "echo build", lint: "echo old", "lint:fix": PACKAGE_SCRIPTS["lint:fix"], "lint:ts": PACKAGE_SCRIPTS["lint:ts"] });
       expect(output).toContain("packages/a: updated (kept your own lint script)");
       expect(project.readJson("packages/a/tsconfig.json")).toEqual({
-        compilerOptions: { noUnusedLocals: false },
+        compilerOptions: { noUnusedLocals: false, ...BUILD_OPTIONS },
         include: [ "src" ],
         extends: "../../sharedConfig/tsconfig.base.json",
       });
       expect(project.readJson("apps/web/b/tsconfig.json")).toEqual({
         extends: [ "../../../sharedConfig/tsconfig.base.json", "./tsconfig.local.json" ],
         include: [ "src" ],
+        compilerOptions: BUILD_OPTIONS,
       });
       expect(project.readFile("apps/web/b/eslint.config.ts")).toContain("\"../../../sharedConfig/eslint.config.ts\"");
       expect(project.fileExists("packages/ignored/eslint.config.ts")).toBe(false);

@@ -67,7 +67,7 @@ describe("existing workspace update-all offer", () => {
     for (const pkg of [ "packages/a", "packages/b" ]) {
       expect(read(`${pkg}/eslint.config.ts`)).toBe("import config from \"../../sharedConfig/eslint.config.ts\";\n\nexport default config;\n");
     }
-    expect(JSON.parse(read("packages/a/package.json")!)).toMatchObject({ scripts: { "build": "echo build", "lint:ts": "tsc --noEmit" } });
+    expect(JSON.parse(read("packages/a/package.json")!)).toMatchObject({ scripts: { "build": "echo build", "lint:ts": "tsc --build" } });
   });
 });
 

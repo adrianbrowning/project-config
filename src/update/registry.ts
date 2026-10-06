@@ -20,7 +20,8 @@ import type { DetectableTool } from "../tool-detection.ts";
 import { libraryExportItems } from "../workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
 import { workspaceProtocolItems } from "../workspace-protocol.ts";
-import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
+import { referenceItems } from "../workspace-references.ts";
+import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_PACKAGE_SCRIPTS, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
@@ -98,14 +99,14 @@ function workspaceItems(): Array<PlanItem> {
     const shared = path.posix.relative(dir, SHARED_DIR);
     const link = path.join(dir, "eslint.config.ts");
     items.push(
-      ...scripts(path.join(dir, MANIFEST), PACKAGE_SCRIPTS),
+      ...scripts(path.join(dir, MANIFEST), PACKAGE_SCRIPTS, PREVIOUS_PACKAGE_SCRIPTS),
       tsconfigLink(path.join(dir, "tsconfig.json"), `${shared}/tsconfig.base.json`),
       templateFile(link, packageEslintLink(shared, "eslint.config.ts")),
       templateFile(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts"))
     );
     items.push(...libraryExportItems(dir));
   }
-  return [ ...items, ...workspaceProtocolItems(dirs, linked) ];
+  return [ ...items, ...workspaceProtocolItems(dirs, linked), ...referenceItems(SHARED_DIR) ];
 }
 
 type ToolItems = (detected: ReadonlyArray<DetectableTool>) => Array<PlanItem>;

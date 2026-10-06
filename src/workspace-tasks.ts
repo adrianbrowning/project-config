@@ -10,6 +10,7 @@ import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml
 import { configureLibraryExports } from "./workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
 import { enforceWorkspaceProtocol } from "./workspace-protocol.ts";
+import { syncReferences } from "./workspace-references.ts";
 
 type WorkspaceTask = ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>;
 
@@ -35,7 +36,14 @@ const SAMPLE_NAME = "example";
 export const PACKAGE_SCRIPTS: Record<string, string> = {
   "lint": "eslint --config eslint.config.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0",
   "lint:fix": "eslint --config eslint.config.style.ts \"src/**/*.{j,t}s{,x}\" --cache --max-warnings=0 --fix",
-  "lint:ts": "tsc --noEmit",
+  // Build mode: a package referencing another can't be checked with --noEmit until the dependency's declarations
+  // exist (TS6305), so each package builds itself and its references, incrementally, into ignored outputs
+  "lint:ts": "tsc --build",
+};
+
+// Package scripts earlier releases wrote; setup and --update replace these, but keep any other value the user set
+export const PREVIOUS_PACKAGE_SCRIPTS: Record<string, Array<string>> = {
+  "lint:ts": [ "tsc --noEmit" ],
 };
 
 // Only the sample package gets a test: an existing package's tests are its own business
@@ -195,7 +203,7 @@ function linkPackage(dir: string): { kept: Array<string>; reason?: string; resul
   const shared = path.posix.relative(dir, SHARED_DIR);
   let changed = false;
 
-  const { kept, scripts } = mergeScripts(manifest.scripts ?? {}, PACKAGE_SCRIPTS);
+  const { kept, scripts } = mergeScripts(manifest.scripts ?? {}, PACKAGE_SCRIPTS, PREVIOUS_PACKAGE_SCRIPTS);
   if (JSON.stringify(scripts) !== JSON.stringify(manifest.scripts ?? {})) {
     changed = writeIfChanged(manifestFile, toJson({ ...manifest, scripts })) || changed;
   }
@@ -330,6 +338,12 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
       task: (_ctx, task) => {
         const lines = configureLibraryExports(state.linked, cliArgs.tsOutdir);
         task.title = lines.length > 0 ? `Library packages:\n  ${lines.join("\n  ")}` : "No library packages to export";
+      },
+    },
+    {
+      title: "Generating TypeScript project references",
+      task: (_ctx, task) => {
+        task.title = syncReferences(SHARED_DIR, cliArgs.tsOutdir);
       },
     },
   ];

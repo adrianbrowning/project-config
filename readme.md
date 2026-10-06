@@ -101,12 +101,13 @@ pnpm exec gingacodemonkey-config --tool=workspace --yes --workspace-update-all
 ```
 package.json                  lint / lint:ts / lint:fix / test / build run across packages; check runs them all
 pnpm-workspace.yaml           packages globs + pnpm settings
+tsconfig.json                 solution config: references every package, for tsc --build
 sharedConfig/
   tsconfig.base.json          extends the preset chosen with the --ts-* flags
   eslint.config.ts            the shared rules; add your own to extraRules
   eslint.config.style.ts
 packages/<name>/
-  tsconfig.json               extends ../../sharedConfig/tsconfig.base.json
+  tsconfig.json               extends ../../sharedConfig/tsconfig.base.json; build options + references
   eslint.config.ts            re-exports ../../sharedConfig/eslint.config.ts
   eslint.config.style.ts
 ```
@@ -126,7 +127,7 @@ A failure in any package fails the root command. `pnpm -r` never includes the wo
 
 **Existing workspace.** Setup writes the shared configs and root scripts, keeps your globs and pnpm settings, then offers to link every discovered package. In interactive mode it asks once. With `--tool=workspace` it only links them when you pass `--workspace-update-all`; otherwise it reports them as skipped. For each linked package:
 
-- Missing `lint`, `lint:fix` and `lint:ts` scripts are added. A script with your own command is kept and reported; other scripts stay.
+- Missing `lint`, `lint:fix` and `lint:ts` (`tsc --build`) scripts are added, and an earlier generated `lint:ts` (`tsc --noEmit`) is replaced. A script with your own command is kept and reported; other scripts stay.
 - `tsconfig.json` gets the shared base as its first `extends`, so the package's own `extends` and `compilerOptions` still win.
 - `eslint.config.ts` and `eslint.config.style.ts` are overwritten with re-exports of the shared configs. Put package-specific rules in `sharedConfig/eslint.config.ts` or restore your own file from git.
 
@@ -157,6 +158,19 @@ Nothing points at `src/`, so `pnpm pack` ships compiled JavaScript and declarati
 ```
 
 Subpaths you add to `exports` yourself, a custom root export (a string or conditions object), `imports` (such as `#src/*`) and extra `files` entries are kept; one of your exports that resolves to TypeScript source is reported. A value of yours that differs from a managed one (say your own `main` or `build`) is kept and reported by setup, and is a `conflict` for `--update`. With a custom root export, `main` and `types` are left to you.
+
+**Project references.** After linking, setup makes the workspace build with [`tsc --build`](https://www.typescriptlang.org/docs/handbook/project-references.html), so TypeScript checks packages incrementally and each dependency before its consumers. `pnpm exec tsc --build` from the root builds every package; `pnpm lint:ts` runs each package's `tsc --build` (dependencies first), which also builds what it references.
+
+- **Which packages.** Every package whose `tsconfig.json` extends the shared base. Others (not linked, or a `tsconfig.json` that isn't plain JSON) are left out and listed; a package without a `tsconfig.json` isn't TypeScript, so it's skipped silently.
+- **Root `tsconfig.json`.** A solution config with `"files": []` and one reference per package. An existing root `tsconfig.json` keeps its own `files`/`include` and references; `"files": []` is only added when it has neither.
+- **Package references** come from the dependencies on other workspace packages, in every section (`dependencies`, `devDependencies`, `optionalDependencies`, `peerDependencies`). A reference to a workspace package is added when you add the dependency and removed when you remove it, each package once. References to anything else are yours and are kept.
+- **Build options.** Each package gets `composite: true`, `outDir` (`--ts-outdir`, default `dist`) and `tsBuildInfoFile: "<outDir>/.tsbuildinfo"`, but only those it doesn't set itself: your own `outDir`, `tsBuildInfoFile` and every other option win. (The presets' own `tsBuildInfoFile` points inside `node_modules/@gingacodemonkey/config`, a file every package would share.) Bundler presets set `noEmit`, and a referenced project must emit, so with a bundler preset packages also get `noEmit: false` and `emitDeclarationOnly: true`: `tsc --build` writes only `.d.ts` files and your bundler still builds the JavaScript. With a `tsc` preset it emits JavaScript as well. Switching the shared base from bundler to `tsc` later leaves those two options in place; remove them from the packages yourself.
+  These bundler-mode options only apply to applications and private packages: a publishable library needs `--ts-mode=tsc` (see **Library packages** above).
+- **Output.** Declarations, JavaScript and build info go only to each package's `outDir` (plus its own `tsBuildInfoFile`, if you set one elsewhere). Setup adds those locations to the root `.gitignore` unless a line already ignores them: `dist/` matches every package's `dist`; a custom path such as `out/types` is anchored to its package.
+- **Can't take part.** A package whose own `tsconfig.json` sets `composite: false` or `noEmit: true` is left out and reported. Options set in a package's own extra `extends` aren't inspected; `tsc --build` reports those itself.
+- **Errors.** Setup fails, and `--update` stops with nothing written, on a dependency cycle (the message lists every package in it), a `workspace:` dependency no package provides, a dependency on a package that can't take part, or a reference to a config that doesn't exist. Fix the dependency or reference and rerun.
+
+`--update` keeps the references, build options, root solution and `.gitignore` entries in sync the same way.
 
 ---
 
