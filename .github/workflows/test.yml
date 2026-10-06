@@ -60,6 +60,7 @@ jobs:
         test-file:
           - full-workflow
           - typescript-configs
+          - ts-import-extensions
           - eslint
           - husky-hooks
           - commitlint
