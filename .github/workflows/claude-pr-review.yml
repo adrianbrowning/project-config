@@ -90,9 +90,9 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ steps.pr.outputs.number }}
 
-            /cc-pr-review-ci ${{ steps.pr.outputs.number }}
+            Read CODING_STANDARDS.md at the repo root first, and include every violation of its rules in the review.
 
-            Also apply every rule in CODING_STANDARDS.md at the repo root, and flag each violation.
+            /cc-pr-review-ci ${{ steps.pr.outputs.number }}
 
           claude_args: |
             --allowedTools "Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*/pulls/*/reviews:*),Bash(gh api repos/*/pulls/*/reviews/*/comments:*),Bash(gh api repos/*/pulls/*/comments:*),Bash(git diff:*),Bash(git log:*),Read,Glob"
