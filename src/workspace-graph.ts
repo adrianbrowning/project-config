@@ -24,6 +24,8 @@ export interface UnreadablePackage {
 
 export interface InternalDependency {
   from: WorkspacePackage;
+  /** The key in the section: the package name, or the alias for an `npm:` alias */
+  name: string;
   section: DependencySection;
   /** The spec as declared, e.g. `workspace:^` or `^1.0.0` */
   spec: string;
@@ -110,12 +112,17 @@ export function sectionEntries(manifest: JsonObject, section: DependencySection)
   return Object.entries(deps).filter((entry): entry is [ string, string ] => typeof entry[1] === "string");
 }
 
-/** The package a dependency installs: its own name, or for `npm:<name>@<range>` the aliased name. */
+/**
+ * The package a dependency installs: its own name, or the aliased name for `npm:<name>@<range>` and
+ * `workspace:<name>@<range>`. Other `workspace:` specs (`workspace:^`, `workspace:1.0.0`) hold no `@` after the prefix.
+ */
 function installedName(name: string, spec: string): string {
-  if (!spec.startsWith("npm:")) return name;
-  const alias = spec.slice(4);
+  const prefix = [ "npm:", "workspace:" ].find(candidate => spec.startsWith(candidate));
+  if (!prefix) return name;
+  const alias = spec.slice(prefix.length);
   const versionAt = alias.indexOf("@", 1);
-  return versionAt === -1 ? alias : alias.slice(0, versionAt);
+  if (versionAt === -1) return prefix === "npm:" ? alias : name;
+  return alias.slice(0, versionAt);
 }
 
 /**
@@ -130,7 +137,7 @@ export function internalDependencies(packages: ReadonlyArray<WorkspacePackage>):
     for (const section of DEPENDENCY_SECTIONS) {
       for (const [ name, spec ] of sectionEntries(from.manifest, section)) {
         const to = byName.get(installedName(name, spec));
-        if (to && to !== from) edges.push({ from, section, spec, to });
+        if (to && to !== from) edges.push({ from, name, section, spec, to });
       }
     }
   }

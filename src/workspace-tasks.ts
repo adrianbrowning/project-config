@@ -8,6 +8,7 @@ import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
+import { enforceWorkspaceProtocol } from "./workspace-protocol.ts";
 
 type WorkspaceTask = ListrTaskWrapper<TaskContext, YES_ANY_IS_OK_HERE, YES_ANY_IS_OK_HERE>;
 
@@ -60,6 +61,12 @@ export const PREVIOUS_ROOT_SCRIPTS: Record<string, Array<string>> = {
 /** A package's ESLint config file: a re-export of the shared one, `shared` being the relative path to sharedConfig/. */
 export function packageEslintLink(shared: string, file: "eslint.config.style.ts" | "eslint.config.ts"): string {
   return `import config from "${shared}/${file}";\n\nexport default config;\n`;
+}
+
+/** Whether setup has linked a package to sharedConfig/; setup and --update only manage linked packages. */
+export function isLinkedPackage(dir: string): boolean {
+  const link = path.join(dir, "eslint.config.ts");
+  return fs.existsSync(link) && fs.readFileSync(link, "utf8").includes(`${path.posix.relative(dir, SHARED_DIR)}/eslint.config.ts`);
 }
 
 type ScriptMerge = { kept: Array<string>; scripts: Record<string, string>; };
@@ -307,6 +314,13 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
         });
         task.title = `Packages: ${Object.entries(counts).map(([ status, count ]) => `${count} ${status}`)
           .join(", ")}\n  ${lines.join("\n  ")}`;
+      },
+    },
+    {
+      title: "Enforcing the workspace: protocol for internal dependencies",
+      task: (_ctx, task) => {
+        const dirs = discoverPackages(state.globs);
+        task.title = enforceWorkspaceProtocol(dirs, dirs.filter(dir => isLinkedPackage(dir)));
       },
     },
   ];

@@ -18,7 +18,8 @@ import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
 import type { DetectableTool } from "../tool-detection.ts";
 import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
-import { PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
+import { workspaceProtocolItems } from "../workspace-protocol.ts";
+import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
@@ -90,11 +91,11 @@ function workspaceItems(): Array<PlanItem> {
     templateFile(path.join(SHARED_DIR, "eslint.config.style.ts"), eslintConfigContent("styled"), { knownKey: "eslint.config.style.ts" }),
     ...scripts(MANIFEST, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS),
   ];
-  for (const dir of discoverPackages(readWorkspaceGlobs() ?? [])) {
+  const dirs = discoverPackages(readWorkspaceGlobs() ?? []);
+  const linked = dirs.filter(dir => isLinkedPackage(dir));
+  for (const dir of linked) {
     const shared = path.posix.relative(dir, SHARED_DIR);
     const link = path.join(dir, "eslint.config.ts");
-    const linked = fs.existsSync(link) && fs.readFileSync(link, "utf8").includes(`${shared}/eslint.config.ts`);
-    if (!linked) continue;
     items.push(
       ...scripts(path.join(dir, MANIFEST), PACKAGE_SCRIPTS),
       tsconfigLink(path.join(dir, "tsconfig.json"), `${shared}/tsconfig.base.json`),
@@ -102,7 +103,7 @@ function workspaceItems(): Array<PlanItem> {
       templateFile(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts"))
     );
   }
-  return items;
+  return [ ...items, ...workspaceProtocolItems(dirs, linked) ];
 }
 
 type ToolItems = (detected: ReadonlyArray<DetectableTool>) => Array<PlanItem>;

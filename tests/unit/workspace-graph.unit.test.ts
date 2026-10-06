@@ -45,13 +45,20 @@ describe("internalDependencies", () => {
     ]);
   });
 
-  it("treats an npm: alias as internal only when it aliases a workspace package", () => {
+  it("treats an npm: or workspace: alias as internal only when it aliases a workspace package", () => {
     writePackage("packages/utils", { name: "@scope/utils" });
-    writePackage("packages/app", { name: "app", dependencies: { "u": "npm:@scope/utils@^1.0.0", "@scope/utils": "npm:lodash@^4.0.0" } });
+    writePackage("packages/app", {
+      name: "app",
+      dependencies: { "u": "npm:@scope/utils@^1.0.0", "@scope/utils": "npm:lodash@^4.0.0" },
+      devDependencies: { "w": "workspace:@scope/utils@^", "lodash": "workspace:^" },
+    });
 
     const { packages } = readWorkspacePackages([ "packages/utils", "packages/app" ]);
 
-    expect(internalDependencies(packages).map(e => [ e.to.name, e.spec ])).toEqual([[ "@scope/utils", "npm:@scope/utils@^1.0.0" ]]);
+    expect(internalDependencies(packages).map(e => [ e.name, e.to.name, e.spec ])).toEqual([
+      [ "u", "@scope/utils", "npm:@scope/utils@^1.0.0" ],
+      [ "w", "@scope/utils", "workspace:@scope/utils@^" ],
+    ]);
   });
 });
 
