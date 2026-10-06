@@ -7,7 +7,7 @@ import { createPackageCollector, isInteractiveMode, parseCliArgs, printHelp, TOO
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
-import { createGithubActionsTasks } from "./github-actions-tasks.ts";
+import { createGithubActionsTasks, usesWorkspaceCi } from "./github-actions-tasks.ts";
 import type { ClaudeRunnerType, GithubActionsOptions } from "./github-actions-tasks.ts";
 import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
@@ -19,7 +19,7 @@ import { runUpdate } from "./update/run-update.ts";
 import type { UpdatePrompts } from "./update/run-update.ts";
 import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
-import { addWorkspaceRootScripts, createWorkspaceTasks, promptUpdateAll, readWorkspaceGlobs } from "./workspace-tasks.ts";
+import { addWorkspaceRootScripts, createWorkspaceTasks, promptUpdateAll } from "./workspace-tasks.ts";
 
 // Type definitions for enquirer MultiSelect
 type MultiSelectChoice = {
@@ -190,7 +190,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
       task: async (_ctx, task) => {
         let ghaOptions: GithubActionsOptions;
         // A workspace being set up now, or one that already lists packages, gets the root CI workflow instead
-        const workspace = answer.includes("workspace") || readWorkspaceGlobs() !== null;
+        const workspace = usesWorkspaceCi(answer.includes("workspace"));
 
         if (cliArgs.yes) {
           ghaOptions = {

@@ -109,4 +109,26 @@ describe("--update", () => {
     expect(result.output).toContain("customized packages/example/tsconfig.json");
     expect(project.readFile("packages/example/tsconfig.json")).toBe(unlinked);
   });
+
+  it("reconciles a workspace's ci.yml and leaves out the single-package workflows", () => {
+    using project = new TestProject({ name: "update-workspace-ci" });
+    // Seeded rather than set up: GitHub Actions setup installs the review skill over the network (#59).
+    // The built CLI's template is this file byte for byte, so update must see it as current.
+    const ci = fs.readFileSync(path.join(EXAMPLES, "workspace-ci.yml"), "utf8");
+    project.writeFile("pnpm-workspace.yaml", "packages:\n  - 'packages/*'\n");
+    project.writeFile(".github/workflows/ci.yml", ci);
+    project.writeFile(".github/actions/setup/action.yml", fs.readFileSync(path.join(EXAMPLES, "actions/setup/action.yml"), "utf8"));
+
+    const current = update(project, "--tool=githubActions", "--yes");
+    expect(current.exitCode, current.output).toBe(0);
+    expect(current.output).not.toMatch(/ci_test\.yml|lint\.yml|ts-check\.yml/);
+    expect(project.readFile(".github/workflows/ci.yml")).toBe(ci);
+
+    const edited = `${ci}\n  extra:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n`;
+    project.writeFile(".github/workflows/ci.yml", edited);
+    const conflict = update(project, "--tool=githubActions", "--yes");
+    expect(conflict.exitCode).toBe(1);
+    expect(conflict.output).toContain("conflict   .github/workflows/ci.yml");
+    expect(project.readFile(".github/workflows/ci.yml")).toBe(edited);
+  });
 });

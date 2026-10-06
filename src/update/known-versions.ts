@@ -16,6 +16,9 @@ export const KNOWN_TEMPLATE_HASHES: Record<string, ReadonlyArray<string>> = {
   ".github/workflows/bumpy-comment.yml": [
     "8a997f696bf669f230c5f1df1645f5981d75128965ad72606e994f8d8f342989", // HEAD, e4bafe7
   ],
+  ".github/workflows/ci.yml": [
+    "1f389466d6cd69499c1b10daa8c1affd0bcf55f537267092dac307b56a04d25c", // HEAD, 3eda081
+  ],
   ".github/workflows/ci_test.yml": [
     "af7c0d8275ccc062a89b8fe3b8da718b31bc1fb88a0196c926accb18790a5dab", // HEAD, cac3f28
     "f0b55c9eb906eb519a073dae22fa4f5ed9f7c2a895d79456d48849dea1b1092e", // 8c7e2a6

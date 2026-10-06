@@ -115,7 +115,7 @@ Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config`
 
 **New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file and a `node --test` test. `pnpm check` passes straight away.
 
-**Root scripts.** These are the commands to run from the workspace root, locally and in CI. With `githubActions` selected (or run later in an existing workspace), setup writes `.github/workflows/ci.yml`, which installs once with the frozen lockfile and runs `pnpm lint`, `pnpm lint:ts`, `pnpm test` and `pnpm build` on pull requests and pushes to `main`. It's read-only, and a newer push cancels the run it supersedes.
+**Root scripts.** These are the commands to run from the workspace root, locally and in CI. With `githubActions` selected (or run later in an existing workspace), setup writes `.github/workflows/ci.yml`, which installs once with the frozen lockfile and runs `pnpm lint`, `pnpm lint:ts`, `pnpm test` and `pnpm build` on pull requests and pushes to `main`. It's read-only, and a newer push cancels the run it supersedes. `--update` keeps `ci.yml` current like the other workflows, and in a workspace doesn't look for the single-package `ci_test.yml`, `lint.yml` or `ts-check.yml`.
 
 | Script | Runs |
 |---|---|
