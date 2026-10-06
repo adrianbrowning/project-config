@@ -143,6 +143,21 @@ Setup prints each package as `updated`, `unchanged`, `skipped` or `could not be 
 
 **Undeclared imports.** Setup and `--update` also scan each linked package's source files (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`; not `node_modules/`, `dist/`, dot-directories or nested packages) for `import`, `export … from`, `import()` and `require()` of another workspace package, including subpaths such as `@acme/lib/utils`. Each one the package declares in no dependency section is reported as `<importer> imports <imported> but doesn't declare it`. Nothing is added for you, since whether it's a dependency, dev dependency or peer is your call: add it with `workspace:^`.
 
+**Library packages.** A linked package is a library when the shared base extends a `library` or `library-monorepo` preset (`--ts-type`), its `package.json` isn't `"private": true` and it has `src/index.ts`. Everything else is an application and never gets publishing fields, so mark apps `"private": true`. Libraries need `--ts-mode=tsc`: bundler mode type-checks with `noEmit` and leaves building to a bundler the CLI doesn't choose, so setup fails and names the library packages instead of writing exports that point at nothing (`--update` reports them as `skipped`). For each library, setup and `--update` manage:
+
+| Where | Value |
+|---|---|
+| `tsconfig.json` | `outDir` (`--ts-outdir`, default `dist`), `rootDir: "src"`, `tsBuildInfoFile: "<outDir>/.tsbuildinfo"`; values already set are the package's own and are used as is |
+| `package.json` | `"type": "module"`, `exports["."]` (`types` → `dist/index.d.ts`, `default` → `dist/index.js`), `main` and `types` (the same files, for resolvers that ignore `exports`), `files` (`dist` without compiled tests or the build state), `scripts.build: "tsc"` |
+
+Nothing points at `src/`, so `pnpm pack` ships compiled JavaScript and declarations only. Further entry points are opt-in, as source paths that are exported as their compiled output (`*` patterns work):
+
+```json
+"gingacodemonkey": { "subpathExports": { "./utils": "./src/utils.ts", "./icons/*": "./src/icons/*.ts" } }
+```
+
+Subpaths you add to `exports` yourself, a custom root export (a string or conditions object), `imports` (such as `#src/*`) and extra `files` entries are kept; one of your exports that resolves to TypeScript source is reported. A value of yours that differs from a managed one (say your own `main` or `build`) is kept and reported by setup, and is a `conflict` for `--update`. With a custom root export, `main` and `types` are left to you.
+
 ---
 
 ## Updating an existing project

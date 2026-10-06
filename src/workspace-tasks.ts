@@ -7,6 +7,7 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
+import { configureLibraryExports } from "./workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
 import { enforceWorkspaceProtocol } from "./workspace-protocol.ts";
 
@@ -235,7 +236,7 @@ export function addWorkspaceRootScripts(): Array<string> {
  * with `--workspace-update-all`, and otherwise reported as skipped.
  */
 export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: ConfirmUpdateAll | null): Array<ListrTask<TaskContext>> {
-  const state: { existing: boolean; globs: Array<string>; } = { existing: false, globs: [] };
+  const state: { existing: boolean; globs: Array<string>; linked: Array<string>; } = { existing: false, globs: [], linked: [] };
 
   return [
     {
@@ -309,6 +310,7 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
           }
           const { kept, reason, result } = linkPackage(dir);
           counts[result]++;
+          if (result !== "could not be migrated") state.linked.push(dir);
           const notes = [ ...(reason ? [ reason ] : []), ...(kept.length > 0 ? [ `kept your own ${kept.join(", ")} script` ] : []) ];
           return `${dir}: ${result}${notes.length > 0 ? ` (${notes.join("; ")})` : ""}`;
         });
@@ -321,6 +323,13 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
       task: (_ctx, task) => {
         const dirs = discoverPackages(state.globs);
         task.title = enforceWorkspaceProtocol(dirs, dirs.filter(dir => isLinkedPackage(dir)));
+      },
+    },
+    {
+      title: "Generating library package exports",
+      task: (_ctx, task) => {
+        const lines = configureLibraryExports(state.linked, cliArgs.tsOutdir);
+        task.title = lines.length > 0 ? `Library packages:\n  ${lines.join("\n  ")}` : "No library packages to export";
       },
     },
   ];
