@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask, ListrTaskWrapper } from "listr2";
+import { resolveTsJsx } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
@@ -162,8 +163,12 @@ function writeSharedConfigs(cliArgs: CliArgs): void {
   if (fs.existsSync(baseFile) && !existing) {
     throw new Error(`${baseFile} is not valid JSON; fix or delete it and rerun setup`);
   }
-  // Keep whatever else the shared base holds; only the preset (and jsx, when asked for) is ours
-  const compilerOptions = { ...(existing?.compilerOptions as JsonObject | undefined), ...(cliArgs.tsJsx ? { jsx: cliArgs.tsJsx } : {}) };
+  // Keep whatever else the shared base holds; only the preset and jsx are ours. Without --ts-jsx an existing
+  // jsx is kept (a new base gets resolveTsJsx's default); --ts-jsx=none removes it; any other --ts-jsx sets it.
+  const compilerOptions: JsonObject = { ...(existing?.compilerOptions as JsonObject | undefined) };
+  const jsx = resolveTsJsx(cliArgs);
+  if (cliArgs.tsJsx === null) delete compilerOptions.jsx;
+  else if (jsx && (cliArgs.tsJsx !== undefined || compilerOptions.jsx === undefined)) compilerOptions.jsx = jsx;
   writeIfChanged(baseFile, toJson({
     ...existing,
     extends: tsPreset(cliArgs),

@@ -1,8 +1,9 @@
 /**
- * Tests for --update flag in CLI args
+ * CLI argument parsing: flags, tool selection, interactive mode and TypeScript options
  */
 import { describe, expect, it } from "vitest";
-import { isInteractiveMode, parseCliArgs } from "../../src/cli-args.ts";
+import { isInteractiveMode, parseCliArgs, resolveTsJsx } from "../../src/cli-args.ts";
+import type { CliArgs, TsJsx } from "../../src/cli-args.ts";
 
 describe("--update flag", () => {
   it("parses --update flag", () => {
@@ -94,5 +95,79 @@ describe("--claude-runner", () => {
   it("accepts bedrock and ignores unknown runners", () => {
     expect(parseCliArgs([ "--claude-runner=bedrock" ]).claudeRunner).toBe("bedrock");
     expect(parseCliArgs([ "--claude-runner=vertex" ]).claudeRunner).toBe("anthropic");
+  });
+});
+
+describe("tool selection", () => {
+  it("collects unknown --tool values instead of dropping them", () => {
+    const args = parseCliArgs([ "--tool=eslnt", "--tool=ts", "--tool=" ]);
+    expect(args.tools).toEqual([ "ts" ]);
+    expect(args.unknownTools).toEqual([ "eslnt", "" ]);
+  });
+
+  it("is case-sensitive, matching the names in --help", () => {
+    expect(parseCliArgs([ "--tool=ESLint" ]).unknownTools).toEqual([ "ESLint" ]);
+  });
+});
+
+describe("isInteractiveMode", () => {
+  it.each([
+    [[], true ],
+    [[ "--update" ], true ],
+    [[ "--yes" ], false ],
+    [[ "-y" ], false ],
+    [[ "--update", "--yes" ], false ],
+    [[ "--all" ], false ],
+    [[ "-a" ], false ],
+    [[ "--tool=eslint" ], false ],
+    // A typo'd tool selects nothing; setup rejects unknownTools before this matters
+    [[ "--tool=eslnt" ], true ],
+  ])("%j → %s", (argv, interactive) => {
+    expect(isInteractiveMode(parseCliArgs(argv))).toBe(interactive);
+  });
+});
+
+describe("short flags", () => {
+  it.each([
+    [ "-a", "all" ],
+    [ "-y", "yes" ],
+    [ "-u", "update" ],
+    [ "-h", "help" ],
+  ] as const)("%s sets %s", (flag, field) => {
+    expect(parseCliArgs([])[field]).toBe(false);
+    expect(parseCliArgs([ flag ])[field]).toBe(true);
+  });
+});
+
+describe("TypeScript options", () => {
+  const defaults = parseCliArgs([]);
+
+  it.each<[string, Partial<CliArgs>]>([
+    [ "--ts-dom=false", { tsDom: false }],
+    [ "--ts-dom=dom", { tsDom: true }],
+    [ "--ts-no-dom", { tsDom: false }],
+    [ "--ts-type=LIBRARY", { tsType: "library" }],
+    [ "--ts-type=Library-Monorepo", { tsType: "library-monorepo" }],
+    [ "--ts-type=service", { tsType: defaults.tsType }],
+    [ "--ts-mode=tsc", { tsMode: "tsc" }],
+    [ "--ts-mode=webpack", { tsMode: defaults.tsMode }],
+    [ "--ts-jsx=react", { tsJsx: "react" }],
+    [ "--ts-jsx=none", { tsJsx: null }],
+    [ "--ts-jsx=false", { tsJsx: null }],
+    [ "--ts-jsx=vue", { tsJsx: undefined }],
+    [ "--ts-outdir=build", { tsOutdir: "build" }],
+    [ "--ts-outdir=", { tsOutdir: defaults.tsOutdir }],
+  ])("%s", (flag, expected) => {
+    expect(parseCliArgs([ flag ])).toMatchObject(expected);
+  });
+
+  it.each<[Array<string>, null | TsJsx]>([
+    [[], "react-jsx" ],
+    [[ "--ts-no-dom" ], null ],
+    [[ "--ts-type=library" ], null ],
+    [[ "--ts-jsx=none" ], null ],
+    [[ "--ts-no-dom", "--ts-jsx=preserve" ], "preserve" ],
+  ])("resolveTsJsx(%j) → %s", (argv, jsx) => {
+    expect(resolveTsJsx(parseCliArgs(argv))).toBe(jsx);
   });
 });

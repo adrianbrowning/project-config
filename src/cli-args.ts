@@ -2,6 +2,9 @@
  * CLI argument parsing for non-interactive/CI mode
  */
 
+/** A tsconfig `jsx` value this CLI writes. */
+export type TsJsx = "preserve" | "react" | "react-jsx";
+
 export type CliArgs = {
   all: boolean; // Tool selection: every tool
   claudeRunner: "anthropic" | "bedrock"; // Claude PR review runner for --yes runs
@@ -11,18 +14,19 @@ export type CliArgs = {
   releaseNpm: boolean; // Publish to npm as well as GitHub releases
   tools: Array<string>; // Tool selection: explicit list
   tsDom: boolean;
-  tsJsx: "preserve" | "react" | "react-jsx" | null;
+  tsJsx: null | TsJsx | undefined; // undefined: not passed, see resolveTsJsx
   tsMode: "bundler" | "tsc";
   tsOutdir: string;
   tsType: "app" | "library" | "library-monorepo";
   tsTypeModule: boolean;
+  unknownTools: Array<string>; // --tool values that aren't tools; setup refuses to run with any
   update: boolean; // Update existing configs
   workspacePackages: Array<string>; // Package globs for a new workspace (default: packages/*)
   workspaceUpdateAll: boolean; // Existing workspace: update every discovered package without asking
   yes: boolean; // Accept all defaults/overwrites
 };
 
-const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy", "workspace" ] as const;
+export const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged", "knip", "jscpd", "githubActions", "bumpy", "workspace" ] as const;
 
 // Opt-in only: `workspace` turns the TS/ESLint setup into shared root configs, so `--all` must not imply it
 const ALL_TOOLS = TOOL_VALUES.filter(tool => tool !== "workspace");
@@ -82,6 +86,12 @@ function parseTsJsx(arg: string, args: CliArgs): void {
   }
 }
 
+/** The tsconfig `jsx` option: `--ts-jsx` when passed (`none` is null), otherwise `react-jsx` for a DOM app. */
+export function resolveTsJsx(args: CliArgs): null | TsJsx {
+  if (args.tsJsx !== undefined) return args.tsJsx;
+  return args.tsDom && args.tsType === "app" ? "react-jsx" : null;
+}
+
 function parseTsOutdir(arg: string, args: CliArgs): void {
   if (!arg.startsWith("--ts-outdir=")) return;
   const outdir = arg.split("=")[1];
@@ -90,10 +100,9 @@ function parseTsOutdir(arg: string, args: CliArgs): void {
 
 function parseTool(arg: string, args: CliArgs): void {
   if (!arg.startsWith("--tool=")) return;
-  const tool = arg.split("=")[1];
-  if (tool && TOOL_VALUES.includes(tool as typeof TOOL_VALUES[number])) {
-    args.tools.push(tool);
-  }
+  const tool = arg.slice("--tool=".length);
+  if (TOOL_VALUES.includes(tool as typeof TOOL_VALUES[number])) args.tools.push(tool);
+  else args.unknownTools.push(tool);
 }
 
 function parseWorkspacePackages(arg: string, args: CliArgs): void {
@@ -123,7 +132,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     tsMode: "bundler",
     tsDom: true,
     tsType: "app",
-    tsJsx: null,
+    tsJsx: undefined,
     tsOutdir: "dist",
     tsTypeModule: false,
     noRelease: false,
@@ -131,6 +140,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     releaseNpm: false,
     help: false,
     workspacePackages: [],
+    unknownTools: [],
     workspaceUpdateAll: false,
   };
 
@@ -155,12 +165,9 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
   return args;
 }
 
+/** Interactive (prompting for tools) only when nothing on the command line chose them or accepted the defaults. */
 export function isInteractiveMode(args: CliArgs): boolean {
-  // Interactive mode is OFF when:
-  // - --all is specified, OR
-  // - --tools are specified, OR
-  // - --yes is specified
-  return !args.all && args.tools.length === 0;
+  return !args.all && !args.yes && args.tools.length === 0;
 }
 
 export function printHelp(): void {
@@ -173,8 +180,10 @@ Usage:
 
 Options:
   --all, -a              Select all tools (except workspace)
-  --yes, -y              Accept all defaults (non-interactive mode)
-  --tool=<name>          Select specific tool (can be used multiple times)
+  --yes, -y              Accept all defaults (non-interactive mode; setup also
+                         needs --all or --tool, --update uses every detected tool)
+  --tool=<name>          Select specific tool (can be used multiple times; an
+                         unknown name is an error)
                          Values: ts, eslint, husky, commitLint, lintStaged,
                                  knip, jscpd, githubActions, bumpy, workspace
 
@@ -207,7 +216,7 @@ TypeScript Options (used with --yes):
   --ts-dom               Enable DOM support (default)
   --ts-no-dom            Disable DOM support
   --ts-type=<type>       app | library | library-monorepo (default: app)
-  --ts-jsx=<jsx>         react | react-jsx | preserve | none (default: none)
+  --ts-jsx=<jsx>         react | react-jsx | preserve | none (default: react-jsx for a DOM app, otherwise none)
   --ts-outdir=<dir>      Output directory (default: dist)
   --ts-type-module       Add "type": "module" to package.json
   --no-ts-type-module    Do not add "type": "module" (default)

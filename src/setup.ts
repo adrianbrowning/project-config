@@ -3,7 +3,7 @@ import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import * as enquirer from "enquirer";
 import { Listr } from "listr2";
 import { createBumpyTasks } from "./bumpy-tasks.ts";
-import { createPackageCollector, isInteractiveMode, parseCliArgs, printHelp } from "./cli-args.ts";
+import { createPackageCollector, isInteractiveMode, parseCliArgs, printHelp, TOOL_VALUES } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { commitLintTasks } from "./convential-tasks.ts";
 import { esLintTasks } from "./eslint-tasks.ts";
@@ -113,6 +113,12 @@ const cliArgs = parseCliArgs();
 if (cliArgs.help) {
   printHelp();
   process.exit(0);
+}
+
+if (cliArgs.unknownTools.length > 0) {
+  // eslint-disable-next-line no-console
+  console.error(`Unknown tool: ${cliArgs.unknownTools.map(tool => `--tool=${tool}`).join(", ")}. Valid tools: ${TOOL_VALUES.join(", ")}.`);
+  process.exit(1);
 }
 
 function createTasks(cliArgs: CliArgs) {
@@ -317,8 +323,7 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
 // Main execution
 async function main() {
   if (cliArgs.update) {
-    // Interactive only when nothing was chosen on the command line, matching setup's rule
-    const interactive = !cliArgs.yes && cliArgs.tools.length === 0;
+    const interactive = isInteractiveMode(cliArgs);
     const prompts: null | UpdatePrompts = interactive
       ? {
         chooseTools: async detected => {

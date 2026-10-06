@@ -22,6 +22,31 @@ function getFixtureContent(fixturePath: string): string {
   );
 }
 
+/** Writes `file`, expects `pnpm lint:ts` to fail on it with one of `codes`, then removes it again. */
+function expectTypeCheckFailure(project: TestProject, file: string, content: string, codes: RegExp): void {
+  project.writeFile(file, content);
+  try {
+    const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
+    expect(result.exitCode, result.stdout).not.toBe(0);
+    expect(result.stdout).toContain(file);
+    expect(result.stdout).toMatch(codes);
+  }
+  finally {
+    // Even when an assertion fails, so later checks in the same project aren't tripped by the probe
+    fs.rmSync(path.join(project.dir, file), { force: true });
+  }
+}
+
+/** Proves tsc checks files under src/: a deliberate type error must fail. */
+function expectTypeErrorsCaught(project: TestProject, file = "src/type-error.ts"): void {
+  expectTypeCheckFailure(project, file, "export const n: number = \"x\";\n", /TS2322/);
+}
+
+/** Proves a no-dom config has no DOM lib: `document` must not exist. */
+function expectDomGlobalsRejected(project: TestProject): void {
+  expectTypeCheckFailure(project, "src/dom-probe.ts", "export const b = document.body;\n", /TS2584|TS2304/);
+}
+
 describe("TypeScript Configurations", () => {
 
   let project: TestProject;
@@ -40,6 +65,8 @@ describe("TypeScript Configurations", () => {
 
   describe("bundler/dom/app (Vite/React web app)", () => {
     it("generates correct tsconfig and passes lint:ts", () => {
+      // Add React before setup, as in a real React project; later `pnpm add` runs under minimumReleaseAge
+      project.exec("pnpm add -D react @types/react");
       project.runCli([
         "--tool=ts",
         "--yes",
@@ -66,6 +93,26 @@ describe("TypeScript Configurations", () => {
       assertPackageJsonScript(project, "lint:ts");
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectTypeErrorsCaught(project, "src/type-error.tsx");
+    });
+
+    it("with --yes and no --ts-jsx, type-checks and lints nested .tsx and .ts without editing tsconfig.json", () => {
+      project.exec("pnpm add -D react @types/react");
+      project.runCli([ "--tool=ts", "--tool=eslint", "--yes" ]);
+      const tsconfig = project.readJson<{ compilerOptions: { jsx?: string; }; }>("tsconfig.json");
+      expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
+
+      project.writeFile("src/components/App.tsx", getFixtureContent("react-app/App.tsx"));
+      expect(runCommand(project, "pnpm lint:ts", { expectFailure: true }).exitCode).toBe(0);
+      const lint = runCommand(project, "pnpm lint", { expectFailure: true });
+      expect(lint.exitCode, lint.stdout).toBe(0);
+
+      // Two directories below src/ is still part of the project
+      project.writeFile("src/a/b/deep.ts", "export const n: number = \"x\";\n");
+      const broken = runCommand(project, "pnpm lint:ts", { expectFailure: true });
+      expect(broken.exitCode).not.toBe(0);
+      expect(broken.stdout).toContain("src/a/b/deep.ts");
     });
   });
 
@@ -99,6 +146,8 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -134,6 +183,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -163,6 +215,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -188,6 +243,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 
@@ -216,6 +274,9 @@ export function addClass(el: HTMLElement, className: string): void {
 
       const result = runCommand(project, "pnpm lint:ts", { expectFailure: true });
       expect(result.exitCode).toBe(0);
+
+      expectDomGlobalsRejected(project);
+      expectTypeErrorsCaught(project);
     });
   });
 

@@ -48,10 +48,10 @@ The CLI can set up any combination of:
 pnpm exec gingacodemonkey-config [options]
 
   --all, -a                   Select all tools (except workspace)
-  --yes, -y                   Accept all defaults (non-interactive)
+  --yes, -y                   Accept all defaults (non-interactive; setup needs --all or --tool)
   --no-release                Exclude bumpy when using --all
   --release-npm               Also publish to npm (default: GitHub releases only)
-  --tool=<name>               Select a specific tool (repeatable)
+  --tool=<name>               Select a specific tool (repeatable; an unknown name is an error)
   --update, -u                Reconcile existing configs with this release's defaults (see below)
   --overwrite                 With --update: replace values you changed in files the CLI owns
 
@@ -59,7 +59,7 @@ TypeScript options (used with --yes):
   --ts-mode=bundler|tsc       Default: bundler
   --ts-dom / --ts-no-dom      Default: dom
   --ts-type=app|library|library-monorepo  Default: app
-  --ts-jsx=react|react-jsx|preserve|none  Default: none
+  --ts-jsx=react|react-jsx|preserve|none  Default: react-jsx for a DOM app, otherwise none
   --ts-outdir=<dir>           Default: dist
   --ts-type-module            Add "type": "module" to package.json
 
