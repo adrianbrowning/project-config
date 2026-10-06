@@ -72,7 +72,7 @@ export async function runUpdate(cliArgs: CliArgs, prompts: null | UpdatePrompts,
   // An explicit --tool subset updates only those tools; otherwise the root pnpm settings and engines come too
   let items: Array<PlanItem>;
   try {
-    items = managedItems(selected, detected, cliArgs.tools.length === 0);
+    items = managedItems(selected, detected, cliArgs.tools.length === 0, cliArgs);
   }
   catch (error) {
     if (!(error instanceof PlanError)) throw error;
