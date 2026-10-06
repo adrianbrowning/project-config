@@ -17,6 +17,7 @@ import { KNIP_CONFIG } from "../knip-tasks.ts";
 import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
 import type { DetectableTool } from "../tool-detection.ts";
+import { libraryExportItems } from "../workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
 import { workspaceProtocolItems } from "../workspace-protocol.ts";
 import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
@@ -102,6 +103,7 @@ function workspaceItems(): Array<PlanItem> {
       templateFile(link, packageEslintLink(shared, "eslint.config.ts")),
       templateFile(path.join(dir, "eslint.config.style.ts"), packageEslintLink(shared, "eslint.config.style.ts"))
     );
+    items.push(...libraryExportItems(dir));
   }
   return [ ...items, ...workspaceProtocolItems(dirs, linked) ];
 }
