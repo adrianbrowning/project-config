@@ -36,7 +36,7 @@ The CLI can set up any combination of:
 | `lintStaged` | `.lintstagedrc` — run ESLint on staged files |
 | `knip` | Dead code & unused dependency detection |
 | `jscpd` | Copy-paste detection |
-| `githubActions` | CI workflows (test, lint, knip, ts-check, Claude PR review) |
+| `githubActions` | CI workflows (test, lint, knip, ts-check, Claude PR review). In a pnpm workspace, one root `ci.yml` replaces test, lint and ts-check |
 | `bumpy` | Versioning and releases via [Bumpy](https://github.com/dmno-dev/bumpy) (see [Releases](#releases-bumpy)) |
 | `workspace` | A pnpm workspace with TS and ESLint configs shared from `sharedConfig/` (see [pnpm workspaces](#pnpm-workspaces)). Not part of `--all`. |
 
@@ -115,7 +115,7 @@ Run it from the workspace root. TypeScript, ESLint and `@gingacodemonkey/config`
 
 **New workspace.** Without a `packages:` list in `pnpm-workspace.yaml` (or with no `package.json` at all), setup creates the workspace with the globs from `--workspace-packages` (default `packages/*`) and adds a sample package (`packages/example`) with a source file and a `node --test` test. `pnpm check` passes straight away.
 
-**Root scripts.** These are the commands to run from the workspace root, locally and in CI:
+**Root scripts.** These are the commands to run from the workspace root, locally and in CI. With `githubActions` selected (or run later in an existing workspace), setup writes `.github/workflows/ci.yml`, which installs once with the frozen lockfile and runs `pnpm lint`, `pnpm lint:ts`, `pnpm test` and `pnpm build` on pull requests and pushes to `main`. It's read-only, and a newer push cancels the run it supersedes.
 
 | Script | Runs |
 |---|---|

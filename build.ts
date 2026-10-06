@@ -66,6 +66,7 @@ const eslintBuild = esbuild.build({
 const ghaWorkflows: Record<string, string> = {
   "actions/setup/action.yml": "SETUP_ACTION",
   "ci_test.yml": "CI_TEST_WORKFLOW",
+  "workspace-ci.yml": "WORKSPACE_CI_WORKFLOW",
   "lint.yml": "LINT_WORKFLOW",
   "knip.yml": "KNIP_WORKFLOW",
   "ts-check.yml": "TS_CHECK_WORKFLOW",

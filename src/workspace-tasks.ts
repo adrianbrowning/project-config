@@ -248,6 +248,18 @@ function linkPackage(dir: string): { kept: Array<string>; reason?: string; resul
 }
 
 /**
+ * Adds the workspace-wide root scripts (lint, lint:ts, test, build, check…) that are missing or still at an earlier
+ * default. Returns the names of scripts kept because the user wrote their own.
+ */
+export function addWorkspaceRootScripts(): Array<string> {
+  const { kept, scripts } = mergeScripts(getPackageJson().scripts ?? {}, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS);
+  for (const name of Object.keys(ROOT_SCRIPTS)) {
+    if (!kept.includes(name)) updatePkgJsonScript(name, scripts[name]!);
+  }
+  return kept;
+}
+
+/**
  * `confirmUpdateAll` is null for `--tool=…` runs, which never prompt: packages are then only linked
  * with `--workspace-update-all`, and otherwise reported as skipped.
  */
@@ -296,10 +308,7 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
     {
       title: "Adding workspace-wide scripts to the root",
       task: (_ctx, task) => {
-        const { kept, scripts } = mergeScripts(getPackageJson().scripts ?? {}, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS);
-        for (const name of Object.keys(ROOT_SCRIPTS)) {
-          if (!kept.includes(name)) updatePkgJsonScript(name, scripts[name]!);
-        }
+        const kept = addWorkspaceRootScripts();
         if (kept.length > 0) task.title = `Root scripts added; kept your own ${kept.join(", ")}`;
       },
     },
