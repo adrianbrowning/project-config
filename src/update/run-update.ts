@@ -5,6 +5,7 @@
 import type { CliArgs } from "../cli-args.ts";
 import { DETECTABLE_TOOLS, detectTools } from "../tool-detection.ts";
 import type { DetectableTool } from "../tool-detection.ts";
+import { PlanError } from "./reconcile.ts";
 import type { PlanItem, Status } from "./reconcile.ts";
 import { managedItems } from "./registry.ts";
 
@@ -69,7 +70,16 @@ export async function runUpdate(cliArgs: CliArgs, prompts: null | UpdatePrompts,
   log(`Updating: ${selected.join(", ")}`);
 
   // An explicit --tool subset updates only those tools; otherwise the root pnpm settings and engines come too
-  const items = managedItems(selected, detected, cliArgs.tools.length === 0);
+  let items: Array<PlanItem>;
+  try {
+    items = managedItems(selected, detected, cliArgs.tools.length === 0);
+  }
+  catch (error) {
+    if (!(error instanceof PlanError)) throw error;
+    log(error.message);
+    log("Nothing was written.");
+    return 1;
+  }
   const overwrite = await resolveConflicts(items.filter(item => item.status === "conflict"), cliArgs, prompts);
   if (!overwrite) {
     report(items, log);

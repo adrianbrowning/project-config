@@ -26,6 +26,9 @@ export type PlanItem = {
   status: Status;
 };
 
+/** A problem that stops update before anything is planned or written, such as a workspace dependency cycle. */
+export class PlanError extends Error {}
+
 type FileOptions = {
   /** Other exact contents the CLI has written to this path (e.g. a placeholder hook). */
   alsoKnown?: Array<string>;
