@@ -81,6 +81,23 @@ describe("workspace flags", () => {
     expect(parseCliArgs([ "--workspace-update-all" ]).workspaceUpdateAll).toBe(true);
   });
 
+  it("--workspace-catalog opts into moving repeated versions into the pnpm catalog", () => {
+    expect(parseCliArgs([ "--tool=workspace", "--yes" ]).workspaceCatalog).toBe(false);
+    expect(parseCliArgs([ "--tool=workspace", "--yes", "--workspace-catalog" ]).workspaceCatalog).toBe(true);
+  });
+
+  it("collects --workspace-catalog-resolve picks by name, scoped names included, and ignores malformed ones", () => {
+    const args = parseCliArgs([
+      "--workspace-catalog-resolve=zod@^4.1.0",
+      "--workspace-catalog-resolve=@types/node@^24.0.0",
+      "--workspace-catalog-resolve=zod@~4.2.0",
+      "--workspace-catalog-resolve=@types/react",
+      "--workspace-catalog-resolve=react@",
+    ]);
+    expect(args.workspaceCatalogResolve).toEqual(new Map([[ "zod", "~4.2.0" ], [ "@types/node", "^24.0.0" ]]));
+    expect(parseCliArgs([]).workspaceCatalogResolve).toEqual(new Map());
+  });
+
   it("ignores arguments that name Object.prototype members", () => {
     expect(() => parseCliArgs([ "constructor", "toString" ])).not.toThrow();
     expect(parseCliArgs([ "constructor" ]).all).toBe(false);

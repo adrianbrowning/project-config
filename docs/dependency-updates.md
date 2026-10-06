@@ -19,12 +19,13 @@ Other dev tooling (`rollup`, `@types/*`, …) and `tests/package.json` aren't tr
 - **Stable releases only.** Prerelease versions are never picked, and prerelease specs (`19.1.0-rc.2`) and non-version specs are left alone.
 - **Release age.** A version must be older than `minimumReleaseAge` in `pnpm-workspace.yaml`, which is the same rule pnpm applies, so `pnpm install` can always resolve what the script picks.
 - **Peers follow the installed version.** A peer that is also in `dependencies` or `devDependencies` takes that version, with the peer's own prefix (dev `^9.1.7` gives peer `9.1.7`). This applies only when the installed version is inside the peer's compatible range. Moving a peer to a new major breaks consumers, so a peer that would need one is upgraded on its own and listed in the PR as drift for a human to resolve. A peer with no installed counterpart (`@varlock/bumpy`) is upgraded on its own.
+- **Catalogs are the source of truth.** A tracked dependency declared as `catalog:` or `catalog:<name>` is planned on the range its catalog in `pnpm-workspace.yaml` holds, and the new range is written to that catalog entry (`catalog:` or `catalogs.<name>:`), not to `package.json`. Every manifest that refers to the entry, `tests/package.json` included, moves with it, and the manifest keeps its `catalog:` reference. When a dependency and its peer share one entry, the entry gets the installed version. The PR summary lists such changes with `catalog` (or `catalog:<name>`) as the section.
 
 Each update PR also adds a patch bump file (`.bumpy/dependency-updates-<run id>.md`) that lists the changes, because changes to peer and runtime ranges ship to consumers.
 
 ## What runs before a PR
 
-The `update` job applies the new versions, regenerates `pnpm-lock.yaml` with `pnpm install --no-frozen-lockfile`, and saves the diff of `package.json`, `pnpm-lock.yaml` and the bump file. It then runs `pnpm build` (which also packs the tarball), `pnpm lint`, the unit tests and the native integration tests against that tarball. `dist/` is ignored by git, so the lockfile is the only generated file in the PR.
+The `update` job applies the new versions, regenerates `pnpm-lock.yaml` with `pnpm install --no-frozen-lockfile`, and saves the diff of `package.json`, `pnpm-workspace.yaml` (catalog entries), `pnpm-lock.yaml` and the bump file. It then runs `pnpm build` (which also packs the tarball), `pnpm lint`, the unit tests and the native integration tests against that tarball. `dist/` is ignored by git, so the lockfile is the only generated file in the PR.
 
 The `pull-request` job runs only if all of those pass. A failed check fails the run, and no PR is opened or updated. A run with no updates stops after the version check and succeeds without a PR. An open automation PR stays as it is in that case.
 

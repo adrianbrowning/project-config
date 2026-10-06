@@ -153,3 +153,66 @@ export function applyUpdates<T extends Manifest>(manifest: T, updates: ReadonlyA
   }
   return next;
 }
+
+/** Catalog name → dependency → range, as pnpm-workspace.yaml defines them. */
+export type Catalogs = Readonly<Record<string, Readonly<Record<string, string>>>>;
+
+/** The catalog keys of pnpm-workspace.yaml. pnpm's default catalog is `catalog:` or, the same thing, `catalogs.default`. */
+export interface WorkspaceCatalogSettings {
+  catalog?: Record<string, string>;
+  catalogs?: Record<string, Record<string, string>>;
+}
+
+export function workspaceCatalogs(workspace: WorkspaceCatalogSettings): Catalogs {
+  return { ...workspace.catalogs, ...(workspace.catalog ? { default: workspace.catalog } : {}) };
+}
+
+/** The catalog a `catalog:` (`default`) or `catalog:<name>` spec points at; undefined for any other spec. */
+function catalogOf(spec: string): string | undefined {
+  return spec.startsWith("catalog:") ? spec.slice("catalog:".length) || "default" : undefined;
+}
+
+/**
+ * Copy of `manifest` with each catalog reference replaced by the range its catalog holds, so the policy plans
+ * on real versions. A reference to an entry that doesn't exist stays as it is, so it's never updated.
+ */
+export function resolveCatalogs<T extends Manifest>(manifest: T, catalogs: Catalogs): T {
+  const next = structuredClone(manifest);
+  for (const section of [ "dependencies", "devDependencies", "peerDependencies" ] as const) {
+    for (const [ name, spec ] of Object.entries(next[section] ?? {})) {
+      const catalog = catalogOf(spec);
+      const range = catalog === undefined ? undefined : catalogs[catalog]?.[name];
+      if (range !== undefined) next[section]![name] = range;
+    }
+  }
+  return next;
+}
+
+export interface CatalogUpdate {
+  catalog: string;
+  from: string;
+  name: string;
+  to: string;
+}
+
+/**
+ * Splits updates planned on `resolveCatalogs(manifest)` by where the version lives. A dependency `manifest`
+ * declares through a catalog is updated in that catalog, the source of truth, and the manifest keeps its reference.
+ * Sections sharing one entry give one catalog update: the first planned, which is the installed version's.
+ */
+export function splitCatalogUpdates(manifest: Manifest, updates: ReadonlyArray<DependencyUpdate>): { catalog: Array<CatalogUpdate>; manifest: Array<DependencyUpdate>; } {
+  const split: { catalog: Array<CatalogUpdate>; manifest: Array<DependencyUpdate>; } = { catalog: [], manifest: [] };
+  for (const update of updates) {
+    const catalog = catalogOf(manifest[update.section]?.[update.name] ?? "");
+    if (catalog === undefined) split.manifest.push(update);
+    else if (!split.catalog.some(entry => entry.catalog === catalog && entry.name === update.name)) {
+      split.catalog.push({ catalog, name: update.name, from: update.from, to: update.to });
+    }
+  }
+  return split;
+}
+
+/** Where a catalog entry sits in pnpm-workspace.yaml: under `catalog:` for the default catalog unless only `catalogs.default` exists. */
+export function catalogEntryPath(workspace: WorkspaceCatalogSettings, catalog: string, name: string): Array<string> {
+  return catalog === "default" && workspace.catalog !== undefined ? [ "catalog", name ] : [ "catalogs", catalog, name ];
+}

@@ -21,6 +21,8 @@ export type CliArgs = {
   tsTypeModule: boolean;
   unknownTools: Array<string>; // --tool values that aren't tools; setup refuses to run with any
   update: boolean; // Update existing configs
+  workspaceCatalog: boolean; // Move external versions repeated across workspace manifests into the pnpm catalog
+  workspaceCatalogResolve: Map<string, string>; // Dependency → range to catalog it at when manifests disagree
   workspacePackages: Array<string>; // Package globs for a new workspace (default: packages/*)
   workspaceUpdateAll: boolean; // Existing workspace: update every discovered package without asking
   yes: boolean; // Accept all defaults/overwrites
@@ -31,7 +33,7 @@ export const TOOL_VALUES = [ "ts", "eslint", "husky", "commitLint", "lintStaged"
 // Opt-in only: `workspace` turns the TS/ESLint setup into shared root configs, so `--all` must not imply it
 const ALL_TOOLS = TOOL_VALUES.filter(tool => tool !== "workspace");
 
-type BooleanFlag = "all" | "help" | "noRelease" | "overwrite" | "releaseNpm" | "tsDom" | "tsTypeModule" | "update" | "workspaceUpdateAll" | "yes";
+type BooleanFlag = "all" | "help" | "noRelease" | "overwrite" | "releaseNpm" | "tsDom" | "tsTypeModule" | "update" | "workspaceCatalog" | "workspaceUpdateAll" | "yes";
 
 // flag → [field, value]. A Map, so arguments like `constructor` can't hit Object.prototype.
 const BOOLEAN_FLAGS = new Map<string, [BooleanFlag, boolean]>([
@@ -50,6 +52,7 @@ const BOOLEAN_FLAGS = new Map<string, [BooleanFlag, boolean]>([
   [ "--no-release", [ "noRelease", true ]],
   [ "--release-npm", [ "releaseNpm", true ]],
   [ "--workspace-update-all", [ "workspaceUpdateAll", true ]],
+  [ "--workspace-catalog", [ "workspaceCatalog", true ]],
   [ "--overwrite", [ "overwrite", true ]],
 ]);
 
@@ -111,6 +114,14 @@ function parseWorkspacePackages(arg: string, args: CliArgs): void {
   if (glob && !args.workspacePackages.includes(glob)) args.workspacePackages.push(glob);
 }
 
+/** `--workspace-catalog-resolve=<name>@<range>`; the `@` after a scope's leading one splits name from range. */
+function parseWorkspaceCatalogResolve(arg: string, args: CliArgs): void {
+  if (!arg.startsWith("--workspace-catalog-resolve=")) return;
+  const value = arg.slice("--workspace-catalog-resolve=".length);
+  const at = value.indexOf("@", 1);
+  if (at > 0 && at < value.length - 1) args.workspaceCatalogResolve.set(value.slice(0, at), value.slice(at + 1));
+}
+
 function parseClaudeRunner(arg: string, args: CliArgs): void {
   if (!arg.startsWith("--claude-runner=")) return;
   const value = arg.split("=")[1];
@@ -142,6 +153,8 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     workspacePackages: [],
     unknownTools: [],
     workspaceUpdateAll: false,
+    workspaceCatalog: false,
+    workspaceCatalogResolve: new Map(),
   };
 
   for (const arg of argv) {
@@ -158,6 +171,7 @@ export function parseCliArgs(argv: Array<string> = process.argv.slice(2)): CliAr
     parseTsOutdir(arg, args);
     parseTool(arg, args);
     parseWorkspacePackages(arg, args);
+    parseWorkspaceCatalogResolve(arg, args);
     parseClaudeRunner(arg, args);
   }
 
@@ -200,6 +214,12 @@ Workspace Options (pnpm workspace with shared root TS/ESLint configs):
                          default: packages/*). Added to an existing workspace.
   --workspace-update-all Existing workspace: link every discovered package
                          to the shared configs (default with --yes: root only)
+  --workspace-catalog    Move external versions repeated across workspace
+                         manifests into the pnpm catalog (setup and --update;
+                         interactive setup asks instead)
+  --workspace-catalog-resolve=<name>@<range>
+                         Catalog <name> at <range> where manifests declare
+                         different ranges (repeatable)
 
 GitHub Actions Options (used with --yes):
   --claude-runner=<runner>

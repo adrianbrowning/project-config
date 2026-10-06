@@ -2,7 +2,7 @@
  * Dependency update policy: which versions the scheduled dependency workflow picks, and how peers follow them
  */
 import { describe, expect, it } from "vitest";
-import { applyUpdates, planUpdates, releasedVersions, trackedDependencies } from "../../scripts/dependency-policy.ts";
+import { applyUpdates, catalogEntryPath, planUpdates, releasedVersions, resolveCatalogs, splitCatalogUpdates, trackedDependencies, workspaceCatalogs } from "../../scripts/dependency-policy.ts";
 import type { Manifest } from "../../scripts/dependency-policy.ts";
 
 const manifest = {
@@ -109,5 +109,50 @@ describe("releasedVersions", () => {
     };
 
     expect(releasedVersions(time, now, 3 * 24 * 60)).toEqual([ "1.0.0", "1.1.0" ]);
+  });
+});
+
+describe("catalogs", () => {
+  const workspace = { catalog: { eslint: "^9.39.5", husky: "^9.1.6" }, catalogs: { tools: { knip: "6.26.0" } } };
+  const catalogs = workspaceCatalogs(workspace);
+  const cataloged = {
+    dependencies: { "eslint": "catalog:", "listr2": "^9.0.5", "ghost": "catalog:" },
+    devDependencies: { husky: "catalog:", knip: "catalog:tools" },
+    peerDependencies: { eslint: "catalog:", husky: "9.1.6" },
+  } satisfies Manifest;
+  const plan = () => planUpdates(resolveCatalogs(cataloged, catalogs), registry);
+
+  it("plans on the catalog's ranges and leaves a reference to a missing entry alone", () => {
+    expect(resolveCatalogs(cataloged, catalogs)).toEqual({
+      dependencies: { "eslint": "^9.39.5", "listr2": "^9.0.5", "ghost": "catalog:" },
+      devDependencies: { husky: "^9.1.6", knip: "6.26.0" },
+      peerDependencies: { eslint: "^9.39.5", husky: "9.1.6" },
+    });
+    expect(trackedDependencies(resolveCatalogs(cataloged, catalogs))).toEqual(trackedDependencies(cataloged));
+  });
+
+  it("updates a catalog entry once, keeps the manifest's references, and edits the manifest only for literal specs", () => {
+    const { catalog, manifest } = splitCatalogUpdates(cataloged, plan().updates);
+
+    expect(catalog).toEqual([
+      { catalog: "default", name: "eslint", from: "^9.39.5", to: "^9.40.0" },
+      { catalog: "default", name: "husky", from: "^9.1.6", to: "^9.1.7" },
+    ]);
+    expect(applyUpdates(cataloged, manifest)).toEqual({ ...cataloged, dependencies: { ...cataloged.dependencies, listr2: "^9.1.0" }, peerDependencies: { eslint: "catalog:", husky: "9.1.7" } });
+  });
+
+  it("updates a named catalog's entry", () => {
+    const devOnly = { devDependencies: { knip: "catalog:tools" }, peerDependencies: { knip: "catalog:tools" } } satisfies Manifest;
+    const { catalog, manifest } = splitCatalogUpdates(devOnly, planUpdates(resolveCatalogs(devOnly, catalogs), registry).updates);
+
+    expect(catalog).toEqual([{ catalog: "tools", name: "knip", from: "6.26.0", to: "6.39.0" }]);
+    expect(manifest).toEqual([]);
+  });
+
+  it("finds the default catalog under catalog: or catalogs.default, and named ones under catalogs", () => {
+    expect(workspaceCatalogs({ catalogs: { default: { a: "^1.0.0" } } })).toEqual({ default: { a: "^1.0.0" } });
+    expect(catalogEntryPath(workspace, "default", "eslint")).toEqual([ "catalog", "eslint" ]);
+    expect(catalogEntryPath({ catalogs: { default: {} } }, "default", "eslint")).toEqual([ "catalogs", "default", "eslint" ]);
+    expect(catalogEntryPath(workspace, "tools", "knip")).toEqual([ "catalogs", "tools", "knip" ]);
   });
 });

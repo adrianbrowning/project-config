@@ -69,6 +69,8 @@ GitHub Actions options (used with --yes):
 Workspace options (with --tool=workspace):
   --workspace-packages=<glob> Package glob for a new workspace (repeatable, default: packages/*)
   --workspace-update-all      Existing workspace: link every package without asking
+  --workspace-catalog         Move external versions repeated across manifests into the pnpm catalog
+  --workspace-catalog-resolve=<name>@<range>  Catalog <name> at <range> where manifests disagree (repeatable)
 
   --help, -h                  Show help
 ```
@@ -100,7 +102,7 @@ pnpm exec gingacodemonkey-config --tool=workspace --yes --workspace-update-all
 
 ```
 package.json                  lint / lint:ts / lint:fix / test / build run across packages; check runs them all
-pnpm-workspace.yaml           packages globs + pnpm settings
+pnpm-workspace.yaml           packages globs, the default catalog + pnpm settings
 tsconfig.json                 solution config: references every package, for tsc --build
 sharedConfig/
   tsconfig.base.json          extends the preset chosen with the --ts-* flags
@@ -196,6 +198,23 @@ export const extraRules: Array<Linter.Config> = [
 ```
 
 For a single import, use `// eslint-disable-next-line gingacodemonkey/workspace-boundaries` with a reason.
+
+### Catalogs
+
+[pnpm catalogs](https://pnpm.io/catalogs) keep one range per external dependency in `pnpm-workspace.yaml`, and manifests use it with `catalog:`, in whatever section they declare it. pnpm swaps `catalog:` for the catalog's range when it packs or publishes, so consumers of a published package see ordinary ranges.
+
+**New workspace.** The shared toolchain (`typescript`, `@types/node`, `eslint`, `jiti`) goes in the default catalog, and the root `package.json` refers to it with `catalog:`. A version the root already declared is kept as the catalog's range, and an entry the catalog already has wins. `@gingacodemonkey/config` stays pinned in the root manifest, since it must match the CLI that wrote `sharedConfig/`.
+
+**Existing versions.** Setup then looks for external versions repeated across the root and package manifests. In interactive mode it offers to move them, and asks about each dependency declared with different ranges. With `--tool=workspace`, identical ranges move only with `--workspace-catalog`, and a dependency with differing ranges only with `--workspace-catalog-resolve=<name>@<range>`. Otherwise setup lists what it left. A range moves when:
+
+- it's a registry range (`^1.2.3`, `~1.2`, `1.x`, `>=1 <2`). `workspace:`, `file:`, `link:`, `npm:` aliases, git and tarball URLs, `owner/repo` shorthands and dist-tags (`latest`) stay as declared,
+- the dependency isn't another package of the workspace, whatever its spec,
+- it's in `dependencies`, `devDependencies` or `optionalDependencies`. `peerDependencies` stay literal: a peer range is a promise to consumers and often deliberately wider than what's installed,
+- every manifest that declares the dependency uses the same range, and at least two do (or the default catalog already holds that exact range).
+
+A dependency declared with different ranges, or with a range that differs from its catalog entry, is reported with every range and where it's used, and nothing changes until you pick one. Existing catalog entries, named catalogs (`catalogs:`) and every other `pnpm-workspace.yaml` setting and comment are kept. When setup rewrites a manifest and the workspace has a `pnpm-lock.yaml`, it runs `pnpm install` so the lockfile holds the `catalog:` references and a frozen install still passes.
+
+**`--update`.** Update reports the same candidates: repeated ranges as `skipped` (moved and `updated` with `--workspace-catalog`) and differing ranges as `customized`. A `catalog:` reference must resolve: a missing toolchain entry is `added` with this release's range, and any other missing entry is reported. Update installs nothing, so run `pnpm install` after it moves versions. Rerunning setup or update after a move changes nothing.
 
 ---
 

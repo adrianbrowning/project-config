@@ -17,11 +17,13 @@ import { KNIP_CONFIG } from "../knip-tasks.ts";
 import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
 import type { DetectableTool } from "../tool-detection.ts";
+import { catalogItems } from "../workspace-catalogs.ts";
+import type { CatalogFlags } from "../workspace-catalogs.ts";
 import { libraryExportItems } from "../workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
 import { workspaceProtocolItems } from "../workspace-protocol.ts";
 import { referenceItems } from "../workspace-references.ts";
-import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_PACKAGE_SCRIPTS, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR } from "../workspace-tasks.ts";
+import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_PACKAGE_SCRIPTS, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR, WORKSPACE_ROOT_DEPENDENCIES } from "../workspace-tasks.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
@@ -86,12 +88,13 @@ function bumpyItems(): Array<PlanItem> {
 }
 
 /** Packages already linked to sharedConfig/; update keeps them current but never links new ones. */
-function workspaceItems(): Array<PlanItem> {
+function workspaceItems(catalog: CatalogFlags): Array<PlanItem> {
   const items: Array<PlanItem> = [
     tsconfigPreset(path.join(SHARED_DIR, "tsconfig.base.json"), "@gingacodemonkey/config/"),
     templateFile(path.join(SHARED_DIR, "eslint.config.ts"), eslintConfigContent("eslint"), { knownKey: "eslint.config.ts", userEditable: true }),
     templateFile(path.join(SHARED_DIR, "eslint.config.style.ts"), eslintConfigContent("styled"), { knownKey: "eslint.config.style.ts" }),
     ...scripts(MANIFEST, ROOT_SCRIPTS, PREVIOUS_ROOT_SCRIPTS),
+    ...catalogItems(WORKSPACE_ROOT_DEPENDENCIES, catalog),
   ];
   const dirs = discoverPackages(readWorkspaceGlobs() ?? []);
   const linked = dirs.filter(dir => isLinkedPackage(dir));
@@ -109,7 +112,7 @@ function workspaceItems(): Array<PlanItem> {
   return [ ...items, ...workspaceProtocolItems(dirs, linked), ...referenceItems(SHARED_DIR) ];
 }
 
-type ToolItems = (detected: ReadonlyArray<DetectableTool>) => Array<PlanItem>;
+type ToolItems = (detected: ReadonlyArray<DetectableTool>, catalog: CatalogFlags) => Array<PlanItem>;
 
 // In a workspace, sharedConfig/ and the root `pnpm -r` scripts (workspace tool) replace the single-package ones
 const singlePackage = (detected: ReadonlyArray<DetectableTool>) => !detected.includes("workspace");
@@ -134,7 +137,7 @@ const TOOL_ITEMS: Record<DetectableTool, ToolItems> = {
   jscpd: () => [ jsonFile(".jscpd.json", JSCPD_CONFIG, [], { userEditable: true }), manifestEntry(MANIFEST, "scripts", "lint:jscpd", "jscpd .") ],
   githubActions: detected => githubActionsItems(detected),
   bumpy: () => bumpyItems(),
-  workspace: () => workspaceItems(),
+  workspace: (_detected, catalog) => workspaceItems(catalog),
 };
 
 /** The root `lint` script combines ts and eslint, so it's managed when either is updated. */
@@ -149,14 +152,15 @@ function combinedLintItems(selected: ReadonlyArray<DetectableTool>, detected: Re
 /**
  * Plan items for the selected tools. `detected` is every tool set up in the project: shared values such as the
  * root `lint` script depend on all of them, not just the ones being updated. `includeRoot` adds the pnpm settings
- * and `engines` every setup run writes; an explicit `--tool` subset leaves them out.
+ * and `engines` every setup run writes; an explicit `--tool` subset leaves them out. `catalog` holds the
+ * `--workspace-catalog*` choices, which decide whether repeated workspace versions move into the pnpm catalog.
  */
-export function managedItems(selected: ReadonlyArray<DetectableTool>, detected: ReadonlyArray<DetectableTool>, includeRoot: boolean): Array<PlanItem> {
+export function managedItems(selected: ReadonlyArray<DetectableTool>, detected: ReadonlyArray<DetectableTool>, includeRoot: boolean, catalog: CatalogFlags = { workspaceCatalog: false, workspaceCatalogResolve: new Map() }): Array<PlanItem> {
   const items: Array<PlanItem> = [
     ...(includeRoot ? Object.entries(PNPM_SETTINGS).map(([ key, value ]) => pnpmSetting(key, value)) : []),
     ...(includeRoot ? Object.entries(ENGINES).map(([ key, value ]) => manifestEntry(MANIFEST, "engines", key, value)) : []),
     ...combinedLintItems(selected, detected),
-    ...selected.flatMap(tool => TOOL_ITEMS[tool](detected)),
+    ...selected.flatMap(tool => TOOL_ITEMS[tool](detected, catalog)),
   ];
 
   // Two tools can own the same entry (e.g. scripts); the first one wins

@@ -44,7 +44,7 @@ jobs:
         run: |
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           node scripts/update-dependencies.ts --summary "$RUNNER_TEMP/summary.md" --bump-file "$BUMP_FILE"
-          if git diff --quiet -- package.json; then
+          if git diff --quiet -- package.json pnpm-workspace.yaml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -59,7 +59,7 @@ jobs:
         if: steps.update.outputs.changed == 'true'
         run: |
           git add --intent-to-add "$BUMP_FILE"
-          git diff --binary -- package.json pnpm-lock.yaml "$BUMP_FILE" > "$RUNNER_TEMP/dependencies.patch"
+          git diff --binary -- package.json pnpm-workspace.yaml pnpm-lock.yaml "$BUMP_FILE" > "$RUNNER_TEMP/dependencies.patch"
 
       - name: Build
         if: steps.update.outputs.changed == 'true'

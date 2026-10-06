@@ -1,5 +1,7 @@
 /**
  * Moves the tracked dependencies in package.json to their newest compatible versions (policy in dependency-policy.ts).
+ * A dependency declared as `catalog:`/`catalog:<name>` is updated in that pnpm-workspace.yaml catalog instead, the
+ * source of truth for every manifest that refers to it; the manifest keeps its reference.
  *
  *   node scripts/update-dependencies.ts [--summary <file>] [--bump-file <file>]
  *
@@ -9,8 +11,8 @@
 import fs from "node:fs";
 import { parseArgs } from "node:util";
 import YAML from "yaml";
-import { applyUpdates, planUpdates, releasedVersions, trackedDependencies } from "./dependency-policy.ts";
-import type { DependencyUpdate, Manifest, PeerDrift } from "./dependency-policy.ts";
+import { applyUpdates, catalogEntryPath, planUpdates, releasedVersions, resolveCatalogs, splitCatalogUpdates, trackedDependencies, workspaceCatalogs } from "./dependency-policy.ts";
+import type { Manifest, PeerDrift, WorkspaceCatalogSettings } from "./dependency-policy.ts";
 
 const REGISTRY = "https://registry.npmjs.org";
 
@@ -23,7 +25,8 @@ const { values: args } = parseArgs({
 
 const manifestText = fs.readFileSync("package.json", "utf8");
 const manifest = JSON.parse(manifestText) as Manifest & { name: string; };
-const workspace = YAML.parse(fs.readFileSync("pnpm-workspace.yaml", "utf8")) as { minimumReleaseAge?: number; };
+const workspaceText = fs.readFileSync("pnpm-workspace.yaml", "utf8");
+const workspace = YAML.parse(workspaceText) as WorkspaceCatalogSettings & { minimumReleaseAge?: number; };
 const minimumReleaseAge = workspace.minimumReleaseAge ?? 0;
 
 async function fetchReleased(name: string, now: Date): Promise<Array<string>> {
@@ -33,9 +36,17 @@ async function fetchReleased(name: string, now: Date): Promise<Array<string>> {
   return releasedVersions(packument.time ?? {}, now, minimumReleaseAge);
 }
 
-function summaryTable(updates: ReadonlyArray<DependencyUpdate>): string {
-  const rows = updates.map(u => `| \`${u.name}\` | ${u.section} | \`${u.from}\` | \`${u.to}\` |`);
-  return [ "| Package | Section | From | To |", "| --- | --- | --- | --- |", ...rows, "" ].join("\n");
+/** One change: `where` is the manifest section, or the catalog that holds the version. */
+interface ChangeRow {
+  from: string;
+  name: string;
+  to: string;
+  where: string;
+}
+
+function summaryTable(rows: ReadonlyArray<ChangeRow>): string {
+  const lines = rows.map(u => `| \`${u.name}\` | ${u.where} | \`${u.from}\` | \`${u.to}\` |`);
+  return [ "| Package | Section | From | To |", "| --- | --- | --- | --- |", ...lines, "" ].join("\n");
 }
 
 function driftNotes(drift: ReadonlyArray<PeerDrift>): string {
@@ -45,23 +56,37 @@ function driftNotes(drift: ReadonlyArray<PeerDrift>): string {
 }
 
 const now = new Date();
-const names = trackedDependencies(manifest);
+// The policy plans on the ranges catalogs hold; splitCatalogUpdates sends each update back to where it's declared
+const resolved = resolveCatalogs(manifest, workspaceCatalogs(workspace));
+const names = trackedDependencies(resolved);
 const available = Object.fromEntries(await Promise.all(names.map(async name => [ name, await fetchReleased(name, now) ] as const)));
-const { updates, drift } = planUpdates(manifest, available);
+const { updates, drift } = planUpdates(resolved, available);
+const split = splitCatalogUpdates(manifest, updates);
 const notes = driftNotes(drift);
-
 if (updates.length === 0) {
   console.log(`All ${names.length} tracked dependencies are on their newest compatible versions.${notes}`);
   process.exit(0);
 }
 
-const indent = /^\{\n( +)/.exec(manifestText)?.[1] ?? "  ";
-fs.writeFileSync("package.json", `${JSON.stringify(applyUpdates(manifest, updates), null, indent)}\n`);
+if (split.manifest.length > 0) {
+  const indent = /^\{\n( +)/.exec(manifestText)?.[1] ?? "  ";
+  fs.writeFileSync("package.json", `${JSON.stringify(applyUpdates(manifest, split.manifest), null, indent)}\n`);
+}
+if (split.catalog.length > 0) {
+  // Edits the document rather than re-serialising the parsed object, so comments and other settings stay as they are
+  const doc = YAML.parseDocument(workspaceText);
+  for (const u of split.catalog) doc.setIn(catalogEntryPath(workspace, u.catalog, u.name), u.to);
+  fs.writeFileSync("pnpm-workspace.yaml", doc.toString({ lineWidth: 0 }));
+}
 
-const summary = `${summaryTable(updates)}${notes}`;
+const rows: Array<ChangeRow> = [
+  ...split.manifest.map(u => ({ ...u, where: u.section })),
+  ...split.catalog.map(u => ({ ...u, where: u.catalog === "default" ? "catalog" : `catalog:${u.catalog}` })),
+];
+const summary = `${summaryTable(rows)}${notes}`;
 console.log(summary);
 if (args.summary) fs.writeFileSync(args.summary, summary);
 if (args["bump-file"]) {
-  const lines = updates.map(u => `- \`${u.name}\` (${u.section}): \`${u.from}\` → \`${u.to}\``);
+  const lines = rows.map(u => `- \`${u.name}\` (${u.where}): \`${u.from}\` → \`${u.to}\``);
   fs.writeFileSync(args["bump-file"], `---\n"${manifest.name}": patch\n---\n\nUpdated dependencies to their newest compatible versions:\n\n${lines.join("\n")}\n`);
 }

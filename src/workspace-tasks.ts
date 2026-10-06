@@ -7,6 +7,7 @@ import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
+import { createCatalogTask, promptCatalog } from "./workspace-catalogs.ts";
 import { configureLibraryExports } from "./workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
 import { enforceWorkspaceProtocol } from "./workspace-protocol.ts";
@@ -28,6 +29,16 @@ const TS_VERSION = "__ts_version__";
 const ESLINT_VERSION = "__eslint_version__";
 // This package's own version, so the shared configs match the CLI that wrote them
 const CONFIG_VERSION = "__config_version__";
+
+/** The root devDependencies every workspace gets. A new workspace keeps these versions in its pnpm catalog. */
+export const WORKSPACE_ROOT_DEPENDENCIES: ReadonlyArray<readonly [string, string]> = [
+  [ "typescript", TS_VERSION ],
+  [ "@types/node", "^24.0.0" ],
+  [ "eslint", ESLINT_VERSION ],
+  // A range, not just the name: the catalog needs one
+  [ "jiti", "^2.0.0" ],
+  [ "@gingacodemonkey/config", CONFIG_VERSION ],
+];
 
 export const SHARED_DIR = "sharedConfig";
 const DEFAULT_GLOB = "packages/*";
@@ -255,15 +266,8 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
             .replace(/[^a-z0-9._-]+/g, "-");
           fs.writeFileSync("package.json", toJson({ name, private: true, type: "module" }));
         }
-        const required: Array<[string, string]> = [
-          [ "typescript", TS_VERSION ],
-          [ "@types/node", "^24.0.0" ],
-          [ "eslint", ESLINT_VERSION ],
-          [ "jiti", "" ],
-          [ "@gingacodemonkey/config", CONFIG_VERSION ],
-        ];
-        const missing = required.filter(([ name ]) => !getPkgVersion(name));
-        for (const [ name, version ] of missing) ctx.packages.add(version ? `${name}@${version}` : name);
+        const missing = WORKSPACE_ROOT_DEPENDENCIES.filter(([ name ]) => !getPkgVersion(name));
+        for (const [ name, version ] of missing) ctx.packages.add(`${name}@${version}`);
         task.title = missing.length > 0
           ? `Workspace root needs ${missing.map(([ name ]) => name).join(", ")}`
           : "Workspace root dependencies already installed";
@@ -346,5 +350,6 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
         task.title = syncReferences(SHARED_DIR, cliArgs.tsOutdir);
       },
     },
+    createCatalogTask(cliArgs, WORKSPACE_ROOT_DEPENDENCIES, () => !state.existing, confirmUpdateAll ? promptCatalog : null),
   ];
 }
