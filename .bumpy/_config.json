@@ -1,0 +1,11 @@
+{
+  "baseBranch": "main",
+  "changelog": "github",
+  "include": [
+    "@gingacodemonkey/config"
+  ],
+  "access": "public",
+  "publish": {
+    "provenance": true
+  }
+}
