@@ -45,9 +45,6 @@ importers:
       '@typescript-eslint/utils':
         specifier: ^8.64.0
         version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
-      '@varlock/bumpy':
-        specifier: ^1.18.1
-        version: 1.18.1
       '@vitest/eslint-plugin':
         specifier: ^1.6.23
         version: 1.6.23(@typescript-eslint/eslint-plugin@8.64.0(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)(vitest@4.1.9)
@@ -157,6 +154,9 @@ importers:
       '@types/semver':
         specifier: ^7.8.0
         version: 7.8.0
+      '@varlock/bumpy':
+        specifier: ^1.18.1
+        version: 1.18.1
       esbuild:
         specifier: ^0.28.1
         version: 0.28.1

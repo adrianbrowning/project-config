@@ -7,9 +7,6 @@
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
     "build": "node build.ts && pnpm pack",
-    "rc": "pnpm version prerelease --preid=rc --no-git-tag-version && pnpm build",
-    "build:bump": "node build.ts && pnpm version patch --no-git-tag-version && pnpm pack",
-    "build:bump-dev": "node build.ts && pnpm version prerelease --no-git-tag-version && pnpm pack",
     "prepare": "husky",
     "test": "pnpm --filter @gingacodemonkey/config-tests test",
     "test:watch": "pnpm --filter @gingacodemonkey/config-tests test:watch",
@@ -22,7 +19,10 @@
     "lint": "pnpm lint:ts && pnpm lint:esl && pnpm lint:fix && pnpm lint:knip",
     "lint:knip": "knip",
     "lint:jscpd": "jscpd .",
-    "lint:e18e": "pnpm dlx @e18e/cli analyze"
+    "lint:e18e": "pnpm dlx @e18e/cli analyze",
+    "bump": "bumpy add",
+    "bump:status": "bumpy status",
+    "prepack": "node build.ts"
   },
   "main": "dist/setup.cjs",
   "bin": {
@@ -111,6 +111,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
     "@types/semver": "^7.8.0",
+    "@varlock/bumpy": "^1.18.1",
     "esbuild": "^0.28.1",
     "husky": "^9.1.7",
     "jscpd": "^5.0.12",
