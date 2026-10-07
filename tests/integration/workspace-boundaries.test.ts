@@ -19,7 +19,8 @@ function writeWorkspace(project: TestProject): void {
     private: true,
     type: "module",
     exports: { ".": "./src/index.ts", "./utils": "./src/utils.ts" },
-    imports: { "#src/*": "./src/*" },
+    // The mapping setup generates in bundler mode (#31), so setup and --update leave it alone
+    imports: { "#src/*.ts": "./src/*.ts" },
   });
   project.writeFile("packages/lib/src/index.ts", "import { twice } from \"#src/utils.ts\";\n\nexport function quad(n: number): number {\n  return twice(twice(n));\n}\n");
   project.writeFile("packages/lib/src/utils.ts", "export function twice(n: number): number {\n  return n * 2;\n}\n");
@@ -29,7 +30,7 @@ function writeWorkspace(project: TestProject): void {
     private: true,
     type: "module",
     dependencies: { "@scope/lib": "workspace:*" },
-    imports: { "#src/*": "./src/*" },
+    imports: { "#src/*.ts": "./src/*.ts" },
   });
   project.writeFile("apps/web/src/local.ts", "export const local = 1;\n");
   project.writeFile("apps/web/src/main.ts", [

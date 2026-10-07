@@ -3,23 +3,9 @@ import { ListrEnquirerPromptAdapter } from "@listr2/prompt-adapter-enquirer";
 import type { ListrTask } from "listr2";
 import { resolveTsJsx } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
+import { applySrcImports, presetMode, promptReplace, srcImportItems } from "./src-imports.ts";
 import { compareVersions, getPkgVersion } from "./utils.ts";
-
-/** Every .ts and .tsx file under `srcDir`, at any depth (tsconfig globs have no brace expansion). */
-function sourceIncludes(srcDir: string): Array<string> {
-  return [ `./${srcDir}/**/*.ts`, `./${srcDir}/**/*.tsx` ];
-}
-
-type TsConfigObject = {
-  compilerOptions: {
-    jsx?: string;
-    outDir?: string;
-    rootDir?: string;
-  };
-  exclude: Array<string>;
-  extends: string;
-  include: Array<string>;
-};
+import { packageKind } from "./workspace-exports.ts";
 
 type PromptAnswers = {
   bundler?: boolean;
@@ -160,22 +146,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
             fs.mkdirSync(srcDir, { recursive: true });
           }
 
-          // Create tsconfig based on user input
-          const hasEslint = parentCtx.cliArgs.tools.includes("eslint");
-          const tsConfig = {
-            "extends": extendsStr,
-            compilerOptions: {
-              ...(jsx ? { jsx: "react-jsx" } : {}),
-              ...(outDir ? { outDir, rootDir: hasEslint ? "." : `./${srcDir}` } : {}),
-            },
-            include: [
-              ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
-              ...sourceIncludes(srcDir),
-            ],
-            exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
-          };
-
-          createTsConfig(tsConfig);
+          writeTsConfig({ extendsStr, jsx: jsx ? "react-jsx" : undefined, outDir, srcDir, eslintConfigs: parentCtx.cliArgs.tools.includes("eslint") && !bundler });
 
           if (type === "App") {
             parentCtx.packages.add("@total-typescript/ts-reset@latest");
@@ -193,6 +164,7 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
     ],
     { concurrent: false }),
   },
+  srcImportsTask(true),
   {
     title: "Adding TypeScript scripts to package.json",
     task: async () => {
@@ -202,6 +174,21 @@ export const tsTasks: Array<ListrTask<TaskContext>> = [
   },
 ];
 
+/**
+ * The `#src/*.ts` import in package.json, matching the tsconfig on disk (just written, or the one the user kept).
+ * Interactive setup asks before replacing a mapping of the user's; `--yes` keeps it and says so.
+ */
+function srcImportsTask(interactive: boolean): ListrTask<TaskContext> {
+  return {
+    title: "Adding the #src package import",
+    task: async (ctx, task) => {
+      const items = srcImportItems(".", presetMode("tsconfig.json"), packageKind(".", "tsconfig.json") === "library", ctx.cliArgs.tsOutdir);
+      const notes = await applySrcImports(items, interactive ? promptReplace(task) : null);
+      if (notes.length > 0) task.title = `#src package import: ${notes.join("; ")}`;
+    },
+  };
+}
+
 function isTypescriptInstalled(): string | undefined {
   return getPkgVersion("typescript") ?? undefined;
 }
@@ -210,8 +197,31 @@ function getTsConfig(): boolean {
   return fs.existsSync("tsconfig.json");
 }
 
-function createTsConfig(config: TsConfigObject): void {
-  fs.writeFileSync("tsconfig.json", JSON.stringify(config, null, 2));
+type TsConfigOptions = {
+  /** Type-check the root ESLint configs too: bundler mode only, since tsc mode's rootDir is the source directory */
+  eslintConfigs: boolean;
+  extendsStr: string;
+  jsx: string | undefined;
+  outDir: string | undefined;
+  srcDir: string;
+};
+
+/**
+ * tsc mode emits the source directory straight into outDir (rootDir src), where the compiled #src imports point, so
+ * the root ESLint configs stay out of it; ESLint loads them itself.
+ */
+function writeTsConfig({ eslintConfigs, extendsStr, jsx, outDir, srcDir }: TsConfigOptions): void {
+  const tsConfig = {
+    "extends": extendsStr,
+    compilerOptions: {
+      ...(jsx ? { jsx } : {}),
+      ...(outDir ? { outDir, rootDir: eslintConfigs ? "." : `./${srcDir}` } : {}),
+    },
+    // Every .ts and .tsx file at any depth (tsconfig globs have no brace expansion)
+    include: [ ...(eslintConfigs ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []), `./${srcDir}/**/*.ts`, `./${srcDir}/**/*.tsx` ],
+    exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
+  };
+  fs.writeFileSync("tsconfig.json", JSON.stringify(tsConfig, null, 2));
 }
 
 function createTsReset(config: string, srcDir = "src"): void {
@@ -258,22 +268,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         const typeStr = type === "library-monorepo" ? "library-monorepo" : type;
         const extendsStr = `@gingacodemonkey/config/${bundler ? "tsc" : "bundler"}/${dom ? "dom" : "no-dom"}/${typeStr}`;
 
-        // Create tsconfig based on CLI args
-        const hasEslint = cliArgs.tools.includes("eslint");
-        const tsConfig = {
-          "extends": extendsStr,
-          compilerOptions: {
-            ...(jsx ? { jsx } : {}),
-            ...(outDir ? { outDir, rootDir: hasEslint ? "." : "./src" } : {}),
-          },
-          include: [
-            ...(hasEslint ? [ "eslint.config.ts", "eslint.config.style.ts" ] : []),
-            ...sourceIncludes("src"),
-          ],
-          exclude: [ "node_modules", ...(outDir ? [ outDir ] : []) ],
-        };
-
-        createTsConfig(tsConfig);
+        writeTsConfig({ extendsStr, jsx: jsx ?? undefined, outDir, srcDir: "src", eslintConfigs: cliArgs.tools.includes("eslint") && !bundler });
 
         if (type === "app") {
           ctx.packages.add("@total-typescript/ts-reset@^0.6.1");
@@ -296,6 +291,7 @@ export function createTsTasksWithArgs(cliArgs: CliArgs): Array<ListrTask<TaskCon
         }
       },
     },
+    srcImportsTask(false),
     {
       title: "Adding TypeScript scripts to package.json",
       task: async () => {

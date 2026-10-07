@@ -16,10 +16,11 @@ import { JSCPD_CONFIG } from "../jscpd-tasks.ts";
 import { KNIP_CONFIG } from "../knip-tasks.ts";
 import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
 import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
+import { presetMode, srcImportItems } from "../src-imports.ts";
 import type { DetectableTool } from "../tool-detection.ts";
 import { catalogItems } from "../workspace-catalogs.ts";
 import type { CatalogFlags } from "../workspace-catalogs.ts";
-import { libraryExportItems } from "../workspace-exports.ts";
+import { libraryExportItems, packageKind } from "../workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
 import { workspaceProtocolItems } from "../workspace-protocol.ts";
 import { referenceItems } from "../workspace-references.ts";
@@ -109,7 +110,10 @@ function workspaceItems(catalog: CatalogFlags): Array<PlanItem> {
     );
     items.push(...libraryExportItems(dir));
   }
-  return [ ...items, ...workspaceProtocolItems(dirs, linked), ...referenceItems(SHARED_DIR) ];
+  // After the references, whose files are written whole: the #src items edit the same tsconfigs in place
+  const mode = presetMode(path.join(SHARED_DIR, "tsconfig.base.json"));
+  const srcImports = linked.flatMap(dir => srcImportItems(dir, mode, packageKind(dir) === "library"));
+  return [ ...items, ...workspaceProtocolItems(dirs, linked), ...referenceItems(SHARED_DIR), ...srcImports ];
 }
 
 type ToolItems = (detected: ReadonlyArray<DetectableTool>, catalog: CatalogFlags) => Array<PlanItem>;
@@ -118,7 +122,12 @@ type ToolItems = (detected: ReadonlyArray<DetectableTool>, catalog: CatalogFlags
 const singlePackage = (detected: ReadonlyArray<DetectableTool>) => !detected.includes("workspace");
 
 const TOOL_ITEMS: Record<DetectableTool, ToolItems> = {
-  ts: detected => (singlePackage(detected) ? [ manifestEntry(MANIFEST, "scripts", "lint:ts", "tsc --noEmit") ] : []),
+  ts: detected => (singlePackage(detected)
+    ? [
+      manifestEntry(MANIFEST, "scripts", "lint:ts", "tsc --noEmit"),
+      ...srcImportItems(".", presetMode("tsconfig.json"), packageKind(".", "tsconfig.json") === "library"),
+    ]
+    : []),
   eslint: () => [
     templateFile("eslint.config.ts", eslintConfigContent("eslint"), { userEditable: true }),
     templateFile("eslint.config.style.ts", eslintConfigContent("styled")),

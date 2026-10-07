@@ -60,10 +60,11 @@ function normaliseDir(dir: string): string {
 
 /**
  * Library, application, or a library in a bundler-mode workspace (which has no build output to publish). Read from
- * the files on disk, so setup and --update classify a package the same way.
+ * the files on disk, so setup and --update classify a package the same way. `presetFile` is the tsconfig that
+ * extends the preset: the shared base in a workspace, a single package's own `tsconfig.json` otherwise.
  */
-export function packageKind(dir: string): PackageKind {
-  const preset = readJson(SHARED_BASE)?.extends;
+export function packageKind(dir: string, presetFile = SHARED_BASE): PackageKind {
+  const preset = readJson(presetFile)?.extends;
   const match = typeof preset === "string" ? /^@gingacodemonkey\/config\/(bundler|tsc)\/[^/]+\/library(?:-monorepo)?$/.exec(preset) : null;
   if (!match) return "application";
   const manifest = readJson(path.join(dir, "package.json"));

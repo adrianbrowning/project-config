@@ -85,7 +85,12 @@ describe("pnpm workspace setup", () => {
       expect(project.readFile("sharedConfig/eslint.config.ts")).toContain("@gingacodemonkey/config/eslint");
       expect(project.readJson<Manifest>("package.json").scripts).toMatchObject(ROOT_SCRIPTS);
 
-      expect(project.readJson<Manifest>("packages/example/package.json").scripts).toEqual({ ...PACKAGE_SCRIPTS, test: "node --test" });
+      const sample = project.readJson<Manifest & { imports?: unknown; }>("packages/example/package.json");
+      expect(sample.scripts).toEqual({ ...PACKAGE_SCRIPTS, test: "node --test" });
+      // Its source and test import each other through #src, mapped to its own src/ (#31)
+      expect(sample.imports).toEqual({ "#src/*.ts": "./src/*.ts" });
+      expect(project.readFile("packages/example/src/index.ts")).toContain("from \"#src/punctuate.ts\"");
+      expect(project.readFile("packages/example/src/index.test.ts")).toContain("from \"#src/index.ts\"");
       expect(project.readJson("packages/example/tsconfig.json")).toEqual({
         extends: "../../sharedConfig/tsconfig.base.json",
         compilerOptions: { types: [ "node" ], ...BUILD_OPTIONS },
@@ -221,6 +226,21 @@ describe("pnpm workspace setup", () => {
       const check = runCommand(project, "pnpm check", { expectFailure: true });
       expect(check.exitCode, check.stdout + check.stderr).toBe(0);
       expect(check.stdout).toMatch(/pass 1/);
+    });
+
+    it("a new tsc-mode workspace's sample test runs from source, with no build output", () => {
+      using project = new TestProject({ name: "workspace-check-tsc" });
+      project.runCli([ "--tool=workspace", "--yes", "--ts-mode=tsc", "--ts-no-dom" ]);
+      const sample = project.readJson<Manifest & { imports?: unknown; }>("packages/example/package.json");
+      expect(sample.scripts?.test).toBe("node --conditions=gingacodemonkey:source --test");
+      expect(sample.imports).toEqual({ "#src/*.ts": { "types": "./dist/*.d.ts", "gingacodemonkey:source": "./src/*.ts", "default": "./dist/*.js" } });
+
+      const check = runCommand(project, "pnpm check", { expectFailure: true });
+      expect(check.exitCode, check.stdout + check.stderr).toBe(0);
+      fs.rmSync(path.join(project.dir, "packages/example/dist"), { recursive: true, force: true });
+      const test = runCommand(project, "pnpm test", { expectFailure: true });
+      expect(test.exitCode, test.stdout + test.stderr).toBe(0);
+      expect(test.stdout).toMatch(/pass 1/);
     });
 
     it("runs each package's script once, skips packages without it, and fails when any package fails", () => {

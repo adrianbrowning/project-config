@@ -5,10 +5,11 @@ import type { ListrTask, ListrTaskWrapper } from "listr2";
 import { resolveTsJsx } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
+import { applySrcImports, presetMode, promptReplace, SOURCE_TEST_SCRIPT, srcImportItems } from "./src-imports.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { createCatalogTask, promptCatalog } from "./workspace-catalogs.ts";
-import { configureLibraryExports } from "./workspace-exports.ts";
+import { configureLibraryExports, packageKind } from "./workspace-exports.ts";
 import { discoverPackages, readWorkspaceGlobs } from "./workspace-graph.ts";
 import { enforceWorkspaceProtocol } from "./workspace-protocol.ts";
 import { syncReferences } from "./workspace-references.ts";
@@ -56,9 +57,6 @@ export const PACKAGE_SCRIPTS: Record<string, string> = {
 export const PREVIOUS_PACKAGE_SCRIPTS: Record<string, Array<string>> = {
   "lint:ts": [ "tsc --noEmit" ],
 };
-
-// Only the sample package gets a test: an existing package's tests are its own business
-const SAMPLE_SCRIPTS: Record<string, string> = { ...PACKAGE_SCRIPTS, test: "node --test" };
 
 // `pnpm -r` skips the workspace root, so these never recurse into themselves. `--if-present` skips packages without
 // the script, so optional ones (test, build) work in workspaces where only some packages have them.
@@ -169,24 +167,36 @@ function sharedTsconfigBase(dir: string): string {
   return `${path.posix.relative(dir, SHARED_DIR)}/tsconfig.base.json`;
 }
 
-function createSamplePackage(dir: string): void {
-  writeIfChanged(path.join(dir, "package.json"), toJson({ name: SAMPLE_NAME, version: "0.0.0", private: true, type: "module", scripts: SAMPLE_SCRIPTS }));
+/** One private package whose source and test import each other through `#src/…`; the imports entry comes later. */
+function createSamplePackage(dir: string, cliArgs: CliArgs): void {
+  // Only the sample package gets a test: an existing package's tests are its own business. In tsc mode the test
+  // resolves `#src/…` to src/ through the source condition, so it runs without a build.
+  const scripts = { ...PACKAGE_SCRIPTS, test: cliArgs.tsMode === "tsc" ? SOURCE_TEST_SCRIPT : "node --test" };
+  writeIfChanged(path.join(dir, "package.json"), toJson({ name: SAMPLE_NAME, version: "0.0.0", private: true, type: "module", scripts }));
   // The sample test uses node:test; TypeScript 6 loads no @types by default
   writeIfChanged(path.join(dir, "tsconfig.json"), toJson({
     extends: sharedTsconfigBase(dir),
     compilerOptions: { types: [ "node" ] },
     include: [ "src" ],
   }));
+  writeIfChanged(path.join(dir, "src", "punctuate.ts"), [
+    "export function punctuate(text: string): string {",
+    "  return `${text}!`;",
+    "}",
+    "",
+  ].join("\n"));
   writeIfChanged(path.join(dir, "src", "index.ts"), [
+    "import { punctuate } from \"#src/punctuate.ts\";",
+    "",
     "export function greet(name: string): string {",
-    "  return `Hello, ${name}!`;",
+    "  return punctuate(`Hello, ${name}`);",
     "}",
     "",
   ].join("\n"));
   writeIfChanged(path.join(dir, "src", "index.test.ts"), [
     "import assert from \"node:assert/strict\";",
     "import { test } from \"node:test\";",
-    "import { greet } from \"./index.ts\";",
+    "import { greet } from \"#src/index.ts\";",
     "",
     "await test(\"greet\", () => {",
     "  assert.equal(greet(\"workspace\"), \"Hello, workspace!\");",
@@ -302,7 +312,7 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
         let packages = discoverPackages(state.globs);
         if (!state.existing && packages.length === 0) {
           const sampleDir = sampleDirFor(state.globs[0] ?? DEFAULT_GLOB);
-          createSamplePackage(sampleDir);
+          createSamplePackage(sampleDir, cliArgs);
           packages = [ sampleDir ];
         }
         if (packages.length === 0) {
@@ -348,6 +358,21 @@ export function createWorkspaceTasks(cliArgs: CliArgs, confirmUpdateAll: Confirm
       title: "Generating TypeScript project references",
       task: (_ctx, task) => {
         task.title = syncReferences(SHARED_DIR, cliArgs.tsOutdir);
+      },
+    },
+    {
+      title: "Generating #src package imports",
+      task: async (_ctx, task) => {
+        // Each package maps #src to its own src/; the shared base decides bundler or tsc mode for all of them
+        const mode = presetMode(path.join(SHARED_DIR, "tsconfig.base.json"));
+        const confirm = confirmUpdateAll ? promptReplace(task) : null;
+        const notes: Array<string> = [];
+        for (const dir of state.linked) {
+          // One package at a time, so interactive questions come in order
+          // eslint-disable-next-line no-await-in-loop
+          notes.push(...await applySrcImports(srcImportItems(dir, mode, packageKind(dir) === "library", cliArgs.tsOutdir), confirm));
+        }
+        task.title = notes.length > 0 ? `#src package imports:\n  ${notes.join("\n  ")}` : `#src package imports: ${state.linked.length} packages up to date`;
       },
     },
     createCatalogTask(cliArgs, WORKSPACE_ROOT_DEPENDENCIES, () => !state.existing, confirmUpdateAll ? promptCatalog : null),

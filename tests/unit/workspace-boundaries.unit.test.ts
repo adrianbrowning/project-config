@@ -70,6 +70,12 @@ beforeAll(() => {
   });
   write(SITE_FILE, "");
   write("apps/web/site/src/local.ts", "export {};\n");
+  // The #src import setup generates for a tsc-mode app (#31): every condition stays inside the package
+  writeManifest("apps/web/gen", {
+    name: "@scope/gen",
+    imports: { "#src/*.ts": { "types": "./dist/*.d.ts", "gingacodemonkey:source": "./src/*.ts", "default": "./dist/*.js" } },
+  });
+  write("apps/web/gen/src/local.ts", "export {};\n");
   // How pnpm links a workspace dependency
   fs.mkdirSync(path.join(root, "apps/web/site/node_modules/@scope"), { recursive: true });
   fs.symlinkSync(path.join(root, "packages/lib"), path.join(root, "apps/web/site/node_modules/@scope/lib"), "dir");
@@ -131,6 +137,12 @@ describe("workspace-boundaries", () => {
   it("rejects absolute paths and file: URLs into a sibling", () => {
     const internal = path.join(root, "packages/lib/src/internal.ts");
     expect(lint(`import "${internal}";\nimport "file://${internal}";`)).toEqual([ "crossPackage", "crossPackage" ]);
+  });
+
+  it("allows a package's own generated #src/*.ts import and rejects one that climbs into a sibling", () => {
+    const file = "apps/web/gen/src/main.ts";
+    expect(lint(`import "#src/local.ts";\nimport "#src/nested/deep.ts";`, file)).toEqual([]);
+    expect(lint(`import "#src/../../../../packages/lib/src/internal.ts";`, file)).toEqual([ "aliasEscape" ]);
   });
 
   // On a case-sensitive file system the differently-cased path doesn't exist, so it reaches nothing
