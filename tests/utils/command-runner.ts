@@ -12,13 +12,13 @@ type CommandResult = {
   stdout: string;
 };
 
-type RunOptions = { expectFailure?: boolean; };
+type RunOptions = { env?: Record<string, string>; expectFailure?: boolean; };
 
-function spawnOptions(project: TestProject) {
+function spawnOptions(project: TestProject, env?: Record<string, string>) {
   return {
     cwd: project.dir,
     encoding: "utf-8" as const,
-    env: { ...process.env, CI: "true" },
+    env: { ...process.env, CI: "true", ...env },
     maxBuffer: 10 * 1024 * 1024,
   };
 }
@@ -37,7 +37,7 @@ function toResult(result: SpawnSyncReturns<string>, label: string, options?: Run
  * Run a shell command line (pipes, globs and `&&` work) and capture stdout, stderr and the exit code.
  */
 export function runCommand(project: TestProject, command: string, options?: RunOptions): CommandResult {
-  return toResult(spawnSync(command, { ...spawnOptions(project), shell: true }), command, options);
+  return toResult(spawnSync(command, { ...spawnOptions(project, options?.env), shell: true }), command, options);
 }
 
 /**

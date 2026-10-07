@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runCommand } from "../utils/command-runner.ts";
+import { LocalRegistry } from "../utils/local-registry.ts";
 import { TestProject } from "../utils/test-project.ts";
 
 type Manifest = { devDependencies?: Record<string, string>; name?: string; scripts?: Record<string, string>; };
@@ -127,9 +128,9 @@ describe("pnpm workspace setup", () => {
         if (entry !== ".git") fs.rmSync(path.join(project.dir, entry), { recursive: true, force: true });
       }
 
-      // Resolve the pinned version to this build's tarball, so the test doesn't depend on it being published
-      const overrides = JSON.stringify(JSON.stringify({ "@gingacodemonkey/config": `file:${tarball}` }));
-      runCommand(project, `npm_config_overrides=${overrides} pnpm dlx ${tarball} --tool=workspace --yes`);
+      // Setup installs its own pinned version; serve that from this build's tarball, so the test passes before it is published
+      using registry = new LocalRegistry(tarball);
+      runCommand(project, `pnpm dlx ${tarball} --tool=workspace --yes`, { env: { "npm_config_@gingacodemonkey:registry": registry.url } });
 
       const manifest = project.readJson<Manifest & { private?: boolean; type?: string; }>("package.json");
       expect(manifest).toMatchObject({ private: true, type: "module" });
