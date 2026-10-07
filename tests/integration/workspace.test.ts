@@ -130,7 +130,7 @@ describe("pnpm workspace setup", () => {
 
       // Setup installs its own pinned version; serve that from this build's tarball, so the test passes before it is published
       using registry = new LocalRegistry(tarball);
-      runCommand(project, `pnpm dlx ${tarball} --tool=workspace --yes`, { env: { "npm_config_@gingacodemonkey:registry": registry.url } });
+      runCommand(project, `pnpm dlx ${tarball} --tool=workspace --yes`, { env: registry.env });
 
       const manifest = project.readJson<Manifest & { private?: boolean; type?: string; }>("package.json");
       expect(manifest).toMatchObject({ private: true, type: "module" });

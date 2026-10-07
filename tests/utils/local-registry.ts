@@ -13,8 +13,11 @@ const SERVER = path.join(import.meta.dirname, "registry-server.ts");
 const STARTUP_TIMEOUT_MS = 10_000;
 
 export class LocalRegistry implements Disposable {
-  /** Point a scope at this registry, e.g. `{ [`npm_config_${scope}:registry`]: url }`. */
-  readonly url: string;
+  /**
+   * Environment that sends the tarball's scope here. The scope goes in an .npmrc: a variable named
+   * `npm_config_@scope:registry` isn't a valid shell name, so dash (Ubuntu's /bin/sh) drops it before pnpm runs.
+   */
+  readonly env: Record<string, string>;
   private readonly child: ChildProcess;
   private readonly dir: string;
 
@@ -34,7 +37,10 @@ export class LocalRegistry implements Disposable {
       }
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
     }
-    this.url = `http://127.0.0.1:${fs.readFileSync(portFile, "utf8")}/`;
+    const name = (JSON.parse(fs.readFileSync(manifestFile, "utf8")) as { name: string; }).name;
+    const npmrc = path.join(this.dir, ".npmrc");
+    fs.writeFileSync(npmrc, `${name.split("/")[0]}:registry=http://127.0.0.1:${fs.readFileSync(portFile, "utf8")}/\n`);
+    this.env = { npm_config_userconfig: npmrc };
   }
 
   [Symbol.dispose](): void {
