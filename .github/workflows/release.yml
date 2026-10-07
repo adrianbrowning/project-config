@@ -16,6 +16,11 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+# Bumpy commits the version bump in CI with its own message. Husky's
+# commit-msg hook would run commitlint on it and reject the commit.
+env:
+  HUSKY: '0'
+
 jobs:
   plan:
     if: github.event_name != 'pull_request'
