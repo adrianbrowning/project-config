@@ -30,9 +30,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adrianbrowning/config.git"
+    "url": "git+https://github.com/adrianbrowning/project-config.git"
   },
-  "homepage": "https://github.com/adrianbrowning/config.git",
+  "homepage": "https://github.com/adrianbrowning/project-config#readme",
   "author": "Adrian Elton-Browning",
   "publishConfig": {
     "access": "public"
