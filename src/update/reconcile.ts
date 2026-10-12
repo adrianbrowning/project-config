@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import YAML from "yaml";
-import { updateWorkspaceYaml } from "../utils.ts";
+import { removeLegacyPnpmBlock, updateWorkspaceYaml } from "../utils.ts";
 import { KNOWN_TEMPLATE_HASHES } from "./known-versions.ts";
 
 /**
@@ -195,4 +195,16 @@ export function pnpmSetting(key: string, current: unknown): PlanItem {
 
   if (isDeepStrictEqual(value, current)) return { label, status: "unchanged" };
   return { label, status: "conflict", reason: `is ${JSON.stringify(value)}, expected ${JSON.stringify(current)}`, apply };
+}
+
+/** The `pnpm:` block older releases wrote, when there is one. pnpm never read it, and pnpm 12 won't install while it exists. */
+export function legacyPnpmBlock(): Array<PlanItem> {
+  if (!("pnpm" in readWorkspaceDoc())) return [];
+  return [{
+    label: "pnpm-workspace.yaml › pnpm:",
+    status: "updated",
+    reason: "removed: pnpm never read it, and pnpm 12 won't install while it's there",
+    // Read at apply time: the settings moved out of the block may have rewritten the file
+    apply: () => fs.writeFileSync("pnpm-workspace.yaml", removeLegacyPnpmBlock(`${(readFile("pnpm-workspace.yaml") ?? "").trimEnd()}\n`)),
+  }];
 }

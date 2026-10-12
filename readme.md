@@ -2,23 +2,24 @@
 
 Opinionated config bundle for TypeScript + ESLint + git tooling. Bundles decisions from [Total TypeScript's TSConfig Cheat Sheet](https://www.totaltypescript.com/tsconfig-cheat-sheet) and [@epic-web/config](https://github.com/epicweb-dev/config).
 
-**Requires**: Node ≥ 24, pnpm ≥ 10
+**Requires**: Node ≥ 24, pnpm ≥ 10.26
 
 ---
 
 ## Quickstart
 
 ```bash
-pnpm add -D @gingacodemonkey/config
-pnpm exec gingacodemonkey-config
+pnpm dlx @gingacodemonkey/config
 ```
+
+Run it through `pnpm dlx` rather than `pnpm add`-ing the package first. Setup writes `minimumReleaseAge` before it installs anything, so pnpm only picks versions at least three days old. The TypeScript and ESLint tools then add this package as a dev dependency, since their configs extend it.
 
 The interactive CLI prompts you to select tools and generates all config files automatically.
 
 For CI / non-interactive use:
 
 ```bash
-pnpm exec gingacodemonkey-config --all --yes
+pnpm dlx @gingacodemonkey/config --all --yes
 ```
 
 ---
@@ -45,7 +46,7 @@ The CLI can set up any combination of:
 ## CLI Reference
 
 ```
-pnpm exec gingacodemonkey-config [options]
+pnpm dlx @gingacodemonkey/config [options]
 
   --all, -a                   Select all tools (except workspace)
   --yes, -y                   Accept all defaults (non-interactive; setup needs --all or --tool)
@@ -79,19 +80,19 @@ Workspace options (with --tool=workspace):
 
 ```bash
 # All tools, accept defaults, no release tooling
-pnpm exec gingacodemonkey-config --all --no-release --yes
+pnpm dlx @gingacodemonkey/config --all --no-release --yes
 
 # Specific tools only
-pnpm exec gingacodemonkey-config --tool=ts --tool=eslint --yes
+pnpm dlx @gingacodemonkey/config --tool=ts --tool=eslint --yes
 
 # Full TypeScript + React app
-pnpm exec gingacodemonkey-config --all --yes --ts-mode=bundler --ts-dom --ts-type=app --ts-jsx=react-jsx
+pnpm dlx @gingacodemonkey/config --all --yes --ts-mode=bundler --ts-dom --ts-type=app --ts-jsx=react-jsx
 
 # Releases to GitHub and npm
-pnpm exec gingacodemonkey-config --tool=bumpy --release-npm --yes
+pnpm dlx @gingacodemonkey/config --tool=bumpy --release-npm --yes
 
 # New pnpm workspace, or link every package in an existing one
-pnpm exec gingacodemonkey-config --tool=workspace --yes --workspace-update-all
+pnpm dlx @gingacodemonkey/config --tool=workspace --yes --workspace-update-all
 ```
 
 ---
@@ -224,12 +225,12 @@ A dependency declared with different ranges, or with a range that differs from i
 `--update` brings a project set up by an older release up to the current defaults. It doesn't run setup and doesn't install packages; it only compares and rewrites the files and keys the CLI manages.
 
 ```bash
-pnpm exec gingacodemonkey-config --update                # pick from the tools it detects
-pnpm exec gingacodemonkey-config --update --yes          # every detected tool
-pnpm exec gingacodemonkey-config --update --tool=husky --yes
+pnpm dlx @gingacodemonkey/config --update                # pick from the tools it detects
+pnpm dlx @gingacodemonkey/config --update --yes          # every detected tool
+pnpm dlx @gingacodemonkey/config --update --tool=husky --yes
 ```
 
-**Rerunning setup to add a tool** installs packages again, and the `minimumReleaseAge: 4320` setting written by the first run applies. If the lockfile holds a dependency published less than three days ago (often a peer installed with this package), pnpm refuses the install. Setup then fails and names the package. When pnpm can look up the publish time and your `minimumReleaseAge`, it also says when the package becomes installable. Wait until then, or use `--update` for config-only changes, since it installs nothing.
+**Rerunning setup to add a tool** installs packages again under the `minimumReleaseAge: 4320` setting. pnpm refuses the install if the lockfile holds a dependency published less than three days ago. pnpm 10 checks only the packages it resolves; pnpm 11 and later check every lockfile entry on every install, so a lockfile resolved before the setting existed (say, by an earlier `pnpm add`) fails until those packages age. Setup then fails and names each package. When pnpm reports the publish time, or can look it up, and can report your `minimumReleaseAge`, setup also says when the package becomes installable. Wait until then, or use `--update` for config-only changes, since it installs nothing.
 
 A tool counts as set up when its main file exists (`tsconfig.json`, `eslint.config.ts`, `.husky/`, `commitlint.config.js`, `.lintstagedrc`, `knip.json`, `.jscpd.json`, `.github/workflows/`, `.bumpy/`, `sharedConfig/`). Without `--tool`, the pnpm settings in `pnpm-workspace.yaml` and `engines` in `package.json` are updated too; an explicit `--tool` updates only those tools.
 

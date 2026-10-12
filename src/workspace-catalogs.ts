@@ -283,8 +283,9 @@ function refreshLockfile(): void {
     execFileSync("pnpm", [ "install", "--no-frozen-lockfile" ], { stdio: "pipe", encoding: "utf8" });
   }
   catch (error: unknown) {
-    const stdout = typeof error === "object" && error !== null && "stdout" in error ? String(error.stdout) : "";
-    throw new Error(`pnpm install failed after moving versions into the catalog\n${stdout.trim().slice(-2000)}`);
+    // pnpm 10 reports errors on stdout, pnpm 11+ on stderr
+    const output = [ "stdout", "stderr" ].map(stream => typeof error === "object" && error !== null && stream in error ? String((error as Record<string, unknown>)[stream]) : "").join("");
+    throw new Error(`pnpm install failed after moving versions into the catalog\n${output.trim().slice(-2000)}`);
   }
 }
 

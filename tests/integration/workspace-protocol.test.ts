@@ -88,7 +88,8 @@ describe("workspace: protocol for internal dependencies", () => {
     try {
       const result = runCommand(project, "pnpm install --no-frozen-lockfile", { expectFailure: true });
       expect(result.exitCode).not.toBe(0);
-      expect(result.stdout + result.stderr).toMatch(/ERR_PNPM_WORKSPACE_PKG_NOT_FOUND[\s\S]*@acme\/lib/);
+      // pnpm 10 names the error code; pnpm 12 only says so, wrapping its message
+      expect((result.stdout + result.stderr).replaceAll(/\s+/g, " ")).toMatch(/ERR_PNPM_WORKSPACE_PKG_NOT_FOUND.*@acme\/lib|no package named "@acme\/lib" is present in the workspace/);
     }
     finally {
       fs.renameSync(path.join(project.dir, "lib-moved"), path.join(project.dir, "libs/lib"));

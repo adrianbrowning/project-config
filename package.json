@@ -3,7 +3,7 @@
   "name": "@gingacodemonkey/config",
   "description": "A collection of TypeScript configurations, based on Total TypeScript's TSConfig Cheat Sheet. ESLint rules based on @epic-web/config.",
   "version": "0.1.0",
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@12.9.0",
   "scripts": {
     "start": "rollup --watch --config rollup.config.ts --configPlugin @rollup/plugin-typescript ",
     "build": "node build.ts && pnpm pack",

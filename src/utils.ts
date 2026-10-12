@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { findPackageJSON } from "node:module";
 import path from "node:path";
@@ -58,7 +58,28 @@ export function detectPackageManager(): "pnpm" {
   return "pnpm";
 }
 
-const TOO_NEW_RE = /ERR_PNPM_NO_MATURE_MATCHING_VERSION\s+Version (\S+) \([^)]*\) of (\S+) does not meet the minimumReleaseAge constraint/;
+// pnpm 10 names one package, on stdout
+const TOO_NEW_V10_RE = /ERR_PNPM_NO_MATURE_MATCHING_VERSION\s+Version (\S+) \([^)]*\) of (\S+) does not meet the minimumReleaseAge constraint/;
+// pnpm 11+ lists one package per line, on stderr, as `<name>@<version> was published at <time>, within the
+// minimumReleaseAge cutoff (...)`: for a new resolution, or for an existing lockfile entry. It wraps long lines,
+// breaking words after a hyphen, so it's read word by word once those breaks are joined.
+const TOO_NEW_CODES = [ "ERR_PNPM_NO_MATURE_MATCHING_VERSION", "ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION" ];
+
+type TooNewPackage = { name: string; published: Date | null; version: string; };
+
+function tooNewPackages(output: string): Array<TooNewPackage> {
+  if (!TOO_NEW_CODES.some(code => output.includes(code))) return [];
+  const v10 = TOO_NEW_V10_RE.exec(output);
+  if (v10) return [{ name: v10[2] ?? "", version: v10[1] ?? "", published: null }];
+  const words = output.replaceAll(/-\n\s+/g, "-").split(/\s+/);
+  return words.flatMap((word, i) => {
+    if (word !== "was" || words[i + 1] !== "published" || words[i + 2] !== "at") return [];
+    const spec = words[i - 1] ?? "";
+    const at = spec.lastIndexOf("@");
+    if (at <= 0) return [];
+    return [{ name: spec.slice(0, at), version: spec.slice(at + 1), published: new Date((words[i + 3] ?? "").replace(/,$/, "")) }];
+  });
+}
 
 /** Each lookup returns null when pnpm can't answer, so a failed query never hides the install error. */
 type ReleaseLookup = {
@@ -68,20 +89,21 @@ type ReleaseLookup = {
 };
 
 /**
- * pnpm's `minimumReleaseAge` refusal, rewritten to name the package and when it becomes installable.
+ * pnpm's `minimumReleaseAge` refusal, rewritten to name each package and when it becomes installable.
  * Null when `output` isn't that refusal.
  */
 export function tooNewPackageMessage(output: string, lookup: ReleaseLookup): null | string {
-  const match = TOO_NEW_RE.exec(output);
-  if (!match) return null;
-  const [ , version = "", name = "" ] = match;
+  const packages = tooNewPackages(output);
+  if (packages.length === 0) return null;
   const minutes = lookup.minimumReleaseAge();
-  const published = minutes === null ? null : lookup.publishedAt(name, version);
   const age = minutes === null ? "" : ` (${minutes} minutes)`;
-  const installableAt = published && minutes !== null ? published.getTime() + minutes * 60_000 : Number.NaN;
-  const installable = Number.isFinite(installableAt) ? ` It can be installed from ${new Date(installableAt).toISOString()}.` : "";
-  return `${name}@${version} is younger than minimumReleaseAge${age}, so pnpm won't install it.${installable}`
-    + " To change configs in this project without installing packages, use --update.";
+  const lines = packages.map(({ name, version, published }) => {
+    const publishedAt = minutes === null ? null : published ?? lookup.publishedAt(name, version);
+    const installableAt = publishedAt && minutes !== null ? publishedAt.getTime() + minutes * 60_000 : Number.NaN;
+    const installable = Number.isFinite(installableAt) ? ` It can be installed from ${new Date(installableAt).toISOString()}.` : "";
+    return `${name}@${version} is younger than minimumReleaseAge${age}, so pnpm won't install it.${installable}`;
+  });
+  return [ ...lines, "To change configs in this project without installing packages, use --update." ].join(" ");
 }
 
 /* eslint-disable sonarjs/no-os-command-from-path */
@@ -117,16 +139,16 @@ export function installPkg(packageManager: "bun" | "npm" | "pnpm" | "yarn", pkg:
     bun: `bun add ${pkg} --dev`,
   }[packageManager];
 
-  try {
-    // pnpm prints its errors on stdout, so capture it to explain a minimumReleaseAge refusal, and pass it
-    // through once pnpm finishes so a successful install still shows its summary
-    process.stdout.write(execSync(installCommand, { stdio: [ "inherit", "pipe", "inherit" ], encoding: "utf8" }));
-  }
-  catch (error: unknown) {
-    const stdout = typeof error === "object" && error !== null && "stdout" in error ? String(error.stdout) : "";
-    const tooNew = tooNewPackageMessage(stdout, registryLookup);
-    throw new Error(tooNew ?? `Failed to install packages. Command: ${installCommand}\n${stdout.trim().slice(-2000)}`);
-  }
+  // pnpm prints its errors on stdout (pnpm 10) or stderr (pnpm 11+), so capture both to explain a
+  // minimumReleaseAge refusal, and pass them through once pnpm finishes so a successful install still shows its summary
+  const result = spawnSync(installCommand, { shell: true, stdio: [ "inherit", "pipe", "pipe" ], encoding: "utf8" });
+  process.stdout.write(result.stdout);
+  process.stderr.write(result.stderr);
+  if (result.status === 0) return;
+
+  const output = `${result.stdout}${result.stderr}`;
+  const tooNew = tooNewPackageMessage(output, registryLookup);
+  throw new Error(tooNew ?? `Failed to install packages. Command: ${installCommand}\n${output.trim().slice(-2000)}`);
 }
 
 export function compareVersions(v1: string, v2: string): -1 | 0 | 1 {
@@ -235,21 +257,11 @@ function yamlEntry(key: string, val: YamlValue, existingBlock = ""): string {
 }
 
 /**
- * Older versions of this CLI nested settings under a `pnpm:` key, where pnpm ignores them.
- * Drop those nested entries for the keys being written; drop the `pnpm:` key once it is empty.
+ * Older versions of this CLI nested settings under a `pnpm:` key. pnpm never read anything there, and pnpm 12
+ * refuses to install while the key exists, so the whole block goes: dropping it changes no setting pnpm used.
  */
-function removeLegacyPnpmEntries(content: string, keys: Array<string>): string {
-  const legacyBlockRe = /^pnpm:[ \t]*\n((?:[ \t].*\n|\n)*)/m;
-  return content.replace(legacyBlockRe, (_block, body: string) => {
-    const kept: Array<string> = [];
-    let dropping = false;
-    for (const line of body.split("\n").slice(0, -1)) {
-      const childKey = yamlChildKeyRe.exec(line)?.[1];
-      if (childKey !== undefined) dropping = keys.includes(childKey);
-      if (!dropping) kept.push(line);
-    }
-    return kept.some(line => line.trim().length > 0) ? "pnpm:\n" + kept.join("\n") + "\n" : "";
-  });
+export function removeLegacyPnpmBlock(content: string): string {
+  return content.replace(/^pnpm:[ \t]*\n(?:[ \t].*\n|\n)*/m, "");
 }
 
 /**
@@ -259,7 +271,7 @@ function removeLegacyPnpmEntries(content: string, keys: Array<string>): string {
 export function updateWorkspaceYaml(values: Record<string, YamlValue>): void {
   const filePath = "pnpm-workspace.yaml";
   const existing = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8").trimEnd() : "";
-  let content = removeLegacyPnpmEntries(existing.length > 0 ? existing + "\n" : "", Object.keys(values));
+  let content = removeLegacyPnpmBlock(existing.length > 0 ? existing + "\n" : "");
 
   for (const [ key, val ] of Object.entries(values)) {
     // The key's own line plus any indented or `- ` list lines that belong to it

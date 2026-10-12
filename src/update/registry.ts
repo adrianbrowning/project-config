@@ -15,7 +15,7 @@ import { COMMIT_MSG_HOOK, PRE_COMMIT_PLACEHOLDER, PRE_PUSH_HOOK } from "../husky
 import { JSCPD_CONFIG } from "../jscpd-tasks.ts";
 import { KNIP_CONFIG } from "../knip-tasks.ts";
 import { LINT_STAGED_HOOK, LINTSTAGED_CONFIG } from "../lintstaged-tasks.ts";
-import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "../project-defaults.ts";
+import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS, PREVIOUS_ENGINES } from "../project-defaults.ts";
 import { presetMode, srcImportItems } from "../src-imports.ts";
 import type { DetectableTool } from "../tool-detection.ts";
 import { catalogItems } from "../workspace-catalogs.ts";
@@ -25,7 +25,7 @@ import { discoverPackages, readWorkspaceGlobs } from "../workspace-graph.ts";
 import { workspaceProtocolItems } from "../workspace-protocol.ts";
 import { referenceItems } from "../workspace-references.ts";
 import { isLinkedPackage, PACKAGE_SCRIPTS, packageEslintLink, PREVIOUS_PACKAGE_SCRIPTS, PREVIOUS_ROOT_SCRIPTS, ROOT_SCRIPTS, SHARED_DIR, WORKSPACE_ROOT_DEPENDENCIES } from "../workspace-tasks.ts";
-import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
+import { jsonFile, legacyPnpmBlock, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "./reconcile.ts";
 import type { PlanItem } from "./reconcile.ts";
 
 // .lintstagedrc as written by earlier releases
@@ -167,7 +167,8 @@ function combinedLintItems(selected: ReadonlyArray<DetectableTool>, detected: Re
 export function managedItems(selected: ReadonlyArray<DetectableTool>, detected: ReadonlyArray<DetectableTool>, includeRoot: boolean, catalog: CatalogFlags = { workspaceCatalog: false, workspaceCatalogResolve: new Map() }): Array<PlanItem> {
   const items: Array<PlanItem> = [
     ...(includeRoot ? Object.entries(PNPM_SETTINGS).map(([ key, value ]) => pnpmSetting(key, value)) : []),
-    ...(includeRoot ? Object.entries(ENGINES).map(([ key, value ]) => manifestEntry(MANIFEST, "engines", key, value)) : []),
+    ...(includeRoot ? legacyPnpmBlock() : []),
+    ...(includeRoot ? Object.entries(ENGINES).map(([ key, value ]) => manifestEntry(MANIFEST, "engines", key, value, PREVIOUS_ENGINES[key])) : []),
     ...combinedLintItems(selected, detected),
     ...selected.flatMap(tool => TOOL_ITEMS[tool](detected, catalog)),
   ];

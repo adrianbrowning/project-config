@@ -11,6 +11,7 @@ import { parseCliArgs } from "../../src/cli-args.ts";
 import { COMMITLINT_CONFIG } from "../../src/convential-tasks.ts";
 import { eslintConfigContent } from "../../src/eslint-tasks.ts";
 import { COMMIT_MSG_HOOK, PRE_PUSH_HOOK } from "../../src/husky-tasks.ts";
+import { PNPM_SETTINGS } from "../../src/project-defaults.ts";
 import type { DetectableTool } from "../../src/tool-detection.ts";
 import { KNOWN_TEMPLATE_HASHES } from "../../src/update/known-versions.ts";
 import { jsonFile, manifestEntry, pnpmSetting, templateFile, tsconfigLink, tsconfigPreset } from "../../src/update/reconcile.ts";
@@ -118,6 +119,16 @@ describe("manifestEntry", () => {
     write("package.json", JSON.stringify({ scripts: { "lint:ts": "tsc -b" } }));
     expect(manifestEntry("package.json", "scripts", "lint:ts", "tsc --noEmit")).toMatchObject({ status: "conflict" });
   });
+
+  it("raises the pnpm engines floor an earlier release wrote, and keeps a user's own floor as a conflict", () => {
+    const pnpmEngine = () => managedItems([], [], true).find(item => item.label === "package.json › engines.pnpm");
+    write("package.json", JSON.stringify({ engines: { node: ">=24.0.0", pnpm: ">=10.0.0" } }));
+    expect(pnpmEngine()?.status).toBe("updated");
+    pnpmEngine()?.apply?.();
+    expect((JSON.parse(read("package.json")) as { engines: unknown; }).engines).toEqual({ node: ">=24.0.0", pnpm: ">=10.26.0" });
+    write("package.json", JSON.stringify({ engines: { pnpm: ">=11.0.0" } }));
+    expect(pnpmEngine()?.status).toBe("conflict");
+  });
 });
 
 describe("pnpmSetting", () => {
@@ -133,6 +144,16 @@ describe("pnpmSetting", () => {
     write("pnpm-workspace.yaml", "minimumReleaseAge: 1440\nallowBuilds:\n  esbuild: true\n  'unrs-resolver': true\n");
     expect(pnpmSetting("minimumReleaseAge", 4320).status).toBe("conflict");
     expect(pnpmSetting("allowBuilds", { "unrs-resolver": true }).status).toBe("unchanged");
+  });
+
+  it("removes the whole legacy pnpm: block, even keys this CLI never wrote, once root settings are current", () => {
+    write("package.json", "{}");
+    write("pnpm-workspace.yaml", `packages:\n  - '.'\npnpm:\n  overrides:\n    lodash: ^4.17.21\n${YAML.stringify(PNPM_SETTINGS)}`);
+    const items = managedItems([], [], true).filter(item => item.label.startsWith("pnpm-workspace.yaml"));
+    expect(items.filter(item => item.status !== "unchanged").map(item => [ item.label, item.status ])).toEqual([[ "pnpm-workspace.yaml › pnpm:", "updated" ]]);
+    for (const item of items) item.apply?.();
+    expect(YAML.parse(read("pnpm-workspace.yaml"))).toEqual({ packages: [ "." ], ...PNPM_SETTINGS });
+    expect(managedItems([], [], true).some(item => item.label === "pnpm-workspace.yaml › pnpm:")).toBe(false);
   });
 });
 
