@@ -5,6 +5,7 @@ import type { ListrTask, ListrTaskWrapper } from "listr2";
 import { resolveTsJsx } from "./cli-args.ts";
 import type { CliArgs, TaskContext } from "./cli-args.ts";
 import { eslintConfigContent } from "./eslint-tasks.ts";
+import { CONFIG_VERSION } from "./project-defaults.ts";
 import { applySrcImports, presetMode, promptReplace, SOURCE_TEST_SCRIPT, srcImportItems } from "./src-imports.ts";
 import type { YES_ANY_IS_OK_HERE } from "./types.ts";
 import { getPackageJson, getPkgVersion, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
@@ -28,8 +29,6 @@ export const promptUpdateAll: ConfirmUpdateAll = async (task, packages) => task.
 
 const TS_VERSION = "__ts_version__";
 const ESLINT_VERSION = "__eslint_version__";
-// This package's own version, so the shared configs match the CLI that wrote them
-const CONFIG_VERSION = "__config_version__";
 
 /** The root devDependencies every workspace gets. A new workspace keeps these versions in its pnpm catalog. */
 export const WORKSPACE_ROOT_DEPENDENCIES: ReadonlyArray<readonly [string, string]> = [

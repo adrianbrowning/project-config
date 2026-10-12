@@ -36,7 +36,8 @@ function olderProject(name: string): TestProject {
 }
 
 function update(project: TestProject, ...flags: Array<string>) {
-  const result = runCommand(project, `pnpm exec gingacodemonkey-config --update ${flags.join(" ")}`, { expectFailure: true });
+  // The bin, as `pnpm dlx` runs it: pnpm 12's `pnpm exec` refuses the legacy `pnpm:` key before update can move it
+  const result = runCommand(project, `./node_modules/.bin/gingacodemonkey-config --update ${flags.join(" ")}`, { expectFailure: true });
   return { ...result, output: result.stdout + result.stderr };
 }
 
@@ -54,6 +55,8 @@ describe("--update", () => {
     const workspace: Record<string, unknown> = YAML.parse(project.readFile("pnpm-workspace.yaml"));
     expect(workspace).not.toHaveProperty("pnpm");
     expect(workspace).toMatchObject({ minimumReleaseAge: 4320, strictDepBuilds: true });
+    // pnpm 12 refuses every install while the `pnpm:` key is there; once update removes it, installs work again
+    expect(runCommand(project, "pnpm install --frozen-lockfile", { expectFailure: true }).exitCode).toBe(0);
 
     expect(project.readJson<Manifest>("package.json").scripts.build).toBe("tsc -p .");
     expect(result.output).toMatch(/added\s+package\.json › imports\["#src\/\*\.ts"\]/);

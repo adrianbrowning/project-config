@@ -31,7 +31,7 @@ runs:
         ref: ${{ inputs.checkout-ref }}
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
 
     - name: Setup Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v4

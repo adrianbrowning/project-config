@@ -2,7 +2,7 @@ FROM node:24-alpine
 
 RUN apk add --no-cache git bash
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable && corepack prepare pnpm@12.9.0 --activate
 
 RUN git config --global user.email "test@test.com" && \
     git config --global user.name "Test User" && \

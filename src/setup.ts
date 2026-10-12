@@ -13,11 +13,11 @@ import { huskyTasks } from "./husky-tasks.ts";
 import { jscpdTasks } from "./jscpd-tasks.ts";
 import { knipTasks } from "./knip-tasks.ts";
 import { lintstagedTasks } from "./lintstaged-tasks.ts";
-import { combinedLintScript, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "./project-defaults.ts";
+import { combinedLintScript, CONFIG_VERSION, E18E_SCRIPT, ENGINES, PNPM_SETTINGS } from "./project-defaults.ts";
 import { createTsTasksWithArgs, tsTasks } from "./ts-tasks.ts";
 import { runUpdate } from "./update/run-update.ts";
 import type { UpdatePrompts } from "./update/run-update.ts";
-import { detectPackageManager, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
+import { detectPackageManager, getPkgVersion, updatePkgJson, updatePkgJsonScript, updateWorkspaceYaml } from "./utils.ts";
 import { installPkg } from "./utils.ts";
 import { addWorkspaceRootScripts, createWorkspaceTasks, promptUpdateAll } from "./workspace-tasks.ts";
 
@@ -140,8 +140,19 @@ function createTasks(cliArgs: CliArgs) {
 }
 
 function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs: CliArgs, interactive: boolean): void {
+  // pnpm supply-chain settings (see project-defaults.ts), written before any task installs (workspace runs
+  // `pnpm install` itself) so pnpm only resolves versions older than minimumReleaseAge and runs the approved
+  // builds. pnpm 11+ checks the whole lockfile against minimumReleaseAge on every install, so a lockfile resolved
+  // before the setting would fail until it aged.
+  tasks.add({
+    title: "Configuring pnpm settings",
+    task: async () => {
+      updateWorkspaceYaml(PNPM_SETTINGS);
+    },
+  });
+
   // Workspace writes shared root TS/ESLint configs itself, so the single-package ts/eslint tools step aside.
-  // It runs first: it may create the root package.json that every later task reads.
+  // It runs next: it may create the root package.json that every later task reads.
   const workspace = answer.includes("workspace");
   if (workspace) tasks.add({
     title: "pnpm workspace",
@@ -279,6 +290,13 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
         updatePkgJsonScript("lint:e18e", E18E_SCRIPT);
       },
     });
+    // The generated tsconfig and ESLint configs extend this package, which `pnpm dlx` doesn't install
+    tasks.add({
+      title: "Checking @gingacodemonkey/config",
+      task: ctx => {
+        if (!getPkgVersion("@gingacodemonkey/config")) ctx.packages.add(`@gingacodemonkey/config@${CONFIG_VERSION}`);
+      },
+    });
   }
 
   // Add engines field to package.json
@@ -307,15 +325,6 @@ function addToolTasks(tasks: Listr<TaskContext>, answer: Array<string>, cliArgs:
     task: ctx => {
       const pkgList = [ ...ctx.packages.packages ].join(" ");
       installPkg(ctx.packageManager, pkgList);
-    },
-  });
-
-  // pnpm supply-chain settings (see project-defaults.ts). Written after the install: peers auto-installed
-  // with this package can be younger than minimumReleaseAge, which would fail setup.
-  tasks.add({
-    title: "Configuring pnpm settings",
-    task: async () => {
-      updateWorkspaceYaml(PNPM_SETTINGS);
     },
   });
 }

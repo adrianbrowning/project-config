@@ -7,7 +7,8 @@
  */
 export const KNOWN_TEMPLATE_HASHES: Record<string, ReadonlyArray<string>> = {
   ".github/actions/setup/action.yml": [
-    "2b94bc56e2c59164399cc868ebbbf630e9fbdc71e218d314c9ad79ae36cf99a6", // HEAD, e4bafe7
+    "35cabeb907a45c8bc463d0c0fe2ddecc8cb3baf16e8bf74a4a0cf10a5ec18774", // HEAD
+    "2b94bc56e2c59164399cc868ebbbf630e9fbdc71e218d314c9ad79ae36cf99a6", // e4bafe7
     "9015db9361f394881589251a7124a177199aec591651c5bf912b55246c3c5acc", // cac3f28
   ],
   ".github/workflows/bumpy-check.yml": [

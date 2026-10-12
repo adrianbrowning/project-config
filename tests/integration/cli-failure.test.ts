@@ -37,19 +37,28 @@ describe("CLI failure handling", () => {
     expect(stripVTControlCharacters(result.stdout + result.stderr)).toContain("✖ Knip [FAILED");
   });
 
-  it("names the too-new package and when it becomes installable when minimumReleaseAge blocks the install", () => {
+  it("names each too-new package and when it becomes installable when minimumReleaseAge blocks the install", () => {
     using project = new TestProject({ name: "cli-too-new" });
-    // Every version in the lockfile is younger than ~190 years, so re-resolving any of them fails the same way
-    // a rerun does when the lockfile holds a peer published in the last three days (#56)
-    project.writeFile("pnpm-workspace.yaml", "minimumReleaseAge: 99999999\nminimumReleaseAgeExclude:\n  - knip\n  - '@gingacodemonkey/config'\n");
-
-    const result = runCommand(project, "pnpm exec gingacodemonkey-config --tool=knip --yes", { expectFailure: true });
+    // Every version in the lockfile is younger than ~190 years, so pnpm rejects the lockfile the same way it does
+    // when one holds a package published in the last three days (#56). pnpm 11+ reads pnpm_config_* from the
+    // environment ahead of pnpm-workspace.yaml, so setup's own minimumReleaseAge doesn't replace it.
+    const result = runCommand(project, "pnpm exec gingacodemonkey-config --tool=knip --yes", {
+      env: { pnpm_config_minimum_release_age: "99999999" },
+      expectFailure: true,
+    });
 
     expect(result.exitCode).not.toBe(0);
     const output = stripVTControlCharacters(result.stdout + result.stderr);
-    const [ before = "", after = "" ] = output.split(" is younger than minimumReleaseAge (99999999 minutes), so pnpm won't install it. It can be installed from ");
-    const pkg = before.slice(before.lastIndexOf(" ") + 1);
-    expect(pkg).toMatch(/^(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+/); // name@version, e.g. picomatch@2.3.1
-    expect(after).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\. To change configs in this project without installing packages, use --update\./);
+    // pnpm 12 names every lockfile entry it rejects: one sentence each, then the --update hint
+    const hint = output.indexOf(" To change configs in this project without installing packages, use --update.");
+    const first = output.indexOf(" is younger than minimumReleaseAge");
+    expect(first).toBeGreaterThan(0);
+    expect(hint).toBeGreaterThan(first);
+    const sentences = output.slice(output.lastIndexOf(" ", first - 1) + 1, hint).split(/(?<=Z\.) /);
+    for (const sentence of sentences) {
+      const [ spec = "", reason = "" ] = sentence.split(" is younger than ");
+      expect(spec).toMatch(/^(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+/); // name@version, e.g. picomatch@2.3.1
+      expect(reason).toMatch(/^minimumReleaseAge \(99999999 minutes\), so pnpm won't install it\. It can be installed from \d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z\.$/);
+    }
   });
 });
